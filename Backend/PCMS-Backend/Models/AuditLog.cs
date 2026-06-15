@@ -7,10 +7,10 @@ public class AuditLog
     [Key]
     public int AuditLogId { get; set; }
 
-    [StringLength(100)]
+    
     public string ActionType { get; set; } = default!;
 
-    [StringLength(100)]
+    
     public string EntityName { get; set; } = default!;
 
     public int EntityRecordId { get; set; }

@@ -1,6 +1,4 @@
-﻿using Physician_On_Call_Schedule_Management_System.Models;
-using System.ComponentModel.DataAnnotations;
-using System.Data;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace PCMS_Backend.Models;
 
@@ -9,16 +7,16 @@ public class User
     [Key]
     public int UserId { get; set; }
 
-    [StringLength(20)]
+    
     public string EmployeeCode { get; set; } = default!;
 
-    [StringLength(100)]
+    
     public string FullName { get; set; } = default!;
 
-    [StringLength(150)]
+    
     public string EmailAddress { get; set; } = default!;
 
-    [StringLength(15)]
+    
     public string PhoneNumber { get; set; } = default!;
 
     public string PasswordHash { get; set; } = default!;

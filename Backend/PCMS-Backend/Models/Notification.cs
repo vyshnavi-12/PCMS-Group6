@@ -9,10 +9,10 @@ public class Notification
 
     public int UserId { get; set; }
 
-    [StringLength(100)]
+    
     public string NotificationTitle { get; set; } = default!;
 
-    [StringLength(500)]
+    
     public string NotificationMessage { get; set; } = default!;
 
     public bool IsRead { get; set; }

@@ -7,14 +7,14 @@ public class CoverageSchedule
     [Key]
     public int CoverageScheduleId { get; set; }
 
-    [StringLength(100)]
+    
     public string ScheduleName { get; set; } = default!;
 
     public DateOnly WeekStartDate { get; set; }
 
     public DateOnly WeekEndDate { get; set; }
 
-    [StringLength(20)]
+    
     public string Status { get; set; } = default!;
 
     public int PublishedByUserId { get; set; }

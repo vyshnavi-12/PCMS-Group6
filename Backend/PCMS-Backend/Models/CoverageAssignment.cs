@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 namespace PCMS_Backend.Models;
 
-public class CoverageAssignments
+public class CoverageAssignment
 {
     [Key]
     public int CoverageAssignmentId { get; set; }
@@ -20,13 +20,13 @@ public class CoverageAssignments
 
     public DateTime CreatedAt { get; set; }
 
-    public CoverageSchedule CoverageSchedule { get; set; }
+    public CoverageSchedule CoverageSchedule { get; set; } = default!;
 
-    public Specialty Specialty { get; set; }
+    public Specialty Specialty { get; set; } = default!;
 
-    public Physicians Physicians { get; set; }
+    public Physician Physician { get; set; } = default!;
 
-    public ICollection<CoverageGapAlerts>? CoverageGapAlerts { get; set; }
+    public ICollection<CoverageGapAlert>? CoverageGapAlert { get; set; }
 
-    public ICollection<SwapRequests>? SwapRequests { get; set; }
+    public ICollection<SwapRequest>? SwapRequest { get; set; }
 }

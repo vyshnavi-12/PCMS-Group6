@@ -14,5 +14,5 @@ public class ExternalLeavesData
 
     public string LeaveReason { get; set; } = default!;
 
-    public Physician Physician { get; set; }
+    public Physician Physician { get; set; } = default!;
 }

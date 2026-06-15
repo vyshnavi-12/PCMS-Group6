@@ -14,5 +14,5 @@ public class ExternalShiftsData
 
     public DateTime EndTime { get; set; }
 
-    public Physicians Physicians { get; set; }
+    public Physician Physician { get; set; } = default!;
 }

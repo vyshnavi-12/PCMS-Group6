@@ -1,9 +1,10 @@
-﻿using System;
+﻿using PCMS_Backend.Models;
+using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Physician_On_Call_Schedule_Management_System.Models
-{
-    public class SwapRequests
+namespace PCMS_Backend.Models;
+
+    public class SwapRequest
     {
         [Key]
         public int SwapRequestId { get; set; }
@@ -25,5 +26,13 @@ namespace Physician_On_Call_Schedule_Management_System.Models
         public int? ReviewedByUserId { get; set; }
 
         public DateTime? ReviewedAt { get; set; }
-    }
+
+        public CoverageAssignment CoverageAssignment { get; set; } = default!;
+
+        public Physician RequestedByPhysician { get; set; } = default!;
+
+        public Physician TargetPhysician { get; set; } = default!;
+
+        public User? ReviewedByUser { get; set; }
+  
 }

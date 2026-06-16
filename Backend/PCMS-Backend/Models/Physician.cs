@@ -4,7 +4,7 @@ namespace PCMS_Backend.Models;
 
 public class Physician
     {
-        [Key]
+        
         public int PhysicianId { get; set; }
 
         public int UserId { get; set; }

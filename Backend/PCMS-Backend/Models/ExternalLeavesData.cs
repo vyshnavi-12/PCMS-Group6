@@ -3,7 +3,7 @@ namespace PCMS_Backend.Models;
 
 public class ExternalLeavesData
 {
-    [Key]
+    
     public int ExternalLeaveId { get; set; }
 
     public int PhysicianId { get; set; }

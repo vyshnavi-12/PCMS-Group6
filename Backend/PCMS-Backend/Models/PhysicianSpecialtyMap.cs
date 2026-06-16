@@ -4,7 +4,7 @@ namespace PCMS_Backend.Models;
 
 public class PhysicianSpecialtyMap
 {
-    [Key]
+    
     public int PhysicianSpecialtyMapId { get; set; }
 
     public int PhysicianId { get; set; }

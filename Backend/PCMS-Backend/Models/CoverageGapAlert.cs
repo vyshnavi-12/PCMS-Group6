@@ -3,12 +3,12 @@ namespace PCMS_Backend.Models;
 
 public class CoverageGapAlert
 {
-    [Key]
+    
     public int CoverageGapAlertId { get; set; }
 
     public int CoverageAssignmentId { get; set; }
 
-    public int SuggestedReplacementPhysicianId { get; set; }
+    public int? SuggestedReplacementPhysicianId { get; set; }
 
     public string AlertStatus { get; set; } = default!;
 

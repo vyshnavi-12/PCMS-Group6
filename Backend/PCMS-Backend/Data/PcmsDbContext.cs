@@ -272,7 +272,8 @@ public class PcmsDbContext : DbContext
             {
                 ca.CoverageScheduleId,
                 ca.CoverageDate,
-                ca.SpecialtyId
+                ca.SpecialtyId,
+                ca.ShiftType
             })
             .IsUnique();
 

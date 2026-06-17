@@ -3,7 +3,7 @@ namespace PCMS_Backend.Models;
 
 public class CoverageAssignment
 {
-    [Key]
+    
     public int CoverageAssignmentId { get; set; }
 
     public int CoverageScheduleId { get; set; }

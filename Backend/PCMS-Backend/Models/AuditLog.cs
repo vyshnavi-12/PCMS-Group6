@@ -4,7 +4,7 @@ namespace PCMS_Backend.Models;
 
 public class AuditLog
 {
-    [Key]
+    
     public int AuditLogId { get; set; }
 
     

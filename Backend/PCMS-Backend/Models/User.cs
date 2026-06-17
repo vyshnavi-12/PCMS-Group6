@@ -4,7 +4,7 @@ namespace PCMS_Backend.Models;
 
 public class User
 {
-    [Key]
+    
     public int UserId { get; set; }
 
     
@@ -41,4 +41,5 @@ public class User
 
     public ICollection<CoverageSchedule> PublishedSchedules { get; set; }
         = default!;
+    public ICollection<SwapRequest> SwapRequests { get; set; } = default!;
 }

@@ -6,7 +6,7 @@ namespace PCMS_Backend.Models;
 
     public class SwapRequest
     {
-        [Key]
+        
         public int SwapRequestId { get; set; }
 
         public int CoverageAssignmentId { get; set; }

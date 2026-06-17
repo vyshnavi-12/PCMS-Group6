@@ -5,7 +5,7 @@ namespace PCMS_Backend.Models;
 
     public class Specialty
     {
-        [Key]
+        
         public int SpecialtyId { get; set; }
 
         public string SpecialtyName { get; set; } = default!;

@@ -5,4 +5,6 @@ namespace PCMS_Backend.Interfaces.Repositories;
 public interface ICoverageScheduleRepository
 {
     Task<IReadOnlyList<CoverageSchedule>> GetAllAsync();
+
+    Task<CoverageSchedule?> GetByIdAsync(int scheduleId);
 }

@@ -33,4 +33,40 @@ public class CoverageScheduleService : ICoverageScheduleService
         return Result<IReadOnlyList<CoverageScheduleDto>>
             .Ok(response);
     }
+
+    public async Task<Result<CoverageScheduleDetailDto>> GetScheduleByIdAsync(int scheduleId)
+    {
+        var schedule = await _coverageScheduleRepository
+            .GetByIdAsync(scheduleId);
+
+        if (schedule is null)
+        {
+            return Result<CoverageScheduleDetailDto>
+                .NotFound("Schedule not found.");
+        }
+
+        var response = new CoverageScheduleDetailDto
+        {
+            CoverageScheduleId = schedule.CoverageScheduleId,
+            ScheduleName = schedule.ScheduleName,
+            WeekStartDate = schedule.WeekStartDate,
+            WeekEndDate = schedule.WeekEndDate,
+            Status = schedule.Status,
+
+            Assignments = schedule.CoverageAssignments
+                .Select(ca => new CoverageAssignmentDto
+                {
+                    CoverageAssignmentId = ca.CoverageAssignmentId,
+                    CoverageDate = ca.CoverageDate,
+                    SpecialtyName = ca.Specialty.SpecialtyName,
+                    PhysicianName = ca.Physician.User.FullName,
+                    ShiftType = ca.ShiftType,
+                    AssignmentStatus = ca.AssignmentStatus
+                })
+                .ToList()
+        };
+
+        return Result<CoverageScheduleDetailDto>
+            .Ok(response);
+    }
 }

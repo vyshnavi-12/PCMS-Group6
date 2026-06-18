@@ -21,4 +21,17 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
             .OrderByDescending(cs => cs.WeekStartDate)
             .ToListAsync();
     }
+
+    public async Task<CoverageSchedule?> GetByIdAsync(int scheduleId)
+    {
+        return await _context.CoverageSchedules
+            .AsNoTracking()
+            .Include(cs => cs.CoverageAssignments)
+                .ThenInclude(ca => ca.Specialty)
+            .Include(cs => cs.CoverageAssignments)
+                .ThenInclude(ca => ca.Physician)
+                    .ThenInclude(p => p.User)
+            .FirstOrDefaultAsync(cs =>
+                cs.CoverageScheduleId == scheduleId);
+    }
 }

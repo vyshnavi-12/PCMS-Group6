@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PCMS_Backend.Data;
 using PCMS_Backend.Models;
-using PCMS_Backend.Repositories.Interfaces;
+using PCMS_Backend.Interfaces.Repositories;
 
 namespace PCMS_Backend.Repositories;
 

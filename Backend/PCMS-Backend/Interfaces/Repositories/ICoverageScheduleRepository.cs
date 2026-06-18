@@ -1,6 +1,6 @@
 ﻿using PCMS_Backend.Models;
 
-namespace PCMS_Backend.Repositories.Interfaces;
+namespace PCMS_Backend.Interfaces.Repositories;
 
 public interface ICoverageScheduleRepository
 {

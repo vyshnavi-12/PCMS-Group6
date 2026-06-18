@@ -7,7 +7,7 @@ public class Physician
         
         public int PhysicianId { get; set; }
 
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
 
         public string PhysicianCode { get; set; } = default!;
 

@@ -8,7 +8,7 @@ public class CoverageGapAlert
 
     public int CoverageAssignmentId { get; set; }
 
-    public int? SuggestedReplacementPhysicianId { get; set; }
+    
 
     public string AlertStatus { get; set; } = default!;
 
@@ -20,5 +20,5 @@ public class CoverageGapAlert
 
     public CoverageAssignment CoverageAssignment { get; set; } = default!;
 
-    public Physician? SuggestedReplacementPhysician { get; set; }
+  
 }

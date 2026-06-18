@@ -167,10 +167,7 @@ public class PcmsDbContext : DbContext
                 .HasForeignKey(ca => ca.PhysicianId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasMany(p => p.SuggestedCoverageGapAlerts)
-                .WithOne(cga => cga.SuggestedReplacementPhysician)
-                .HasForeignKey(cga => cga.SuggestedReplacementPhysicianId)
-                .OnDelete(DeleteBehavior.Restrict);
+           
 
             entity.HasMany(p => p.RequestedSwapRequests)
                 .WithOne(sr => sr.RequestedByPhysician)

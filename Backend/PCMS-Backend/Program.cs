@@ -3,6 +3,10 @@ using PCMS_Backend.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//DI
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
 // Controllers
 builder.Services.AddControllers();
 

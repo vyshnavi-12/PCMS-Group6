@@ -26,7 +26,7 @@ public class CoverageAssignment
 
     public Physician Physician { get; set; } = default!;
 
-    public ICollection<CoverageGapAlert>? CoverageGapAlert { get; set; }
+    public ICollection<CoverageGapAlert>? CoverageGapAlerts { get; set; }
 
-    public ICollection<SwapRequest>? SwapRequest { get; set; }
+    public ICollection<SwapRequest>? SwapRequests { get; set; }
 }

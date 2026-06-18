@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PCMS_Backend.Data;
 
@@ -11,9 +12,11 @@ using PCMS_Backend.Data;
 namespace PCMS_Backend.Migrations
 {
     [DbContext(typeof(PcmsDbContext))]
-    partial class PcmsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260616125725_allTablesCreated")]
+    partial class allTablesCreated
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -95,11 +98,11 @@ namespace PCMS_Backend.Migrations
 
                     b.HasKey("CoverageAssignmentId");
 
+                    b.HasIndex("PhysicianId");
+
                     b.HasIndex("SpecialtyId");
 
-                    b.HasIndex("PhysicianId", "CoverageDate");
-
-                    b.HasIndex("CoverageScheduleId", "CoverageDate", "SpecialtyId", "ShiftType")
+                    b.HasIndex("CoverageScheduleId", "CoverageDate", "SpecialtyId")
                         .IsUnique();
 
                     b.ToTable("CoverageAssignments");
@@ -134,11 +137,14 @@ namespace PCMS_Backend.Migrations
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("SuggestedReplacementPhysicianId")
+                        .HasColumnType("int");
+
                     b.HasKey("CoverageGapAlertId");
 
-                    b.HasIndex("AlertStatus");
-
                     b.HasIndex("CoverageAssignmentId");
+
+                    b.HasIndex("SuggestedReplacementPhysicianId");
 
                     b.ToTable("CoverageGapAlerts");
                 });
@@ -630,12 +636,19 @@ namespace PCMS_Backend.Migrations
             modelBuilder.Entity("PCMS_Backend.Models.CoverageGapAlert", b =>
                 {
                     b.HasOne("PCMS_Backend.Models.CoverageAssignment", "CoverageAssignment")
-                        .WithMany("CoverageGapAlerts")
+                        .WithMany("CoverageGapAlert")
                         .HasForeignKey("CoverageAssignmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PCMS_Backend.Models.Physician", "SuggestedReplacementPhysician")
+                        .WithMany("SuggestedCoverageGapAlerts")
+                        .HasForeignKey("SuggestedReplacementPhysicianId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("CoverageAssignment");
+
+                    b.Navigation("SuggestedReplacementPhysician");
                 });
 
             modelBuilder.Entity("PCMS_Backend.Models.CoverageSchedule", b =>
@@ -715,7 +728,7 @@ namespace PCMS_Backend.Migrations
             modelBuilder.Entity("PCMS_Backend.Models.SwapRequest", b =>
                 {
                     b.HasOne("PCMS_Backend.Models.CoverageAssignment", "CoverageAssignment")
-                        .WithMany("SwapRequests")
+                        .WithMany("SwapRequest")
                         .HasForeignKey("CoverageAssignmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -727,7 +740,7 @@ namespace PCMS_Backend.Migrations
                         .IsRequired();
 
                     b.HasOne("PCMS_Backend.Models.User", "ReviewedByUser")
-                        .WithMany("ReviewedSwapRequests")
+                        .WithMany("SwapRequests")
                         .HasForeignKey("ReviewedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -759,9 +772,9 @@ namespace PCMS_Backend.Migrations
 
             modelBuilder.Entity("PCMS_Backend.Models.CoverageAssignment", b =>
                 {
-                    b.Navigation("CoverageGapAlerts");
+                    b.Navigation("CoverageGapAlert");
 
-                    b.Navigation("SwapRequests");
+                    b.Navigation("SwapRequest");
                 });
 
             modelBuilder.Entity("PCMS_Backend.Models.CoverageSchedule", b =>
@@ -780,6 +793,8 @@ namespace PCMS_Backend.Migrations
                     b.Navigation("PhysicianSpecialtyMaps");
 
                     b.Navigation("RequestedSwapRequests");
+
+                    b.Navigation("SuggestedCoverageGapAlerts");
 
                     b.Navigation("TargetSwapRequests");
                 });
@@ -806,7 +821,7 @@ namespace PCMS_Backend.Migrations
 
                     b.Navigation("PublishedSchedules");
 
-                    b.Navigation("ReviewedSwapRequests");
+                    b.Navigation("SwapRequests");
                 });
 #pragma warning restore 612, 618
         }

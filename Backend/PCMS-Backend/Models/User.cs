@@ -41,5 +41,5 @@ public class User
 
     public ICollection<CoverageSchedule> PublishedSchedules { get; set; }
         = default!;
-    public ICollection<SwapRequest> SwapRequests { get; set; } = default!;
+    public ICollection<SwapRequest> ReviewedSwapRequests { get; set; }=default!;
 }

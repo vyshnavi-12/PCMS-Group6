@@ -116,7 +116,7 @@ public class PcmsDbContext : DbContext
                 .HasForeignKey(cs => cs.PublishedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasMany(u => u.SwapRequests)
+            entity.HasMany(u => u.ReviewedSwapRequests)
                   .WithOne(sr => sr.ReviewedByUser)
                   .HasForeignKey (sr => sr.ReviewedByUserId)
                   .OnDelete(DeleteBehavior.Restrict);
@@ -274,16 +274,18 @@ public class PcmsDbContext : DbContext
             })
             .IsUnique();
 
-            entity.HasMany(ca => ca.CoverageGapAlert)
+            entity.HasMany(ca => ca.CoverageGapAlerts)
                 .WithOne(cga => cga.CoverageAssignment)
                 .HasForeignKey(cga => cga.CoverageAssignmentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasMany(ca => ca.SwapRequest)
+            entity.HasMany(ca => ca.SwapRequests)
                 .WithOne(sr => sr.CoverageAssignment)
                 .HasForeignKey(sr => sr.CoverageAssignmentId)
                 .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(ca => new { ca.PhysicianId, ca.CoverageDate });
         });
+       
     }
 
     private static void ConfigureCoverageGapAlert(ModelBuilder modelBuilder)
@@ -301,6 +303,9 @@ public class PcmsDbContext : DbContext
             entity.Property(cga => cga.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
         });
+        modelBuilder.Entity<CoverageGapAlert>()
+    .HasIndex(cga => cga.AlertStatus);
+
     }
 
     private static void ConfigureSwapRequest(ModelBuilder modelBuilder)

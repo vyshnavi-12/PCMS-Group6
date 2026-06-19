@@ -8,28 +8,7 @@ import Password from 'primevue/password'
 import Checkbox from 'primevue/checkbox'
 import Button from 'primevue/button'
 
-const users = [
-  {
-    email: 'doctor@pcms.com',
-    password: 'Doctor123',
-    role: 'Doctor',
-    name: 'Dr. John Smith',
-    department: 'Cardiology',
-    employeeId: 'PHY-0012',
-    phone: '(555) 123-4567',
-    profileImage: 'https://i.pravatar.cc/200?img=12'
-  },
-  {
-    email: 'supervisor@pcms.com',
-    password: 'Supervisor123',
-    role: 'Supervisor',
-    name: 'John Williams',
-    department: 'Supervisor',
-    employeeId: 'SUP-0001',
-    phone: '(555) 987-6543',
-    profileImage: 'https://i.pravatar.cc/200?img=15'
-  }
-]
+import { loginUser } from '../services/authService'
 
 const router = useRouter()
 
@@ -53,43 +32,34 @@ const formValid = computed(() =>
   isPasswordValid.value
 )
 
-const handleLogin = () => {
+const handleLogin = async () => {
   submitted.value = true
   loginError.value = ''
 
-  if (!formValid.value) {
-    return
-  }
+  if (!formValid.value) return
 
-  const user = users.find(
-    u =>
-      u.email.toLowerCase() === email.value.toLowerCase().trim() &&
-      u.password === password.value
-  )
+  try {
+    const response = await loginUser(
+      email.value.trim(),
+      password.value
+    )
 
-  if (!user) {
-    loginError.value = 'Invalid Email or Password'
-    return
-  }
+    const user = response.data
 
-  // Store logged in user
-  localStorage.setItem(
-    'loggedInUser',
-    JSON.stringify(user)
-  )
+    localStorage.setItem(
+      "loggedInUser",
+      JSON.stringify(user)
+    )
 
-  // Store remember me preference
-  localStorage.setItem(
-    'rememberMe',
-    rememberMe.value.toString()
-  )
-
-  // Redirect based on role
-  if (user.role === 'Doctor') {
-    router.push('/doctor/dashboard')
-  }
-  else {
-    router.push('/supervisor/dashboard')
+    if (user.role === "Physician") {
+      router.push("/doctor/dashboard")
+    } else {
+      router.push("/supervisor/dashboard")
+    }
+  } catch (error: any) {
+    loginError.value =
+      error?.response?.data?.message ||
+      "Login failed"
   }
 }
 </script>

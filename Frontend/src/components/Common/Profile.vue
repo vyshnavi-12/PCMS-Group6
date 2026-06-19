@@ -1,23 +1,53 @@
 <script setup lang="ts">
-const loggedInUser = JSON.parse(
-    localStorage.getItem('loggedInUser') || '{}'
-)
+import { ref, onMounted } from 'vue'
+import { getMe } from '../../services/authService'
+
+
+const loggedInUser = ref({
+    fullName: '',
+    role: '',
+    phoneNumber: '',
+    employeeCode: '',
+    email: '',
+    specialtyName: ''
+})
+
+const loading = ref(true)
+
+const fetchProfile = async () => {
+    try {
+        const response = await getMe()
+        loggedInUser.value = response.data
+    } catch (error) {
+        console.error("Failed to fetch profile:", error)
+    } finally {
+        loading.value = false
+    }
+}
+
+onMounted(() => {
+    fetchProfile()
+})
 </script>
 
 <template>
     <div class="profile-page">
 
-        <div class="profile-card">
+        <div v-if="loading" class="loading-text">
+            Loading profile...
+        </div>
+
+        <div v-else class="profile-card">
 
             <!-- Left Section -->
             <div class="profile-left">
 
-                <img :src="loggedInUser.profileImage" alt="Profile" class="profile-avatar" />
+                <img src="https://i.pravatar.cc/200?img=12" alt="Profile" class="profile-avatar" />
 
-                <h2>{{ loggedInUser.name }}</h2>
+                <h2>{{ loggedInUser.fullName }}</h2>
 
                 <p class="department">
-                    {{ loggedInUser.department }}
+                    {{ loggedInUser.specialtyName || loggedInUser.role }}
                 </p>
 
             </div>
@@ -32,7 +62,7 @@ const loggedInUser = JSON.parse(
                     <div class="info-row">
                         <span class="label">Employee ID</span>
                         <span class="value">
-                            {{ loggedInUser.employeeId }}
+                            {{ loggedInUser.employeeCode }}
                         </span>
                     </div>
 
@@ -46,14 +76,14 @@ const loggedInUser = JSON.parse(
                     <div class="info-row">
                         <span class="label">Phone</span>
                         <span class="value">
-                            {{ loggedInUser.phone }}
+                            {{ loggedInUser.phoneNumber }}
                         </span>
                     </div>
 
                     <div class="info-row">
                         <span class="label">Department</span>
                         <span class="value">
-                            {{ loggedInUser.department }}
+                            {{ loggedInUser.specialtyName || loggedInUser.role }}
                         </span>
                     </div>
 
@@ -69,6 +99,12 @@ const loggedInUser = JSON.parse(
 <style scoped>
 .profile-page {
     width: 100%;
+}
+
+.loading-text {
+    text-align: center;
+    padding: 50px;
+    font-size: 18px;
 }
 
 .profile-card {
@@ -105,11 +141,6 @@ const loggedInUser = JSON.parse(
 .department {
     color: #2563eb;
     font-weight: 500;
-    margin-bottom: 4px;
-}
-
-.role {
-    color: #6b7280;
 }
 
 .profile-right {

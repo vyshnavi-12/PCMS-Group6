@@ -119,19 +119,29 @@ public class UserService : IUserService
         return Result<LoginResponseDto>.Ok(userResponse, "Login successful", token);
     }
 
-    public async Task<Result<MeResponseDto>> GetNameAsync(int userId)
+    public async Task<Result<MeResponseDto>> GetMeAsync(int userId)
     {
         var user = await _userRepo.GetUserByIdWithRoleAsync(userId);
 
         if (user == null)
             return Result<MeResponseDto>.NotFound("User profile not found.");
 
+        string? specialtyName = user.Physician?
+            .PhysicianSpecialtyMaps?
+            .FirstOrDefault()?
+            .Specialty?
+            .SpecialtyName;
+
         var userResponse = new MeResponseDto
         {
             FullName = user.FullName,
-            Role = user.Role.RoleName
+            Role = user.Role.RoleName,
+            PhoneNumber = user.PhoneNumber,
+            EmployeeCode = user.EmployeeCode,
+            Email = user.EmailAddress,
+            SpecialtyName = specialtyName
         };
 
-        return Result<MeResponseDto>.Ok(userResponse, "User is authenticated");
+        return Result<MeResponseDto>.Ok(userResponse, "User fetched successfully");
     }
 }

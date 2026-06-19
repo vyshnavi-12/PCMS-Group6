@@ -35,6 +35,9 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
             .Include(u => u.Role)
+            .Include(u => u.Physician)
+                .ThenInclude(p => p.PhysicianSpecialtyMaps)
+                    .ThenInclude(psm => psm.Specialty)
             .FirstOrDefaultAsync(u => u.UserId == userId);
     }
 

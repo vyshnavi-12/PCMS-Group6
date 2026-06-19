@@ -1,23 +1,32 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
-
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import Button from 'primevue/button'
+import { logoutUser } from '../../services/authService'
 
 const route = useRoute()
+const router = useRouter()
 
 const isSidebarCollapsed = ref(false)
 
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
+
+const handleLogout = async () => {
+  try {
+    await logoutUser()
+  } catch (error) {
+    console.error("Logout failed:", error)
+  } finally {
+    localStorage.removeItem("loggedInUser")
+    router.push("/login")
+  }
+}
 </script>
 
 <template>
-  <aside
-    class="sidebar"
-    :class="{ collapsed: isSidebarCollapsed }"
-  >
+  <aside class="sidebar" :class="{ collapsed: isSidebarCollapsed }">
     <div class="sidebar-header">
 
       <div class="logo-section">
@@ -25,39 +34,23 @@ const toggleSidebar = () => {
           <i class="pi pi-shield"></i>
         </div>
 
-        <span
-          v-if="!isSidebarCollapsed"
-          class="logo-text"
-        >
+        <span v-if="!isSidebarCollapsed" class="logo-text">
           PCMS
         </span>
       </div>
 
-      <Button
-        text
-        rounded
-        class="toggle-btn"
-        @click="toggleSidebar"
-      >
-        <i
-          class="pi"
-          :class="
-            isSidebarCollapsed
-              ? 'pi-angle-right'
-              : 'pi-angle-left'
-          "
-        />
+      <Button text rounded class="toggle-btn" @click="toggleSidebar">
+        <i class="pi" :class="isSidebarCollapsed
+            ? 'pi-angle-right'
+            : 'pi-angle-left'
+          " />
       </Button>
 
     </div>
 
     <nav class="sidebar-nav">
 
-      <RouterLink
-        to="/doctor/dashboard"
-        class="nav-item"
-        :class="{ active: route.path === '/doctor/dashboard' }"
-      >
+      <RouterLink to="/doctor/dashboard" class="nav-item" :class="{ active: route.path === '/doctor/dashboard' }">
         <i class="pi pi-home"></i>
 
         <span v-if="!isSidebarCollapsed">
@@ -65,11 +58,7 @@ const toggleSidebar = () => {
         </span>
       </RouterLink>
 
-      <RouterLink
-        to="/doctor/schedule"
-        class="nav-item"
-        :class="{ active: route.path === '/doctor/schedule' }"
-      >
+      <RouterLink to="/doctor/schedule" class="nav-item" :class="{ active: route.path === '/doctor/schedule' }">
         <i class="pi pi-calendar"></i>
 
         <span v-if="!isSidebarCollapsed">
@@ -77,11 +66,8 @@ const toggleSidebar = () => {
         </span>
       </RouterLink>
 
-      <RouterLink
-        to="/doctor/swap-requests"
-        class="nav-item"
-        :class="{ active: route.path === '/doctor/swap-requests' }"
-      >
+      <RouterLink to="/doctor/swap-requests" class="nav-item"
+        :class="{ active: route.path === '/doctor/swap-requests' }">
         <i class="pi pi-arrow-right-arrow-left"></i>
 
         <span v-if="!isSidebarCollapsed">
@@ -89,11 +75,8 @@ const toggleSidebar = () => {
         </span>
       </RouterLink>
 
-      <RouterLink
-        to="/doctor/notifications"
-        class="nav-item"
-        :class="{ active: route.path === '/doctor/notifications' }"
-      >
+      <RouterLink to="/doctor/notifications" class="nav-item"
+        :class="{ active: route.path === '/doctor/notifications' }">
         <i class="pi pi-bell"></i>
 
         <span v-if="!isSidebarCollapsed">
@@ -101,11 +84,7 @@ const toggleSidebar = () => {
         </span>
       </RouterLink>
 
-      <RouterLink
-        to="/doctor/profile"
-        class="nav-item"
-        :class="{ active: route.path === '/doctor/profile' }"
-      >
+      <RouterLink to="/doctor/profile" class="nav-item" :class="{ active: route.path === '/doctor/profile' }">
         <i class="pi pi-user"></i>
 
         <span v-if="!isSidebarCollapsed">
@@ -117,16 +96,13 @@ const toggleSidebar = () => {
 
     <div class="sidebar-footer">
 
-      <RouterLink
-        to="/login"
-        class="nav-item logout"
-      >
+      <div class="nav-item logout" @click="handleLogout">
         <i class="pi pi-sign-out"></i>
 
         <span v-if="!isSidebarCollapsed">
           Logout
         </span>
-      </RouterLink>
+      </div>
 
     </div>
 
@@ -138,11 +114,9 @@ const toggleSidebar = () => {
   width: 240px;
   min-height: 100vh;
 
-  background: linear-gradient(
-    180deg,
-    #232f72 0%,
-    #16204d 100%
-  );
+  background: linear-gradient(180deg,
+      #232f72 0%,
+      #16204d 100%);
 
   color: white;
 

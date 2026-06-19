@@ -13,17 +13,20 @@ public class NotificationService : INotificationService
     public async Task<Result<IReadOnlyList<Notification>>> GetUserNotificationsAsync(int userId)
     {
         var notifications = await _repository.GetByUserIdAsync(userId);
-        if (notifications.Count == 0)
-            return Result<IReadOnlyList<Notification>>.NotFound("No notifications found.");
 
-        return Result<IReadOnlyList<Notification>>.Ok(notifications, "Notifications retrieved successfully");
+       
+        return Result<IReadOnlyList<Notification>>.Ok(notifications, notifications.Count == 0
+            ? "No notifications found."
+            : "Notifications retrieved successfully");
     }
 
     public async Task<Result> MarkAsReadAsync(int notificationId, int userId)
     {
         var notification = await _repository.GetByIdAsync(notificationId);
-        if (notification == null || notification.UserId != userId)
-            return Result.NotFound("Notification not found or not owned by user.");
+        if (notification == null)
+            return Result.NotFound("Notification not found");
+        else if(notification.UserId != userId)
+            return Result.Forbidden("Notification not owned by user.");
 
         notification.IsRead = true;
         notification.ReadAt = DateTime.UtcNow;

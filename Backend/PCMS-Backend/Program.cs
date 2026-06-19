@@ -12,8 +12,6 @@ var builder = WebApplication.CreateBuilder(args);
 //DI
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<AuthService>();
-
-//DI
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 

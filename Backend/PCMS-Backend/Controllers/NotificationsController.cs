@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PCMS_Backend.Shared;
+using System.Security.Claims;
 
 [Authorize] // ✅ Only authenticated users can access
 [ApiController]
@@ -18,17 +19,32 @@ public class NotificationsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetNotifications()
     {
-        int userId = int.Parse(User.FindFirst("UserId")!.Value);
-        var result = await _service.GetUserNotificationsAsync(userId);
+        var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (int.TryParse(claimValue, out int userId))
+        {
+// ✅ Pass both logged-in userId and requested userId (same in this case)
+            var result = await _service.GetUserNotificationsAsync(userId);
         return result.ToActionResult();
+        }
+        return Unauthorized("Invalid or missing session token.");
+
     }
 
     // POST /api/notifications/{id}/mark-read
     [HttpPost("{id}/mark-read")]
     public async Task<IActionResult> MarkNotificationAsRead(int id)
     {
-        int userId = int.Parse(User.FindFirst("UserId")!.Value);
-        var result = await _service.MarkAsReadAsync(id, userId);
-        return result.ToActionResult();
+        var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (int.TryParse(claimValue, out int userId))
+        { 
+         // ✅ Pass both logged-in userId and requested userId (same in this case)
+            var result = await _service.MarkAsReadAsync(id, userId);
+            return result.ToActionResult();
+        }
+        return Unauthorized("Invalid or missing session token.");
     }
+
+
+
 }

@@ -91,29 +91,19 @@ const markAllAsRead = async () => {
 
 <template>
   <div class="notifications-page">
-    
+
     <div class="notifications-toolbar">
       <div class="tabs">
-        <span
-          :class="{ active: activeTab === 'All' }"
-          @click="activeTab = 'All'"
-        >
+        <span :class="{ active: activeTab === 'All' }" @click="activeTab = 'All'">
           All
         </span>
 
-        <span
-          :class="{ active: activeTab === 'Unread' }"
-          @click="activeTab = 'Unread'"
-        >
+        <span :class="{ active: activeTab === 'Unread' }" @click="activeTab = 'Unread'">
           Unread
         </span>
       </div>
 
-      <button
-        class="mark-btn"
-        @click="markAllAsRead"
-        :disabled="notifications.filter(n => !n.isRead).length === 0"
-      >
+      <button class="mark-btn" @click="markAllAsRead" :disabled="notifications.filter(n => !n.isRead).length === 0">
         Mark All as Read
       </button>
     </div>
@@ -141,16 +131,9 @@ const markAllAsRead = async () => {
         </thead>
 
         <tbody>
-          <tr
-            v-for="notification in filteredNotifications"
-            :key="notification.notificationId"
-          >
+          <tr v-for="notification in filteredNotifications" :key="notification.notificationId">
             <td>
-              <input
-                v-if="!notification.isRead"
-                type="checkbox"
-                @change="markAsRead(notification)"
-              />
+              <input v-if="!notification.isRead" type="checkbox" @change="markAsRead(notification)" />
             </td>
 
             <td>
@@ -168,10 +151,7 @@ const markAllAsRead = async () => {
 
             <td>
               <div class="status">
-                <span
-                  class="dot"
-                  :class="notification.isRead ? 'read' : 'unread'"
-                />
+                <span class="dot" :class="notification.isRead ? 'read' : 'unread'" />
                 {{ notification.isRead ? 'Read' : 'Unread' }}
               </div>
             </td>
@@ -190,7 +170,9 @@ const markAllAsRead = async () => {
 
 <style scoped>
 .notifications-page {
-  width: 100%;
+  height: calc(100vh - 170px);
+  display: flex;
+  flex-direction: column;
 }
 
 .notifications-toolbar {
@@ -236,10 +218,12 @@ const markAllAsRead = async () => {
 }
 
 .table-card {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  overflow: hidden;
+  border-radius: 10px;
   box-shadow:
     0 4px 10px rgba(35, 47, 114, 0.04);
 }
@@ -250,6 +234,9 @@ const markAllAsRead = async () => {
 }
 
 .notification-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   background: #f8fafc;
 }
 
@@ -293,14 +280,14 @@ const markAllAsRead = async () => {
 }
 
 .toolbar-actions {
-    display: flex;
-    gap: 10px;
+  display: flex;
+  gap: 10px;
 }
 
 input[type='checkbox'] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
 .loading-state,

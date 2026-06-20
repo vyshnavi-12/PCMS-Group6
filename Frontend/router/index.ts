@@ -2,16 +2,15 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import Login from "../src/components/Login.vue";
 import Profile from "../src/components/Common/Profile.vue";
+import Notifications from "../src/components/Common/Notifications.vue";
 
 import DoctorLayout from "../src/layouts/DoctorLayout.vue";
 import DoctorDashboard from "../src/components/Doctor/Dashboard.vue";
-import DoctorNotifications from "../src/components/Common/Notifications.vue";
 import DoctorSwapRequests from "../src/components/Doctor/SwapRequests.vue";
 import MySchedule from "../src/components/Doctor/MySchedule.vue";
 
 import SupervisorLayout from "../src/layouts/SupervisorLayout.vue";
 import SupervisorDashboard from "../src/components/Supervisor/Dashboard.vue";
-import SupervisorNotifications from "../src/components/Supervisor/Notifications.vue";
 import SupervisorSwapRequests from "../src/components/Supervisor/SwapRequests.vue";
 import SupervisorSchedules from "../src/components/Supervisor/Schedules.vue";
 import CoverageSchedule from "../src/components/Supervisor/CoverageSchedule.vue";
@@ -53,7 +52,7 @@ const router = createRouter({
         },
         {
           path: "notifications",
-          component: DoctorNotifications,
+          component: Notifications,
         },
         {
           path: "profile",
@@ -92,7 +91,7 @@ const router = createRouter({
         },
         {
           path: "notifications",
-          component: SupervisorNotifications,
+          component: Notifications,
         },
         {
           path: "profile",

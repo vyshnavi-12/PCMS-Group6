@@ -1,174 +1,197 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 
 const activeTab = ref('All')
+const loading = ref(false)
+const errorMessage = ref('')
 
-const notifications = ref([
-    {
-        message: 'New schedule published for May 19 – May 25, 2025.',
-        date: 'May 18, 2025 11:00 AM',
-        status: 'Unread'
-    },
-    {
-        message: 'Swap request SWP-0012 has been approved.',
-        date: 'May 18, 2025 02:30 PM',
-        status: 'Unread'
-    },
-    {
-        message: 'You are assigned to NIGHT shift on May 20, 2025.',
-        date: 'May 18, 2025 09:00 AM',
-        status: 'Read'
-    },
-    {
-        message: 'Dr. Sarah Davis requested a swap for May 21, 2025 (DAY).',
-        date: 'May 17, 2025 04:15 PM',
-        status: 'Read'
-    },
-    {
-        message: 'Coverage gap detected in Orthopedics (NIGHT) on May 22.',
-        date: 'May 17, 2025 01:20 PM',
-        status: 'Read'
-    }
-])
-
-const filteredNotifications = computed(() => {
-    if (activeTab.value === 'Unread') {
-        return notifications.value.filter(
-            notification => notification.status === 'Unread'
-        )
-    }
-
-    return notifications.value
-})
-
-const markAsRead = (notification: any) => {
-    notification.status = 'Read'
+interface Notification {
+  notificationId: number
+  userId: number
+  notificationTitle: string
+  notificationMessage: string
+  isRead: boolean
+  createdAt: string
+  readAt: string | null
 }
 
-const markAllAsRead = () => {
-    notifications.value.forEach(notification => {
-        notification.status = 'Read'
-    })
+interface ApiResponse {
+  data: Notification[]
+  success: boolean
+  message: string
+  statusCode: number
+}
+
+const notifications = ref<Notification[]>([])
+
+const api = axios.create({
+  baseURL: 'https://localhost:7119',
+  withCredentials: true
+})
+
+const fetchNotifications = async () => {
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await api.get<ApiResponse>('/api/notifications')
+
+    console.log('Notifications API Response:', response.data)
+
+    notifications.value = response.data.data || []
+  } catch (error: any) {
+    console.error('Fetch Notifications Error:', error)
+    errorMessage.value =
+      error.response?.data?.message ||
+      error.message ||
+      'Something went wrong'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchNotifications()
+})
+
+const filteredNotifications = computed(() => {
+  if (activeTab.value === 'Unread') {
+    return notifications.value.filter(notification => !notification.isRead)
+  }
+  return notifications.value
+})
+
+const markAsRead = async (notification: Notification) => {
+  if (notification.isRead) return
+
+  try {
+    await api.post(`/api/notifications/${notification.notificationId}/mark-read`)
+    notification.isRead = true
+    notification.readAt = new Date().toISOString()
+  } catch (error) {
+    console.error('Mark As Read Error:', error)
+  }
+}
+
+const markAllAsRead = async () => {
+  const unreadNotifications = notifications.value.filter(n => !n.isRead)
+
+  if (!unreadNotifications.length) return
+
+  try {
+    await Promise.all(
+      unreadNotifications.map(notification => markAsRead(notification))
+    )
+  } catch (error) {
+    console.error('Mark All As Read Error:', error)
+  }
 }
 </script>
 
 <template>
-    <div class="notifications-page">
+  <div class="notifications-page">
+    
+    <div class="notifications-toolbar">
+      <div class="tabs">
+        <span
+          :class="{ active: activeTab === 'All' }"
+          @click="activeTab = 'All'"
+        >
+          All
+        </span>
 
-        <div class="notifications-toolbar">
+        <span
+          :class="{ active: activeTab === 'Unread' }"
+          @click="activeTab = 'Unread'"
+        >
+          Unread
+        </span>
+      </div>
 
-            <div class="tabs">
-
-                <span
-                    :class="{ active: activeTab === 'All' }"
-                    @click="activeTab = 'All'"
-                >
-                    All
-                </span>
-
-                <span
-                    :class="{ active: activeTab === 'Unread' }"
-                    @click="activeTab = 'Unread'"
-                >
-                    Unread
-                </span>
-
-            </div>
-
-            <button
-                class="mark-btn"
-                @click="markAllAsRead"
-            >
-                Mark All as Read
-            </button>
-
-        </div>
-
-        <div class="table-card">
-
-            <table class="notification-table">
-
-                <thead>
-                    <tr>
-                        <th width="50"></th>
-                        <th>Message</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    <tr
-                        v-for="(notification, index) in filteredNotifications"
-                        :key="index"
-                    >
-
-                        <td>
-
-                            <input
-                                v-if="notification.status === 'Unread'"
-                                type="checkbox"
-                                @change="markAsRead(notification)"
-                            />
-
-                        </td>
-
-                        <td>
-                            {{ notification.message }}
-                        </td>
-
-                        <td>
-                            {{ notification.date }}
-                        </td>
-
-                        <td>
-
-                            <div class="status">
-
-                                <span
-                                    class="dot"
-                                    :class="
-                                        notification.status === 'Unread'
-                                            ? 'unread'
-                                            : 'read'
-                                    "
-                                />
-
-                                {{ notification.status }}
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                    <tr v-if="filteredNotifications.length === 0">
-
-                        <td
-                            colspan="4"
-                            class="empty-state"
-                        >
-                            No notifications found
-                        </td>
-
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-        </div>
-
+      <button
+        class="mark-btn"
+        @click="markAllAsRead"
+        :disabled="notifications.filter(n => !n.isRead).length === 0"
+      >
+        Mark All as Read
+      </button>
     </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="loading-state">
+      Loading notifications...
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="errorMessage" class="error-state">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Table -->
+    <div v-else class="table-card">
+      <table class="notification-table">
+        <thead>
+          <tr>
+            <th width="50"></th>
+            <th>Message</th>
+            <th>Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr
+            v-for="notification in filteredNotifications"
+            :key="notification.notificationId"
+          >
+            <td>
+              <input
+                v-if="!notification.isRead"
+                type="checkbox"
+                @change="markAsRead(notification)"
+              />
+            </td>
+
+            <td>
+              <div>
+                <strong>{{ notification.notificationTitle }}</strong>
+              </div>
+              <div>
+                {{ notification.notificationMessage }}
+              </div>
+            </td>
+
+            <td>
+              {{ new Date(notification.createdAt).toLocaleString() }}
+            </td>
+
+            <td>
+              <div class="status">
+                <span
+                  class="dot"
+                  :class="notification.isRead ? 'read' : 'unread'"
+                />
+                {{ notification.isRead ? 'Read' : 'Unread' }}
+              </div>
+            </td>
+          </tr>
+
+          <tr v-if="filteredNotifications.length === 0">
+            <td colspan="4" class="empty-state">
+              No notifications found
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </template>
 
 <style scoped>
 .notifications-page {
   width: 100%;
 }
-
-/* Toolbar */
 
 .notifications-toolbar {
   display: flex;
@@ -195,8 +218,6 @@ const markAllAsRead = () => {
   border-bottom: 2px solid #f69d39;
 }
 
-/* Button */
-
 .mark-btn {
   background: white;
   border: 1px solid #dbe2ea;
@@ -214,19 +235,14 @@ const markAllAsRead = () => {
   color: #232f72;
 }
 
-/* Card */
-
 .table-card {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   overflow: hidden;
-
   box-shadow:
     0 4px 10px rgba(35, 47, 114, 0.04);
 }
-
-/* Table */
 
 .notification-table {
   width: 100%;
@@ -255,8 +271,6 @@ const markAllAsRead = () => {
 .notification-table tbody tr:hover {
   background: #fafbfc;
 }
-
-/* Status */
 
 .status {
   display: flex;
@@ -289,7 +303,22 @@ input[type='checkbox'] {
     cursor: pointer;
 }
 
-/* Mobile */
+.loading-state,
+.error-state,
+.empty-state {
+  padding: 24px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.error-state {
+  color: red;
+}
+
+.mark-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 @media (max-width: 900px) {
   .notifications-toolbar {

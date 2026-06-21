@@ -1,48 +1,93 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 
 const activeTab = ref('Published')
+const loading = ref(false)
+const errorMessage = ref('')
 
-const schedules = ref([
-  {
-    id: 1,
-    scheduleName: 'May 19 - Jun 01, 2025',
-    weekStart: 'May 19, 2025',
-    weekEnd: 'Jun 01, 2025',
-    status: 'PUBLISHED',
-    publishedAt: 'May 18, 2025 10:30 AM'
-  },
+interface Schedule {
+  id: number
+  scheduleName: string
+  weekStart: string
+  weekEnd: string
+  status: string
+  publishedAt: string
+}
 
-  {
-    id: 2,
-    scheduleName: 'May 05 - May 18, 2025',
-    weekStart: 'May 05, 2025',
-    weekEnd: 'May 18, 2025',
-    status: 'PUBLISHED',
-    publishedAt: 'May 04, 2025 09:15 AM'
-  },
+const schedules = ref<Schedule[]>([])
 
-  {
-    id: 3,
-    scheduleName: 'Jun 02 - Jun 15, 2025',
-    weekStart: 'Jun 02, 2025',
-    weekEnd: 'Jun 15, 2025',
-    status: 'DRAFT',
-    publishedAt: '-'
-  },
+const months = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+]
 
-  {
-    id: 4,
-    scheduleName: 'Jun 16 - Jun 29, 2025',
-    weekStart: 'Jun 16, 2025',
-    weekEnd: 'Jun 29, 2025',
-    status: 'DRAFT',
-    publishedAt: '-'
+const formatDate = (dateString: string) => {
+  const [year, month, day] = dateString.split('-')
+
+  return `${months[Number(month) - 1]} ${day}, ${year}`
+}
+
+const formatScheduleName = (startDate: string, endDate: string) => {
+  const [startYear, startMonth, startDay] = startDate.split('-')
+  const [endYear, endMonth, endDay] = endDate.split('-')
+
+  return `${months[Number(startMonth) - 1]} ${startDay} - ${months[Number(endMonth) - 1]} ${endDay}, ${endYear}`
+}
+
+const formatPublishedAt = (dateString: string | null) => {
+  if (!dateString) return '-'
+
+  const date = new Date(dateString)
+
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  })
+}
+
+const fetchSchedules = async () => {
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await axios.get(
+      'https://localhost:7119/api/CoverageSchedules',
+      {
+        withCredentials: true
+      }
+    )
+
+    schedules.value = response.data.data.map((schedule: any) => ({
+      id: schedule.coverageScheduleId,
+      scheduleName: formatScheduleName(
+        schedule.weekStartDate,
+        schedule.weekEndDate
+      ),
+      weekStart: formatDate(schedule.weekStartDate),
+      weekEnd: formatDate(schedule.weekEndDate),
+      status: schedule.status.toUpperCase(),
+      publishedAt: formatPublishedAt(schedule.publishedAt)
+    }))
+  } catch (error: any) {
+    errorMessage.value =
+      error.response?.data?.message || 'Failed to load schedules'
+    console.error(error)
+  } finally {
+    loading.value = false
   }
-])
+}
+
+onMounted(() => {
+  fetchSchedules()
+})
 
 const filteredSchedules = computed(() => {
   if (activeTab.value === 'Published') {
@@ -61,7 +106,6 @@ const createSchedule = () => {
 }
 
 const viewSchedule = (scheduleId: number) => {
-
   const selectedSchedule = schedules.value.find(
     schedule => schedule.id === scheduleId
   )
@@ -70,7 +114,6 @@ const viewSchedule = (scheduleId: number) => {
 
   router.push({
     path: '/supervisor/coverage-schedule',
-
     query: {
       id: selectedSchedule.id,
       week: selectedSchedule.scheduleName,

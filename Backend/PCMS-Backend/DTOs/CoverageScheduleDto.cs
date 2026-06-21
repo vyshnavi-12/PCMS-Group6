@@ -1,6 +1,4 @@
-﻿namespace PCMS_Backend.DTOs;
-
-public class CoverageScheduleDto
+﻿public class CoverageScheduleDto
 {
     public int CoverageScheduleId { get; set; }
 
@@ -11,4 +9,6 @@ public class CoverageScheduleDto
     public DateOnly WeekEndDate { get; set; }
 
     public string Status { get; set; } = default!;
+
+    public DateTime? PublishedAt { get; set; }
 }

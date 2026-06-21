@@ -1,111 +1,68 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 
-const schedules = [
-  {
-    date: 'Mon, May 19',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Tue, May 20',
-    shift: 'NIGHT',
-    specialty: 'Cardiology',
-    time: '04:00 PM - 12:00 AM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Wed, May 21',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Thu, May 22',
-    shift: '-',
-    specialty: '-',
-    time: '-',
-    status: 'OFF'
-  },
-  {
-    date: 'Fri, May 23',
-    shift: 'NIGHT',
-    specialty: 'Cardiology',
-    time: '04:00 PM - 12:00 AM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Sat, May 24',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Sun, May 25',
-    shift: '-',
-    specialty: '-',
-    time: '-',
-    status: 'OFF'
-  },
+interface Schedule {
+  date: string
+  shift: string
+  specialty: string
+  time: string
+  status: string
+}
 
-  /* WEEK 2 */
+const schedules = ref<Schedule[]>([])
 
-  {
-    date: 'Mon, May 26',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Tue, May 27',
-    shift: 'NIGHT',
-    specialty: 'Cardiology',
-    time: '04:00 PM - 12:00 AM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Wed, May 28',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Thu, May 29',
-    shift: '-',
-    specialty: '-',
-    time: '-',
-    status: 'OFF'
-  },
-  {
-    date: 'Fri, May 30',
-    shift: 'NIGHT',
-    specialty: 'Cardiology',
-    time: '04:00 PM - 12:00 AM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Sat, May 31',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Sun, Jun 01',
-    shift: '-',
-    specialty: '-',
-    time: '-',
-    status: 'OFF'
-  }
+const months = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ]
+
+const days = [
+  'Sun', 'Mon', 'Tue', 'Wed',
+  'Thu', 'Fri', 'Sat'
+]
+
+const formatDate = (dateString: string) => {
+  const [year, month, day] = dateString.split('-')
+
+  const date = new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day)
+  )
+
+  return `${days[date.getDay()]}, ${months[Number(month) - 1]} ${day}`
+}
+
+const fetchMySchedule = async () => {
+  try {
+    const response = await axios.get(
+      'https://localhost:7119/api/MySchedule',
+      {
+        withCredentials: true
+      }
+    )
+
+    schedules.value = response.data.data.map(
+      (schedule: any) => ({
+        date: formatDate(schedule.date),
+        shift: schedule.shift.toUpperCase(),
+        specialty: schedule.specialty,
+        time: schedule.time,
+        status: schedule.status
+      })
+    )
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+onMounted(() => {
+  fetchMySchedule()
+})
 
 const getStatusClass = (status: string) => {
   switch (status) {

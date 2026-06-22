@@ -12,17 +12,17 @@ using PCMS_Backend.Repositories;
 using PCMS_Backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-<<<<<<< HEAD
 //DI
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IPhysicianService, PhysicianService>();
+builder.Services.AddScoped<IPhysicianRepository, PhysicianRepository>();
+builder.Services.AddScoped<ISupervisorRepository, SupervisorRepository>();
+builder.Services.AddScoped<ISupervisorService, SupervisorService>();
 
 // Controllers
-=======
-
->>>>>>> b4d4399b53e9c0231c28fa5115532a495d6efe89
 builder.Services.AddControllers();
 
 

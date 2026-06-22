@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PCMS_Backend.Interfaces.Services;
+using PCMS_Backend.Services;
 using PCMS_Backend.Shared;
+using System.Security.Claims;
 
 
 namespace PCMS_Backend.Controllers;
-[Authorize(Roles ="Supervisor")]
+//[Authorize(Roles = "Supervisor")]
 [Route("api/[controller]")]
 [ApiController]
 public class CoverageSchedulesController : ControllerBase
@@ -17,6 +19,13 @@ public class CoverageSchedulesController : ControllerBase
     {
         _coverageScheduleService = coverageScheduleService;
     }
+
+    private int GetCurrentUserId()
+    {
+        return 6;
+        //return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    }
+
 
     [HttpGet]
     public async Task<IActionResult> GetAllSchedules()
@@ -35,4 +44,25 @@ public class CoverageSchedulesController : ControllerBase
 
         return result.ToActionResult();
     }
+
+
+    [HttpPost("generate")]
+    public async Task<IActionResult> Generate()
+    {
+        int userId = GetCurrentUserId();
+
+        var result = await _coverageScheduleService.GenerateScheduleAsync(userId);
+
+        return result.ToActionResult();
+    }
+
+
+    [HttpPost("{id}/publish")]
+    public async Task<IActionResult> Publish(int id)
+    {
+        var result =await _coverageScheduleService.PublishScheduleAsync(id);
+        return result.ToActionResult();
+        
+    }
+
 }

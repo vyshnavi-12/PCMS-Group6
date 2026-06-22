@@ -12,6 +12,7 @@ using PCMS_Backend.Repositories;
 using PCMS_Backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();

@@ -218,10 +218,28 @@ const cancelEdit = () => {
   isEditing.value = false
 }
 
-const publishSchedule = () => {
-  scheduleStatus.value = 'PUBLISHED'
-  isEditing.value = false
-  alert('Schedule Published')
+const publishSchedule = async () => {
+  try {
+    if (!selectedScheduleId.value) return
+
+    await axios.post(
+      `https://localhost:7119/api/CoverageSchedules/${selectedScheduleId.value}/publish`,
+      {},
+      {
+        withCredentials: true
+      }
+    )
+
+    scheduleStatus.value = 'PUBLISHED'
+    isEditing.value = false
+
+    await fetchAllSchedules()
+
+    alert('Schedule Published')
+  } catch (error) {
+    console.error(error)
+    alert('Failed to publish schedule')
+  }
 }
 </script>
 
@@ -279,23 +297,20 @@ const publishSchedule = () => {
               </td>
 
               <td v-for="specialty in specialties" :key="specialty">
-                <select
-                  v-if="isEditing && activeCell === `${day.date}-${shift.type}-${specialty}`"
-                  v-model="shift.assignments[specialty]"
-                  class="physician-dropdown"
-                  @blur="closeCellEditor"
-                >
+                <select v-if="isEditing && activeCell === `${day.date}-${shift.type}-${specialty}`"
+                  v-model="shift.assignments[specialty]" class="physician-dropdown" @blur="closeCellEditor">
                   <option v-for="doctor in physicians" :key="doctor" :value="doctor">
                     {{ doctor }}
                   </option>
                 </select>
 
-                <span
-                  v-else
-                  class="doctor-name"
-                  @click="isEditing && openCellEditor(day.date, shift.type, specialty)"
-                >
+                <span v-else class="doctor-name" :class="{ editable: isEditing }"
+                  @click="isEditing && openCellEditor(day.date, shift.type, specialty)">
                   {{ shift.assignments[specialty] || '-' }}
+
+                  <span v-if="isEditing" class="edit-icon">
+                    <i class="pi pi-pencil"></i>
+                  </span>
                 </span>
               </td>
             </tr>
@@ -318,14 +333,14 @@ const publishSchedule = () => {
 
 <style scoped>
 .coverage-page {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 
-    height: calc(100vh - 150px);
-    min-height: 0;
+  height: calc(100vh - 150px);
+  min-height: 0;
 
-    overflow: hidden;
+  overflow: hidden;
 }
 
 /* =========================
@@ -333,101 +348,101 @@ const publishSchedule = () => {
 ========================= */
 
 .toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .week-navigation {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .nav-btn {
-    width: 36px;
-    height: 36px;
+  width: 36px;
+  height: 36px;
 
-    border: 1px solid #dbe2ea;
-    background: white;
+  border: 1px solid #dbe2ea;
+  background: white;
 
-    border-radius: 8px;
-    cursor: pointer;
+  border-radius: 8px;
+  cursor: pointer;
 
-    font-size: 18px;
-    transition: 0.2s;
+  font-size: 18px;
+  transition: 0.2s;
 }
 
 .nav-btn:hover:not(:disabled) {
-    background: #f8fafc;
+  background: #f8fafc;
 }
 
 .nav-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .week-label {
-    min-width: 240px;
+  min-width: 240px;
 
-    padding: 10px 18px;
+  padding: 10px 18px;
 
-    background: white;
+  background: white;
 
-    border: 1px solid #dbe2ea;
-    border-radius: 8px;
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
 
-    text-align: center;
-    font-weight: 600;
-    color: #334155;
+  text-align: center;
+  font-weight: 600;
+  color: #334155;
 }
 
 .toolbar-actions {
-    display: flex;
-    gap: 10px;
+  display: flex;
+  gap: 10px;
 }
 
 .edit-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 
-    background: white;
-    color: #334155;
+  background: white;
+  color: #334155;
 
-    border: 1px solid #dbe2ea;
-    border-radius: 8px;
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
 
-    padding: 10px 16px;
+  padding: 10px 16px;
 
-    cursor: pointer;
-    font-weight: 600;
+  cursor: pointer;
+  font-weight: 600;
 
-    transition: 0.2s;
+  transition: 0.2s;
 }
 
 .edit-btn:hover {
-    background: #f8fafc;
+  background: #f8fafc;
 }
 
 .publish-btn {
-    background: #232f72;
-    color: white;
+  background: #232f72;
+  color: white;
 
-    border: none;
-    border-radius: 8px;
+  border: none;
+  border-radius: 8px;
 
-    padding: 10px 18px;
+  padding: 10px 18px;
 
-    cursor: pointer;
-    font-weight: 600;
+  cursor: pointer;
+  font-weight: 600;
 
-    transition: 0.2s;
+  transition: 0.2s;
 }
 
 .publish-btn:hover {
-    background: #1c265f;
+  background: #1c265f;
 }
 
 /* =========================
@@ -435,17 +450,17 @@ const publishSchedule = () => {
 ========================= */
 
 .table-wrapper {
-    flex: 1;
+  flex: 1;
 
-    min-height: 0;
+  min-height: 0;
 
-    background: white;
+  background: white;
 
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
 
-    overflow-y: auto;
-    overflow-x: auto;
+  overflow-y: auto;
+  overflow-x: auto;
 }
 
 /* =========================
@@ -453,42 +468,42 @@ const publishSchedule = () => {
 ========================= */
 
 table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 900px;
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
 }
 
 thead th {
-    position: sticky;
-    top: 0;
-    z-index: 20;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 
-    background: #f8fafc;
+  background: #f8fafc;
 
-    padding: 14px 12px;
+  padding: 14px 12px;
 
-    border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
 
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
 
-    text-align: center;
+  text-align: center;
 }
 
 tbody td {
-    padding: 12px;
+  padding: 12px;
 
-    border-top: 1px solid #f1f5f9;
+  border-top: 1px solid #f1f5f9;
 
-    font-size: 13px;
-    color: #334155;
+  font-size: 13px;
+  color: #334155;
 
-    text-align: center;
+  text-align: center;
 }
 
 tbody tr:hover {
-    background: #fafbfc;
+  background: #fafbfc;
 }
 
 /* =========================
@@ -496,43 +511,78 @@ tbody tr:hover {
 ========================= */
 
 .date-cell {
-    min-width: 140px;
+  min-width: 140px;
 
-    text-align: left;
+  text-align: left;
 
-    font-weight: 600;
-    color: #232f72;
+  font-weight: 600;
+  color: #232f72;
 
-    background: white;
+  background: white;
 
-    position: sticky;
-    left: 0;
-    z-index: 10;
+  position: sticky;
+  left: 0;
+  z-index: 10;
 }
 
 tbody tr:hover .date-cell {
-    background: #fafbfc;
+  background: #fafbfc;
 }
 
 .doctor-name {
-    cursor: pointer;
-    display: block;
-    padding: 6px;
-    border-radius: 4px;
+  cursor: pointer;
+  display: block;
+  padding: 6px;
+  border-radius: 4px;
 }
 
 .doctor-name:hover {
-    background: #f8fafc;
+  background: #f8fafc;
+}
+
+.doctor-name {
+    position: relative;
+}
+
+.doctor-name.editable:hover {
+    background: #f1f5f9;
+}
+
+.edit-icon {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+
+    width: 14px;
+    height: 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #64748b;
+
+    opacity: 0;
+    transition: 0.2s;
+}
+
+.edit-icon i {
+    font-size: 7px !important;
+}
+.doctor-name.editable:hover .edit-icon {
+    opacity: 1;
 }
 
 .physician-dropdown {
-    width: 100%;
-    padding: 6px 8px;
+  width: 100%;
+  padding: 6px 8px;
 
-    border: 1px solid #dbe2ea;
-    border-radius: 6px;
+  border: 1px solid #dbe2ea;
+  border-radius: 6px;
 
-    font-size: 13px;
+  font-size: 13px;
 }
 
 /* =========================
@@ -540,10 +590,10 @@ tbody tr:hover .date-cell {
 ========================= */
 
 .shift-cell {
-    width: 90px;
+  width: 90px;
 
-    font-weight: 600;
-    color: #475569;
+  font-weight: 600;
+  color: #475569;
 }
 
 /* =========================
@@ -551,21 +601,21 @@ tbody tr:hover .date-cell {
 ========================= */
 
 .assignment-input {
-    width: 100%;
+  width: 100%;
 
-    padding: 6px 8px;
+  padding: 6px 8px;
 
-    border: 1px solid #dbe2ea;
-    border-radius: 6px;
+  border: 1px solid #dbe2ea;
+  border-radius: 6px;
 
-    font-size: 12px;
+  font-size: 12px;
 
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 .assignment-input:focus {
-    outline: none;
-    border-color: #232f72;
+  outline: none;
+  border-color: #232f72;
 }
 
 /* =========================
@@ -573,47 +623,47 @@ tbody tr:hover .date-cell {
 ========================= */
 
 .update-section {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 
-    margin-top: 12px;
+  margin-top: 12px;
 }
 
 .cancel-btn {
-    background: white;
-    color: #475569;
+  background: white;
+  color: #475569;
 
-    border: 1px solid #dbe2ea;
-    border-radius: 8px;
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
 
-    padding: 10px 18px;
+  padding: 10px 18px;
 
-    cursor: pointer;
-    font-weight: 600;
+  cursor: pointer;
+  font-weight: 600;
 
-    transition: 0.2s;
+  transition: 0.2s;
 }
 
 .cancel-btn:hover {
-    background: #f8fafc;
+  background: #f8fafc;
 }
 
 .update-btn {
-    background: #232f72;
-    color: white;
+  background: #232f72;
+  color: white;
 
-    border: none;
-    border-radius: 8px;
+  border: none;
+  border-radius: 8px;
 
-    padding: 10px 18px;
+  padding: 10px 18px;
 
-    cursor: pointer;
-    font-weight: 600;
+  cursor: pointer;
+  font-weight: 600;
 }
 
 .update-btn:hover {
-    background: #1c265f;
+  background: #1c265f;
 }
 
 /* =========================
@@ -621,8 +671,8 @@ tbody tr:hover .date-cell {
 ========================= */
 
 @media (max-width: 1200px) {
-    table {
-        min-width: 1000px;
-    }
+  table {
+    min-width: 1000px;
+  }
 }
 </style>

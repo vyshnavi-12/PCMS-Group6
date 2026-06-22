@@ -14,7 +14,7 @@ import SupervisorDashboard from "../src/components/Supervisor/Dashboard.vue";
 import SupervisorSwapRequests from "../src/components/Supervisor/SwapRequests.vue";
 import SupervisorSchedules from "../src/components/Supervisor/Schedules.vue";
 import CoverageSchedule from "../src/components/Supervisor/CoverageSchedule.vue";
-import CoverageGap from "../src/components/Supervisor/CoverageGap.vue";
+import CoverageGap from "../src/components/Supervisor/UnavailableRequests.vue";
 
 const router = createRouter({
   history: createWebHistory(),

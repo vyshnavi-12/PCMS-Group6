@@ -7,6 +7,7 @@ const router = useRouter()
 
 const activeTab = ref('Published')
 const loading = ref(false)
+const generating = ref(false)
 const errorMessage = ref('')
 
 interface Schedule {
@@ -27,12 +28,11 @@ const months = [
 
 const formatDate = (dateString: string) => {
   const [year, month, day] = dateString.split('-')
-
   return `${months[Number(month) - 1]} ${day}, ${year}`
 }
 
 const formatScheduleName = (startDate: string, endDate: string) => {
-  const [startYear, startMonth, startDay] = startDate.split('-')
+  const [, startMonth, startDay] = startDate.split('-')
   const [endYear, endMonth, endDay] = endDate.split('-')
 
   return `${months[Number(startMonth) - 1]} ${startDay} - ${months[Number(endMonth) - 1]} ${endDay}, ${endYear}`
@@ -60,9 +60,7 @@ const fetchSchedules = async () => {
   try {
     const response = await axios.get(
       'https://localhost:7119/api/CoverageSchedules',
-      {
-        withCredentials: true
-      }
+      { withCredentials: true }
     )
 
     schedules.value = response.data.data.map((schedule: any) => ({
@@ -101,31 +99,59 @@ const filteredSchedules = computed(() => {
   )
 })
 
-const createSchedule = () => {
-  alert('Create Schedule Clicked')
+const createSchedule = async () => {
+  generating.value = true
+  errorMessage.value = ''
+
+  try {
+    await axios.post(
+      'https://localhost:7119/api/CoverageSchedules/generate',
+      {},
+      {
+        withCredentials: true
+      }
+    )
+
+    // Switch to drafts tab after generation
+    activeTab.value = 'Drafts'
+
+    // Refresh schedule list
+    await fetchSchedules()
+
+  } catch (error: any) {
+    errorMessage.value =
+      error.response?.data?.message || 'Failed to generate schedule'
+    console.error(error)
+  } finally {
+    generating.value = false
+  }
 }
 
 const viewSchedule = (scheduleId: number) => {
-  const selectedSchedule = schedules.value.find(
-    schedule => schedule.id === scheduleId
-  )
-
-  if (!selectedSchedule) return
-
   router.push({
     path: '/supervisor/coverage-schedule',
     query: {
-      id: selectedSchedule.id,
-      week: selectedSchedule.scheduleName,
-      status: selectedSchedule.status
+      id: scheduleId
     }
   })
 }
 </script>
 
 <template>
-
   <div class="schedule-page">
+
+    <!-- Loading Overlay -->
+    <div v-if="generating" class="loading-overlay">
+      <div class="loader-box">
+        <div class="spinner"></div>
+        <p>Generating Schedule...</p>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div v-if="errorMessage" class="error-box">
+      {{ errorMessage }}
+    </div>
 
     <div class="toolbar">
 
@@ -152,8 +178,9 @@ const viewSchedule = (scheduleId: number) => {
       <button
         class="create-btn"
         @click="createSchedule"
+        :disabled="generating"
       >
-        Generate Schedule
+        {{ generating ? 'Generating...' : 'Generate Schedule' }}
       </button>
 
     </div>
@@ -186,29 +213,31 @@ const viewSchedule = (scheduleId: number) => {
             <td>{{ schedule.weekEnd }}</td>
 
             <td>
-
               <span
                 class="status-badge"
                 :class="schedule.status.toLowerCase()"
               >
                 {{ schedule.status }}
               </span>
-
             </td>
 
             <td>{{ schedule.publishedAt }}</td>
 
             <td>
-
               <button
                 class="view-btn"
                 @click="viewSchedule(schedule.id)"
               >
                 View
               </button>
-
             </td>
+          </tr>
 
+          <!-- Empty State -->
+          <tr v-if="!loading && filteredSchedules.length === 0">
+            <td colspan="6" class="empty-cell">
+              No schedules available
+            </td>
           </tr>
 
         </tbody>
@@ -218,7 +247,6 @@ const viewSchedule = (scheduleId: number) => {
     </div>
 
   </div>
-
 </template>
 
 <style scoped>
@@ -329,6 +357,61 @@ td {
 
 .view-btn:hover {
     background: #dbeafe;
+}
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(5px);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 9999;
+}
+
+.loader-box {
+    background: white;
+    padding: 24px 32px;
+    border-radius: 12px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #232f72;
+    border-radius: 50%;
+
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.error-box {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 12px 16px;
+    border-radius: 8px;
+}
+
+.empty-cell {
+    text-align: center;
+    padding: 30px;
+    color: #64748b;
 }
 
 @media (max-width: 1024px) {

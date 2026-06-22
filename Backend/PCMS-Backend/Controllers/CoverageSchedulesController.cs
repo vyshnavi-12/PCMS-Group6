@@ -60,9 +60,12 @@ public class CoverageSchedulesController : ControllerBase
     [HttpPost("{id}/publish")]
     public async Task<IActionResult> Publish(int id)
     {
-        var result =await _coverageScheduleService.PublishScheduleAsync(id);
+        int userId = GetCurrentUserId();
+
+        var result = await _coverageScheduleService
+            .PublishScheduleAsync(id, userId);
+
         return result.ToActionResult();
-        
     }
 
 }

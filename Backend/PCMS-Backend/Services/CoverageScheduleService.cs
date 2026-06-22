@@ -277,7 +277,7 @@ public class CoverageScheduleService : ICoverageScheduleService
     // ✅ PUBLISH
     // =========================================
 
-    public async Task<Result<bool>> PublishScheduleAsync(int scheduleId)
+    public async Task<Result<bool>> PublishScheduleAsync(int scheduleId, int userId)
     {
         var schedule = await _coverageScheduleRepository
             .GetScheduleWithAssignmentsAsync(scheduleId);
@@ -299,12 +299,12 @@ public class CoverageScheduleService : ICoverageScheduleService
         // ======================================
 
         schedule.Status = "Published";
+        schedule.PublishedAt = DateTime.UtcNow;
+        schedule.PublishedByUserId = userId;
 
         foreach (var a in schedule.CoverageAssignments)
         {
-            
-                a.AssignmentStatus = "Active";
-           
+            a.AssignmentStatus = "Active";
         }
 
         await _coverageScheduleRepository.SaveChangesAsync();

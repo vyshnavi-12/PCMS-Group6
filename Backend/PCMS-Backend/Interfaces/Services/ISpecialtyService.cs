@@ -1,0 +1,9 @@
+﻿using PCMS_Backend.DTOs;
+using PCMS_Backend.Shared;
+
+namespace PCMS_Backend.Interfaces.Services;
+
+public interface ISpecialtyService
+{
+    Task<Result<IReadOnlyList<SpecialtyDto>>> GetAllSpecialtiesAsync();
+}

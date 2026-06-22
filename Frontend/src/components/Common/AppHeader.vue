@@ -1,49 +1,35 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { getMe } from '../../services/authService'
+import { useNotificationStore } from '../../stores/notificationStore'
 
-defineProps<{
-  pageTitle: string
-}>()
+defineProps<{ pageTitle: string }>()
 
 const router = useRouter()
+const notificationStore = useNotificationStore()
 
-const loggedInUser = JSON.parse(
-  localStorage.getItem('loggedInUser') || '{}'
-)
+const loggedInUser = ref({ fullName: '', role: '', specialtyName: '' })
 
-/*
-  TEMPORARY MOCK COUNT
-  Replace with API/Store later
-*/
-const notifications = [
-  {
-    message: 'New schedule published',
-    status: 'Unread'
-  },
-  {
-    message: 'Swap request approved',
-    status: 'Unread'
-  },
-  {
-    message: 'Coverage gap alert',
-    status: 'Read'
+const unreadNotifications = computed(() => notificationStore.unreadCount)
+
+const fetchUser = async () => {
+  try {
+    const response = await getMe()
+    loggedInUser.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch user:', error)
   }
-]
+}
 
-const unreadNotifications = computed(() =>
-  notifications.filter(
-    notification => notification.status === 'Unread'
-  ).length
-)
+onMounted(() => {
+  fetchUser()
+  notificationStore.fetchNotifications() 
+})
 
 const openNotifications = () => {
-  if (loggedInUser.role === 'Doctor') {
-    router.push('/doctor/notifications')
-  }
-  else if (loggedInUser.role === 'Supervisor') {
-    router.push('/supervisor/notifications')
-  }
+  if (loggedInUser.value.role === 'Physician') router.push('/doctor/notifications')
+  else if (loggedInUser.value.role === 'Supervisor') router.push('/supervisor/notifications')
 }
 </script>
 
@@ -66,16 +52,20 @@ const openNotifications = () => {
 
       <div class="profile-section">
 
-        <img :src="loggedInUser.profileImage" alt="Profile" class="avatar" />
+        <img
+          src="https://i.pravatar.cc/200?img=12"
+          alt="Profile"
+          class="avatar"
+        />
 
         <div class="profile-info">
 
           <span class="profile-name">
-            {{ loggedInUser.name }}
+            {{ loggedInUser.fullName }}
           </span>
 
           <span class="profile-role">
-            {{ loggedInUser.department }}
+            {{ loggedInUser.specialtyName || loggedInUser.role }}
           </span>
 
         </div>
@@ -89,22 +79,19 @@ const openNotifications = () => {
 
 <style scoped>
 .top-header {
-  height: 72px;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-
-  padding: 0 24px;
-
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .top-header h1 {
   margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #232f72;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2937;
 }
 
 .header-actions {
@@ -113,51 +100,42 @@ const openNotifications = () => {
   gap: 24px;
 }
 
-/* Notification */
-
 .notification-wrapper {
   position: relative;
   cursor: pointer;
 }
 
 .notification-icon {
-  font-size: 22px;
-  color: #232f72;
+  font-size: 24px;
+  color: #374151;
 }
 
 .notification-badge {
   position: absolute;
-  top: -7px;
-  right: -7px;
-
-  width: 18px;
-  height: 18px;
-
-  border-radius: 50%;
-
-  background: #ef4444;
+  top: -8px;
+  right: -10px;
+  background: red;
   color: white;
-
+  font-size: 11px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  font-size: 10px;
-  font-weight: 600;
 }
-
-/* Profile */
 
 .profile-section {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .avatar {
   width: 42px;
   height: 42px;
   border-radius: 50%;
+  object-fit: cover;
 }
 
 .profile-info {
@@ -168,11 +146,11 @@ const openNotifications = () => {
 .profile-name {
   font-size: 14px;
   font-weight: 600;
-  color: #0f172a;
+  color: #111827;
 }
 
 .profile-role {
   font-size: 12px;
-  color: #64748b;
+  color: #6b7280;
 }
 </style>

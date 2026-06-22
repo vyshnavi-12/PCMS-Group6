@@ -1,122 +1,134 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import axios from 'axios'
+import DatePicker from 'primevue/datepicker'
 
+const route = useRoute()
 const emit = defineEmits(['back'])
 
-const selectedDate = ref('')
+const selectedDate = ref<Date | null>(null)
 const selectedShift = ref('')
 const reason = ref('')
+const lockedShift = ref('')
 
-/*
-  MOCK COVERAGE SCHEDULE
-  Later replace with API call
-*/
-const weeklySchedule = [
-    {
-        date: '2026-06-15',
-        shift: 'DAY',
-        physician: 'Dr. Michael Brown',
-        specialty: 'Cardiology'
-    },
-    {
-        date: '2026-06-15',
-        shift: 'NIGHT',
-        physician: 'Dr. Sarah Davis',
-        specialty: 'Cardiology'
-    },
-    {
-        date: '2026-06-16',
-        shift: 'DAY',
-        physician: 'Dr. James Wilson',
-        specialty: 'Cardiology'
-    },
-    {
-        date: '2026-06-16',
-        shift: 'NIGHT',
-        physician: 'Dr. Emily Clark',
-        specialty: 'Cardiology'
-    },
-    {
-        date: '2026-06-17',
-        shift: 'DAY',
-        physician: 'Dr. Robert Taylor',
-        specialty: 'Cardiology'
-    },
-    {
-        date: '2026-06-17',
-        shift: 'NIGHT',
-        physician: 'Dr. Sarah Davis',
-        specialty: 'Cardiology'
-    },
-    {
-        date: '2026-06-18',
-        shift: 'DAY',
-        physician: 'Dr. Michael Brown',
-        specialty: 'Cardiology'
-    },
-    {
-        date: '2026-06-18',
-        shift: 'NIGHT',
-        physician: 'Dr. Emily Clark',
-        specialty: 'Cardiology'
-    },
-    {
-        date: '2026-06-19',
-        shift: 'DAY',
-        physician: 'Dr. James Wilson',
-        specialty: 'Cardiology'
-    },
-    {
-        date: '2026-06-19',
-        shift: 'NIGHT',
-        physician: 'Dr. Robert Taylor',
-        specialty: 'Cardiology'
+const weeklySchedule = ref<any[]>([])
+
+const parseDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number)
+    return new Date(year, month - 1, day)
+}
+
+const formatDateToString = (date: Date | null) => {
+    if (!date) return ''
+
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+
+    return `${year}-${month}-${day}`
+}
+
+const fetchSchedule = async () => {
+    try {
+        const assignmentId = route.query.assignmentId
+
+        console.log('route query:', route.query)
+        console.log('assignmentId:', assignmentId)
+
+        if (route.query.shift) {
+            lockedShift.value = route.query.shift.toString()
+            selectedShift.value = route.query.shift.toString()
+        }
+
+        if (!assignmentId) {
+            console.error('Assignment Id missing')
+            return
+        }
+
+        const response = await axios.get(
+            `https://localhost:7119/api/SwapRequests/available-targets/${assignmentId}`,
+            {
+                withCredentials: true
+            }
+        )
+
+        weeklySchedule.value = response.data.data.map((schedule: any) => ({
+            ...schedule,
+            shift: schedule.shift.toUpperCase()
+        }))
+
+        if (route.query.date) {
+            selectedDate.value = parseDate(route.query.date.toString())
+        }
+
+        if (route.query.shift) {
+            selectedShift.value = route.query.shift.toString()
+        }
+
+    } catch (error: any) {
+        console.log(error.response)
+        console.log(error.response?.data)
+        console.error(error)
     }
-]
+}
 
-/*
-  CURRENT WEEK RANGE
-*/
-const today = new Date()
+onMounted(() => {
+    fetchSchedule()
+})
 
-const minDate = computed(() => {
-    const monday = new Date(today)
+const availableDates = computed(() => {
+    return [...new Set(
+        weeklySchedule.value.map(item => item.date)
+    )]
+})
 
-    const day = monday.getDay()
+const minDate = computed<Date | undefined>(() => {
+    if (!availableDates.value.length) return undefined
+    return parseDate(availableDates.value[0])
+})
 
-    monday.setDate(
-        monday.getDate() - day + (day === 0 ? -6 : 1)
+const maxDate = computed<Date | undefined>(() => {
+    if (!availableDates.value.length) return undefined
+    return parseDate(
+        availableDates.value[availableDates.value.length - 1]
     )
-
-    return monday.toISOString().split('T')[0]
 })
 
-const maxDate = computed(() => {
-    const sunday = new Date(minDate.value)
+const disabledDates = computed(() => {
+    if (!minDate.value || !maxDate.value) return []
 
-    sunday.setDate(sunday.getDate() + 6)
+    const disabled: Date[] = []
+    const current = new Date(minDate.value)
 
-    return sunday.toISOString().split('T')[0]
+    while (current <= maxDate.value) {
+        const formatted = formatDateToString(current)
+
+        if (!availableDates.value.includes(formatted)) {
+            disabled.push(new Date(current))
+        }
+
+        current.setDate(current.getDate() + 1)
+    }
+
+    return disabled
 })
 
-/*
-  FIND ASSIGNED PHYSICIAN
-*/
 const selectedCoverage = computed(() => {
-    return weeklySchedule.find(
-        schedule =>
-            schedule.date === selectedDate.value &&
-            schedule.shift === selectedShift.value
+    const formattedDate = formatDateToString(selectedDate.value)
+
+    return weeklySchedule.value.find(
+        schedule => schedule.date === formattedDate
     )
 })
 
-const assignedPhysician = computed(() =>
-    selectedCoverage.value?.physician ?? ''
-)
+const assignedPhysician = computed(() => {
+    return selectedCoverage.value?.physicianName || '-'
+})
 
-const specialty = computed(() =>
-    selectedCoverage.value?.specialty ?? ''
-)
+const specialty = computed(() => {
+    return selectedCoverage.value?.specialty || '-'
+})
 
 const goBack = () => {
     emit('back')
@@ -129,12 +141,21 @@ const submitRequest = () => {
     }
 
     if (!selectedCoverage.value) {
-        alert('No physician assigned for this shift')
+        alert('No physician found for selected date and shift')
         return
     }
 
-    alert('Swap Request Submitted')
+    console.log({
+        targetCoverageAssignmentId:
+            selectedCoverage.value.coverageAssignmentId,
+        targetPhysician:
+            selectedCoverage.value.physicianName,
+        date: formatDateToString(selectedDate.value),
+        shift: selectedShift.value,
+        reason: reason.value
+    })
 
+    alert('Swap Request Submitted')
     emit('back')
 }
 </script>
@@ -164,30 +185,28 @@ const submitRequest = () => {
                                 <span>*</span>
                             </label>
 
-                            <input v-model="selectedDate" type="date" :min="minDate" :max="maxDate" />
+                            <DatePicker
+                                v-model="selectedDate"
+                                :manualInput="false"
+                                :disabledDates="disabledDates"
+                                :minDate="minDate"
+                                :maxDate="maxDate"
+                                dateFormat="yy-mm-dd"
+                                showIcon
+                            />
                         </div>
 
                         <div class="field">
                             <label>
-                                Select Shift
+                                Shift
                                 <span>*</span>
                             </label>
 
-                            <select v-model="selectedShift">
-
-                                <option value="">
-                                    Select Shift
-                                </option>
-
-                                <option value="DAY">
-                                    DAY (08:00 AM - 04:00 PM)
-                                </option>
-
-                                <option value="NIGHT">
-                                    NIGHT (04:00 PM - 12:00 AM)
-                                </option>
-
-                            </select>
+                            <input
+                                type="text"
+                                :value="selectedShift"
+                                disabled
+                            />
                         </div>
 
                     </div>
@@ -198,7 +217,11 @@ const submitRequest = () => {
                             Reason
                         </label>
 
-                        <textarea v-model="reason" rows="8" placeholder="Enter reason for swap request"></textarea>
+                        <textarea
+                            v-model="reason"
+                            rows="8"
+                            placeholder="Enter reason for swap request"
+                        ></textarea>
 
                     </div>
 
@@ -210,22 +233,30 @@ const submitRequest = () => {
 
                     <div class="detail-item">
                         <span class="detail-label">Date:</span>
-                        <span class="detail-value">{{ selectedDate || '-' }}</span>
+                        <span class="detail-value">
+                            {{ selectedDate ? formatDateToString(selectedDate) : '-' }}
+                        </span>
                     </div>
 
                     <div class="detail-item">
                         <span class="detail-label">Physician:</span>
-                        <span class="detail-value">{{ assignedPhysician || '-' }}</span>
+                        <span class="detail-value">
+                            {{ assignedPhysician }}
+                        </span>
                     </div>
 
                     <div class="detail-item">
                         <span class="detail-label">Shift:</span>
-                        <span class="detail-value">{{ selectedShift || '-' }}</span>
+                        <span class="detail-value">
+                            {{ selectedShift || '-' }}
+                        </span>
                     </div>
 
                     <div class="detail-item">
                         <span class="detail-label">Specialty:</span>
-                        <span class="detail-value">{{ specialty || '-' }}</span>
+                        <span class="detail-value">
+                            {{ specialty }}
+                        </span>
                     </div>
 
                 </div>

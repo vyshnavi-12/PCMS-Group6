@@ -7,5 +7,5 @@ public interface IUserService
 {
     Task<Result> RegisterAsync(RegisterRequestDto req);
     Task<Result<LoginResponseDto>> LoginAsync(LoginRequestDto req);
-    Task<Result<MeResponseDto>> GetNameAsync(int userId);
+    Task<Result<MeResponseDto>> GetMeAsync(int userId);
 }

@@ -38,8 +38,8 @@ public class UserController : ControllerBase
         Response.Cookies.Append("token", token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true, 
-            SameSite = SameSiteMode.Strict, 
+            Secure = true,
+            SameSite = SameSiteMode.None,
             Expires = DateTime.UtcNow.AddMinutes(30)
         });
 
@@ -59,15 +59,15 @@ public class UserController : ControllerBase
         });
     }
 
-    [HttpGet("checkAuth")]
+    [HttpGet("me")]
     [Authorize]
-    public async Task<IActionResult> CheckAuth()
+    public async Task<IActionResult> Me()
     {
         var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (int.TryParse(claimValue, out int userId))
         {
-            var result = await _userService.GetNameAsync(userId);
+            var result = await _userService.GetMeAsync(userId);
             return result.ToActionResult();
         }
 

@@ -12,6 +12,7 @@ using PCMS_Backend.Repositories;
 using PCMS_Backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+<<<<<<< HEAD
 //DI
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<AuthService>();
@@ -34,9 +35,14 @@ builder.Services.AddDbContext<PcmsDbContext>(options =>
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<ISpecialtyRepository, SpecialtyRepository>();
+builder.Services.AddScoped<ISpecialtyService, SpecialtyService>();
 builder.Services.AddScoped<IPhysicianRepository, PhysicianRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-
+builder.Services.AddScoped<IMyScheduleRepository, MyScheduleRepository>();
+builder.Services.AddScoped<IMyScheduleService, MyScheduleService>();
+builder.Services.AddScoped<ISwapRequestRepository, SwapRequestRepository>();
+builder.Services.AddScoped<ISwapRequestService, SwapRequestService>();
 builder.Services.AddScoped<ICoverageScheduleRepository, CoverageScheduleRepository>();
 
 
@@ -48,6 +54,16 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddScoped<ICoverageScheduleService, CoverageScheduleService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // Vue frontend URL
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
 builder.Services.AddAuthentication(options =>
 {
@@ -99,6 +115,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 

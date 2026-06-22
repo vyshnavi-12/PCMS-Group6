@@ -1,15 +1,27 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
-
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
+import { logoutUser } from '../../services/authService'
 
 const route = useRoute()
+const router = useRouter()
 
 const isSidebarCollapsed = ref(false)
 
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
+const handleLogout = async () => {
+  try {
+    await logoutUser()
+  } catch (error) {
+    console.error("Logout failed:", error)
+  } finally {
+    localStorage.removeItem("loggedInUser")
+    router.push("/login")
+  }
 }
 </script>
 
@@ -29,8 +41,8 @@ const toggleSidebar = () => {
 
       <Button text rounded class="toggle-btn" @click="toggleSidebar">
         <i class="pi" :class="isSidebarCollapsed
-            ? 'pi-angle-right'
-            : 'pi-angle-left'
+          ? 'pi-angle-right'
+          : 'pi-angle-left'
           " />
       </Button>
 
@@ -56,7 +68,8 @@ const toggleSidebar = () => {
         </span>
       </RouterLink>
 
-      <RouterLink to="/supervisor/coverage-schedule" class="nav-item" :class="{ active: route.path === '/supervisor/coverage-schedule' }">
+      <RouterLink to="/supervisor/coverage-schedule" class="nav-item"
+        :class="{ active: route.path === '/supervisor/coverage-schedule' }">
         <i class="pi pi-calendar"></i>
 
         <span v-if="!isSidebarCollapsed">
@@ -69,7 +82,7 @@ const toggleSidebar = () => {
         <i class="pi pi-exclamation-triangle"></i>
 
         <span v-if="!isSidebarCollapsed">
-          Coverage Gap 
+          Coverage Gap
         </span>
       </RouterLink>
 
@@ -103,13 +116,13 @@ const toggleSidebar = () => {
 
     <div class="sidebar-footer">
 
-      <RouterLink to="/login" class="nav-item logout">
+      <div class="nav-item logout" @click="handleLogout">
         <i class="pi pi-sign-out"></i>
 
         <span v-if="!isSidebarCollapsed">
           Logout
         </span>
-      </RouterLink>
+      </div>
 
     </div>
 

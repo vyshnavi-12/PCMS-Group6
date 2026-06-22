@@ -6,4 +6,5 @@ public interface IPhysicianRepository
 {
     Task<Physician?> GetByCodeAsync(string physicianCode);
     void Update(Physician physician);
+    Task<Physician?> GetByUserIdAsync(int userId);
 }

@@ -20,15 +20,16 @@ public class CoverageScheduleService : ICoverageScheduleService
         var schedules = await _coverageScheduleRepository.GetAllAsync();
 
         var response = schedules
-            .Select(cs => new CoverageScheduleDto
-            {
-                CoverageScheduleId = cs.CoverageScheduleId,
-                ScheduleName = cs.ScheduleName,
-                WeekStartDate = cs.WeekStartDate,
-                WeekEndDate = cs.WeekEndDate,
-                Status = cs.Status
-            })
-            .ToList();
+    .Select(cs => new CoverageScheduleDto
+    {
+        CoverageScheduleId = cs.CoverageScheduleId,
+        ScheduleName = cs.ScheduleName,
+        WeekStartDate = cs.WeekStartDate,
+        WeekEndDate = cs.WeekEndDate,
+        Status = cs.Status,
+        PublishedAt = cs.PublishedAt
+    })
+    .ToList();
 
         return Result<IReadOnlyList<CoverageScheduleDto>>
             .Ok(response);

@@ -24,4 +24,10 @@ public class PhysicianRepository : IPhysicianRepository
     {
         _context.Physicians.Update(physician);
     }
+
+    public async Task<Physician?> GetByUserIdAsync(int userId)
+    {
+        return await _context.Physicians
+            .FirstOrDefaultAsync(p => p.UserId == userId);
+    }
 }

@@ -1,62 +1,35 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getMe } from '../../services/authService'
+import { useNotificationStore } from '../../stores/notificationStore'
 
-defineProps<{
-  pageTitle: string
-}>()
+defineProps<{ pageTitle: string }>()
 
 const router = useRouter()
+const notificationStore = useNotificationStore()
 
-const loggedInUser = ref({
-  fullName: '',
-  role: '',
-  specialtyName: ''
-})
+const loggedInUser = ref({ fullName: '', role: '', specialtyName: '' })
 
-const notifications = [
-  {
-    message: 'New schedule published',
-    status: 'Unread'
-  },
-  {
-    message: 'Swap request approved',
-    status: 'Unread'
-  },
-  {
-    message: 'Coverage gap alert',
-    status: 'Read'
-  }
-]
-
-const unreadNotifications = computed(() =>
-  notifications.filter(
-    notification => notification.status === 'Unread'
-  ).length
-)
+const unreadNotifications = computed(() => notificationStore.unreadCount)
 
 const fetchUser = async () => {
   try {
     const response = await getMe()
     loggedInUser.value = response.data
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Failed to fetch user:', error)
   }
 }
 
 onMounted(() => {
   fetchUser()
+  notificationStore.fetchNotifications() 
 })
 
 const openNotifications = () => {
-  if (loggedInUser.value.role === 'Physician') {
-    router.push('/doctor/notifications')
-  }
-  else if (loggedInUser.value.role === 'Supervisor') {
-    router.push('/supervisor/notifications')
-  }
+  if (loggedInUser.value.role === 'Physician') router.push('/doctor/notifications')
+  else if (loggedInUser.value.role === 'Supervisor') router.push('/supervisor/notifications')
 }
 </script>
 

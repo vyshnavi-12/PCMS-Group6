@@ -6,83 +6,96 @@ import axios from 'axios'
 const router = useRouter()
 
 interface Schedule {
-  date: string
-  shift: string
-  specialty: string
-  time: string
-  status: string
+    coverageAssignmentId: number
+    originalDate: string
+    date: string
+    shift: string
+    specialty: string
+    time: string
+    status: string
 }
 
 const schedules = ref<Schedule[]>([])
 
 const months = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ]
 
 const days = [
-  'Sun', 'Mon', 'Tue', 'Wed',
-  'Thu', 'Fri', 'Sat'
+    'Sun', 'Mon', 'Tue', 'Wed',
+    'Thu', 'Fri', 'Sat'
 ]
 
 const formatDate = (dateString: string) => {
-  const [year, month, day] = dateString.split('-')
+    const [year, month, day] = dateString.split('-')
 
-  const date = new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day)
-  )
+    const date = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day)
+    )
 
-  return `${days[date.getDay()]}, ${months[Number(month) - 1]} ${day}`
+    return `${days[date.getDay()]}, ${months[Number(month) - 1]} ${day}`
 }
 
 const fetchMySchedule = async () => {
-  try {
-    const response = await axios.get(
-      'https://localhost:7119/api/MySchedule',
-      {
-        withCredentials: true
-      }
-    )
+    try {
+        const response = await axios.get(
+            'https://localhost:7119/api/MySchedule',
+            {
+                withCredentials: true
+            }
+        )
 
-    schedules.value = response.data.data.map(
-      (schedule: any) => ({
-        date: formatDate(schedule.date),
-        shift: schedule.shift.toUpperCase(),
-        specialty: schedule.specialty,
-        time: schedule.time,
-        status: schedule.status
-      })
-    )
-  } catch (error) {
-    console.error(error)
-  }
+        schedules.value = response.data.data.map(
+            (schedule: any) => ({
+                coverageAssignmentId: schedule.coverageAssignmentId,
+                originalDate: schedule.date,
+                date: formatDate(schedule.date),
+                shift: schedule.shift.toUpperCase(),
+                specialty: schedule.specialty,
+                time: schedule.time,
+                status: schedule.status
+            })
+        )
+    } catch (error) {
+        console.error(error)
+    }
 }
 
 onMounted(() => {
-  fetchMySchedule()
+    fetchMySchedule()
 })
 
 const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'ASSIGNED':
-      return 'assigned'
+    switch (status) {
+        case 'ASSIGNED':
+            return 'assigned'
 
-    case 'OFF':
-      return 'off'
+        case 'OFF':
+            return 'off'
 
-    default:
-      return ''
-  }
+        default:
+            return ''
+    }
 }
 
 const markUnavailable = (scheduleDate: string) => {
-  alert(`Unavailable request submitted for ${scheduleDate}`)
+    alert(`Unavailable request submitted for ${scheduleDate}`)
 }
 
-const openSwapRequest = () => {
-  router.push('/doctor/swap-requests?new=true')
+const openSwapRequest = (schedule: Schedule) => {
+    router.push({
+        path: '/doctor/swap-requests',
+        query: {
+            new: 'true',
+            assignmentId: schedule.coverageAssignmentId,
+            date: schedule.originalDate,
+            shift: schedule.shift,
+            specialty: schedule.specialty
+        }
+    })
 }
 </script>
 
@@ -106,10 +119,7 @@ const openSwapRequest = () => {
 
                 <tbody>
 
-                    <tr
-                        v-for="schedule in schedules"
-                        :key="schedule.date"
-                    >
+                    <tr v-for="schedule in schedules" :key="`${schedule.originalDate}-${schedule.shift}`">
                         <td>{{ schedule.date }}</td>
 
                         <td>{{ schedule.shift }}</td>
@@ -119,10 +129,7 @@ const openSwapRequest = () => {
                         <td>{{ schedule.time }}</td>
 
                         <td>
-                            <span
-                                class="status-badge"
-                                :class="getStatusClass(schedule.status)"
-                            >
+                            <span class="status-badge" :class="getStatusClass(schedule.status)">
                                 {{ schedule.status }}
                             </span>
                         </td>
@@ -131,17 +138,11 @@ const openSwapRequest = () => {
 
                             <template v-if="schedule.status === 'ASSIGNED'">
 
-                                <button
-                                    class="unavailable-btn"
-                                    @click="markUnavailable(schedule.date)"
-                                >
+                                <button class="unavailable-btn" @click="markUnavailable(schedule.date)">
                                     Unavailable
                                 </button>
 
-                                <button
-                                    class="swap-btn"
-                                    @click="openSwapRequest"
-                                >
+                                <button class="swap-btn" @click="openSwapRequest(schedule)">
                                     Request Swap
                                 </button>
 

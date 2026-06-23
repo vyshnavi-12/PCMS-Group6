@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 
 namespace PCMS_Backend.Controllers;
-//[Authorize(Roles = "Supervisor")]
+[Authorize(Roles = "Supervisor")]
 [Route("api/[controller]")]
 [ApiController]
 public class CoverageSchedulesController : ControllerBase
@@ -22,8 +22,8 @@ public class CoverageSchedulesController : ControllerBase
 
     private int GetCurrentUserId()
     {
-        return 6;
-        //return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
     }
 
 
@@ -60,8 +60,11 @@ public class CoverageSchedulesController : ControllerBase
     [HttpPost("{id}/publish")]
     public async Task<IActionResult> Publish(int id)
     {
-        var result =await _coverageScheduleService.PublishScheduleAsync(id);
+        int userId = GetCurrentUserId();
+
+        var result = await _coverageScheduleService
+            .PublishScheduleAsync(id, userId);
+
         return result.ToActionResult();
-        
     }
 }

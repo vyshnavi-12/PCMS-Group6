@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import UnavailableRequestCard from './UnavailableRequestCard.vue'
 
 const activeTab = ref('Open')
+const selectedRequest = ref<any | null>(null)
 
 const gapAlerts = ref([
     {
@@ -9,8 +11,7 @@ const gapAlerts = ref([
         date: 'May 23, 2025',
         specialty: 'Neurology',
         shift: 'NIGHT',
-        reason: 'Physician Unavailable',
-        replacement: 'Dr. Johnson',
+        from: 'Dr. Johnson',
         status: 'OPEN',
         createdAt: 'May 18, 2025 08:45 AM'
     },
@@ -19,8 +20,7 @@ const gapAlerts = ref([
         date: 'May 23, 2025',
         specialty: 'Pediatrics',
         shift: 'DAY',
-        reason: 'Insufficient Coverage',
-        replacement: 'Dr. Brown',
+        from: 'Dr. Brown',
         status: 'OPEN',
         createdAt: 'May 18, 2025 08:40 AM'
     },
@@ -29,8 +29,7 @@ const gapAlerts = ref([
         date: 'May 21, 2025',
         specialty: 'Orthopedics',
         shift: 'NIGHT',
-        reason: 'Leave',
-        replacement: 'Dr. Brown',
+        from: 'Dr. Miller',
         status: 'OPEN',
         createdAt: 'May 17, 2025 04:30 PM'
     },
@@ -39,8 +38,7 @@ const gapAlerts = ref([
         date: 'May 20, 2025',
         specialty: 'Emergency',
         shift: 'DAY',
-        reason: 'Insufficient Coverage',
-        replacement: 'Dr. Davis',
+        from: 'Dr. Davis',
         status: 'OPEN',
         createdAt: 'May 17, 2025 02:40 PM'
     },
@@ -49,8 +47,7 @@ const gapAlerts = ref([
         date: 'May 19, 2025',
         specialty: 'Cardiology',
         shift: 'NIGHT',
-        reason: 'Physician Unavailable',
-        replacement: 'Dr. Miller',
+        from: 'Dr. Wilson',
         status: 'OPEN',
         createdAt: 'May 16, 2025 01:15 PM'
     },
@@ -59,35 +56,34 @@ const gapAlerts = ref([
         date: 'May 24, 2025',
         specialty: 'Pediatrics',
         shift: 'NIGHT',
-        reason: 'Insufficient Coverage',
-        replacement: 'Dr. Johnson',
-        status: 'UNRESOLVED'
+        from: 'Dr. Anderson',
+        status: 'UNRESOLVED',
+        createdAt: 'May 15, 2025 11:00 AM'
     },
     {
         id: 'ALT-0002',
         date: 'May 25, 2025',
         specialty: 'General Surgery',
         shift: 'DAY',
-        reason: 'Leave',
-        replacement: 'Dr. Brown',
-        status: 'UNRESOLVED'
+        from: 'Dr. Thomas',
+        status: 'UNRESOLVED',
+        createdAt: 'May 14, 2025 10:15 AM'
     },
     {
         id: 'ALT-0001',
         date: 'May 26, 2025',
         specialty: 'Emergency',
         shift: 'NIGHT',
-        reason: 'Physician Unavailable',
-        replacement: 'Dr. Davis',
-        status: 'RESOLVED'
+        from: 'Dr. Taylor',
+        status: 'RESOLVED',
+        createdAt: 'May 13, 2025 09:20 AM'
     }
 ])
 
 const filteredGaps = computed(() => {
-
     if (activeTab.value === 'Open') {
         return gapAlerts.value.filter(
-            gap => gap.status === 'OPEN'
+            gap => gap.status === 'OPEN' || gap.status === 'UNRESOLVED'
         )
     }
 
@@ -97,107 +93,98 @@ const filteredGaps = computed(() => {
 })
 
 const getStatusClass = (status: string) => {
-
     switch (status) {
-
         case 'OPEN':
             return 'open'
-
         case 'UNRESOLVED':
             return 'unresolved'
-
         case 'ESCALATED':
             return 'escalated'
-
         case 'RESOLVED':
             return 'resolved'
-
         default:
             return ''
     }
 }
+
+const viewRequest = (gap: any) => {
+    selectedRequest.value = gap
+}
+
+const closeRequest = () => {
+    selectedRequest.value = null
+}
 </script>
 
 <template>
-
     <div class="coverage-gap-page">
 
-        <div class="toolbar">
+        <template v-if="!selectedRequest">
 
-            <div class="tabs">
+            <div class="toolbar">
+                <div class="tabs">
 
-                <button class="tab-button" :class="{ active: activeTab === 'Open' }" @click="activeTab = 'Open'">
-                    Open (5)
-                </button>
+                    <button class="tab-button" :class="{ active: activeTab === 'Open' }" @click="activeTab = 'Open'">
+                        Open (5)
+                    </button>
 
-                <button class="tab-button" :class="{ active: activeTab === 'Resolved' }"
-                    @click="activeTab = 'Resolved'">
-                    Resolved (1)
-                </button>
+                    <button class="tab-button" :class="{ active: activeTab === 'Resolved' }"
+                        @click="activeTab = 'Resolved'">
+                        Resolved (1)
+                    </button>
 
+                </div>
             </div>
 
-        </div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Specialty</th>
+                            <th>Shift</th>
+                            <th>Requestd By</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
 
-        <div class="table-card">
+                    <tbody>
+                        <tr v-for="gap in filteredGaps" :key="gap.id">
 
-            <table>
+                            <td>{{ gap.date }}</td>
+                            <td>{{ gap.specialty }}</td>
+                            <td>{{ gap.shift }}</td>
+                            <td>{{ gap.from }}</td>
 
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Specialty</th>
-                        <th>Shift</th>
-                        <th>Reason</th>
-                        <th>Suggested Replacement</th>
-                        <th>Status</th>
-                        <th>Created At</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+                            <td>
+                                <span class="status-badge" :class="getStatusClass(gap.status)">
+                                    {{ gap.status }}
+                                </span>
+                            </td>
 
-                <tbody>
+                            <td>{{ gap.createdAt }}</td>
 
-                    <tr v-for="gap in filteredGaps" :key="gap.id">
+                            <td>
+                                <button class="view-btn" @click="viewRequest(gap)">
+                                    View
+                                </button>
+                            </td>
 
-                        <td>{{ gap.date }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-                        <td>{{ gap.specialty }}</td>
+        </template>
 
-                        <td>{{ gap.shift }}</td>
+        <template v-else>
 
-                        <td>{{ gap.reason }}</td>
-
-                        <td>{{ gap.replacement }}</td>
-
-                        <td>
-
-                            <span class="status-badge" :class="getStatusClass(gap.status)">
-                                {{ gap.status }}
-                            </span>
-
-                        </td>
-
-                        <td>{{ gap.createdAt }}</td>
-
-                        <td>
-
-                            <button class="view-btn">
-                                View
-                            </button>
-
-                        </td>
-
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-        </div>
+            <UnavailableRequestCard :request="selectedRequest" @close="closeRequest" />
+        </template>
 
     </div>
-
 </template>
 
 <style scoped>

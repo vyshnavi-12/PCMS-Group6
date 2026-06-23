@@ -13,7 +13,7 @@ public interface ICoverageScheduleService
 
     Task<Result<CoverageScheduleGenerateResponseDto>> GenerateScheduleAsync(int userId);
 
-    Task<Result<bool>> PublishScheduleAsync(int scheduleId);
+    Task<Result<bool>> PublishScheduleAsync(int scheduleId, int userId);
 
 
 }

@@ -113,13 +113,8 @@ public class CoverageScheduleService : ICoverageScheduleService
                 .ToList()
         };
 
-<<<<<<< HEAD
         return Result<CoverageScheduleDetailDto>
             .Ok(response);
-
-=======
-        return Result<CoverageScheduleDetailDto>.Ok(response);
->>>>>>> 1faecb1e55a3b8ce8a61a987a8d02ed4fa40d213
     }
 
     // =========================================

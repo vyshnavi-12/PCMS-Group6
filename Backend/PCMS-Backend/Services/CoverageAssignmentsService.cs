@@ -38,4 +38,9 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         return Result.Ok("Assignment marked unavailable. Alert sent to supervisor.");
     }
 
+    public async Task<Result<IReadOnlyList<OpenAlertsResponseDto>>> GetOpenAlertsAsync()
+    {
+        var openAlerts = await _coverageAssignmentsRepo.GetOpenAlertsAsync();
+        return Result<IReadOnlyList<OpenAlertsResponseDto>>.Ok(openAlerts);
+    }
 }

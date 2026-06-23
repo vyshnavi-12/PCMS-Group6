@@ -10,7 +10,7 @@ namespace PCMS_Backend.Controllers;
 
 [ApiController]
 
-[Route("api/coverage")]
+[Route("api/[controller]")]
 public class CoverageAssignmentsController : ControllerBase
 {
     private readonly ICoverageAssignmentsService _coverageService;
@@ -33,4 +33,11 @@ public class CoverageAssignmentsController : ControllerBase
         return result.ToActionResult();
     }
 
+    [HttpGet("open")]
+    [Authorize(Roles = "Supervisor")]
+    public async Task<IActionResult> GetOpenAlerts()
+    {
+        var result = await _coverageService.GetOpenAlertsAsync();
+        return result.ToActionResult();
+    }
 }

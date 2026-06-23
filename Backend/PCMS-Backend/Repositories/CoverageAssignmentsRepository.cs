@@ -36,5 +36,30 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
         await _context.SaveChangesAsync();
     }
 
- 
+    public async Task<IReadOnlyList<OpenAlertsResponseDto>> GetOpenAlertsAsync()
+    {
+        var currentScheduleWeek = await _context.CoverageSchedules
+            .Where(s => s.Status == "Published")
+            .Select(s => new { startDate = s.WeekStartDate, endDate = s.WeekEndDate })
+            .FirstOrDefaultAsync();
+        if(currentScheduleWeek == null) return new List<OpenAlertsResponseDto>();
+        DateTime startDateTime = currentScheduleWeek.startDate.ToDateTime(TimeOnly.MinValue)!;
+        DateTime endDateTime = currentScheduleWeek.endDate.ToDateTime(TimeOnly.MinValue)!;
+
+        var openAlerts = await _context.CoverageGapAlerts
+            .Where(a => a.AlertStatus == "Open" && startDateTime <= a.CreatedAt.Date && a.CreatedAt.Date <= endDateTime)
+            .Select(a => new OpenAlertsResponseDto
+            {
+                Date = a.CoverageAssignment.CoverageDate,
+                Specialty = a.CoverageAssignment.Specialty.SpecialtyName,
+                Shift = a.CoverageAssignment.ShiftType,
+                RequestedBy = a.CoverageAssignment.Physician.User.FullName,
+                Status = a.AlertStatus,
+                CreatedAt = a.CreatedAt
+            })
+            .ToListAsync();
+        return openAlerts;
+    }
+
+
 }

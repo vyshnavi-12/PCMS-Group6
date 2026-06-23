@@ -6,4 +6,6 @@ public interface ICoverageAssignmentsRepository
 {
     Task<CoverageAssignment?> GetAssignmentByIdAsync(int assignmentId);
     Task CreateAlertAsync(CoverageGapAlertDto alert);
+
+    Task<IReadOnlyList<OpenAlertsResponseDto>> GetOpenAlertsAsync();
 }

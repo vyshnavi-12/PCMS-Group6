@@ -34,4 +34,23 @@ public class NotificationService : INotificationService
 
         return Result.Ok("Notification marked as read.");
     }
+    public async Task CreateSchedulePublishedNotificationsAsync(
+    CoverageSchedule schedule)
+    {
+        var notifications = schedule.CoverageAssignments
+            .Select(ca => ca.Physician.UserId)
+            .Distinct()
+            .Select(userId => new Notification
+            {
+                UserId =(int) userId,
+                NotificationTitle = "On-Call Schedule Published",
+                NotificationMessage =
+                    $"You have been assigned on-call duties in '{schedule.ScheduleName}'. Please review your schedule.",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            })
+            .ToList();
+
+        await _repository.AddRangeAsync(notifications);
+    }
 }

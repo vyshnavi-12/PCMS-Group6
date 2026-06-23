@@ -115,13 +115,8 @@ public class CoverageScheduleService : ICoverageScheduleService
                 .ToList()
         };
 
-
         return Result<CoverageScheduleDetailDto>
             .Ok(response);
-
-
-        return Result<CoverageScheduleDetailDto>.Ok(response);
-
     }
 
     // =========================================

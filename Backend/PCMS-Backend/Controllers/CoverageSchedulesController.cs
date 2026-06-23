@@ -67,5 +67,4 @@ public class CoverageSchedulesController : ControllerBase
 
         return result.ToActionResult();
     }
-
 }

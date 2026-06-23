@@ -1,57 +1,36 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 
 const activeTab = ref('All')
-
 const showFilter = ref(false)
-
 const selectedFilter = ref('')
 
-const requests = ref([
-    {
-        id: 'SWP-0011',
-        coverageDate: 'May 25, 2025',
-        shift: 'NIGHT',
-        requestedBy: 'Dr. Davis',
-        targetPhysician: 'Dr. Miller',
-        status: 'PENDING',
-        requestedAt: 'May 18, 2025 10:30 AM'
-    },
-    {
-        id: 'SWP-0010',
-        coverageDate: 'May 24, 2025',
-        shift: 'DAY',
-        requestedBy: 'Dr. Williams',
-        targetPhysician: 'Dr. Brown',
-        status: 'PENDING',
-        requestedAt: 'May 18, 2025 09:30 AM'
-    },
-    {
-        id: 'SWP-0009',
-        coverageDate: 'May 23, 2025',
-        shift: 'NIGHT',
-        requestedBy: 'Dr. Smith',
-        targetPhysician: 'Dr. Johnson',
-        status: 'APPROVED',
-        requestedAt: 'May 17, 2025 04:15 PM'
-    },
-    {
-        id: 'SWP-0008',
-        coverageDate: 'May 22, 2025',
-        shift: 'DAY',
-        requestedBy: 'Dr. Taylor',
-        targetPhysician: 'Dr. Brown',
-        status: 'DECLINED',
-        requestedAt: 'May 17, 2025 01:20 PM'
+const requests = ref<any[]>([])
+
+const fetchSupervisorRequests = async () => {
+    try {
+        const response = await axios.get(
+            'https://localhost:7119/api/SwapRequests/supervisor',
+            { withCredentials: true }
+        )
+
+        requests.value = response.data.data
+    } catch (error) {
+        console.error(error)
     }
-])
+}
+
+onMounted(() => {
+    fetchSupervisorRequests()
+})
 
 const filteredRequests = computed(() => {
     let data = requests.value
 
     if (activeTab.value === 'Pending') {
         return data.filter(
-            request => request.status === 'PENDING'
+            request => request.status === 'TARGET_ACCEPTED'
         )
     }
 
@@ -64,23 +43,31 @@ const filteredRequests = computed(() => {
     return data
 })
 
-const approveRequest = (requestId: string) => {
-    const request = requests.value.find(
-        request => request.id === requestId
-    )
+const approveRequest = async (requestId: number) => {
+    try {
+        await axios.put(
+            `https://localhost:7119/api/SwapRequests/${requestId}/supervisor-approve`,
+            {},
+            { withCredentials: true }
+        )
 
-    if (request) {
-        request.status = 'APPROVED'
+        fetchSupervisorRequests()
+    } catch (error) {
+        console.error(error)
     }
 }
 
-const declineRequest = (requestId: string) => {
-    const request = requests.value.find(
-        request => request.id === requestId
-    )
+const declineRequest = async (requestId: number) => {
+    try {
+        await axios.put(
+            `https://localhost:7119/api/SwapRequests/${requestId}/supervisor-decline`,
+            {},
+            { withCredentials: true }
+        )
 
-    if (request) {
-        request.status = 'DECLINED'
+        fetchSupervisorRequests()
+    } catch (error) {
+        console.error(error)
     }
 }
 
@@ -102,13 +89,15 @@ const applyFilter = (status: string) => {
 
 const getStatusClass = (status: string) => {
     switch (status) {
-        case 'APPROVED':
+        case 'SUPERVISOR_APPROVED':
             return 'approved'
 
-        case 'DECLINED':
+        case 'TARGET_DECLINED':
+        case 'SUPERVISOR_DECLINED':
             return 'declined'
 
-        case 'PENDING':
+        case 'PENDING_TARGET':
+        case 'TARGET_ACCEPTED':
             return 'pending'
 
         default:
@@ -131,7 +120,7 @@ const getStatusClass = (status: string) => {
 
                 <button class="tab-button" :class="{ active: activeTab === 'Pending' }" @click="
                     activeTab = 'Pending';
-                showFilter = false;
+                    showFilter = false;
                 ">
                     Pending
                 </button>
@@ -150,19 +139,20 @@ const getStatusClass = (status: string) => {
                     <h4>Status</h4>
 
                     <label>
-                        <input type="radio" :checked="selectedFilter === 'PENDING'" @change="applyFilter('PENDING')" />
+                        <input type="radio" :checked="selectedFilter === 'TARGET_ACCEPTED'"
+                            @change="applyFilter('TARGET_ACCEPTED')" />
                         Pending
                     </label>
 
                     <label>
-                        <input type="radio" :checked="selectedFilter === 'APPROVED'"
-                            @change="applyFilter('APPROVED')" />
+                        <input type="radio" :checked="selectedFilter === 'SUPERVISOR_APPROVED'"
+                            @change="applyFilter('SUPERVISOR_APPROVED')" />
                         Approved
                     </label>
 
                     <label>
-                        <input type="radio" :checked="selectedFilter === 'DECLINED'"
-                            @change="applyFilter('DECLINED')" />
+                        <input type="radio" :checked="selectedFilter === 'SUPERVISOR_DECLINED'"
+                            @change="applyFilter('SUPERVISOR_DECLINED')" />
                         Declined
                     </label>
 
@@ -192,44 +182,35 @@ const getStatusClass = (status: string) => {
                         <th>Requested By</th>
                         <th>Target Physician</th>
                         <th>Status</th>
-                        <th>Requested At</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
 
-                    <tr v-for="request in filteredRequests" :key="request.id">
+                    <tr v-for="request in filteredRequests" :key="request.swapRequestId">
 
-                        <td>{{ request.id }}</td>
-
-                        <td>{{ request.coverageDate }}</td>
-
+                        <td>{{ request.swapRequestId }}</td>
+                        <td>{{ request.date }}</td>
                         <td>{{ request.shift }}</td>
-
                         <td>{{ request.requestedBy }}</td>
-
                         <td>{{ request.targetPhysician }}</td>
 
                         <td>
-
                             <span class="status-badge" :class="getStatusClass(request.status)">
                                 {{ request.status }}
                             </span>
-
                         </td>
-
-                        <td>{{ request.requestedAt }}</td>
 
                         <td>
 
-                            <template v-if="request.status === 'PENDING'">
+                            <template v-if="request.status === 'TARGET_ACCEPTED'">
 
-                                <button class="approve-btn" @click="approveRequest(request.id)">
+                                <button class="approve-btn" @click="approveRequest(request.swapRequestId)">
                                     Approve
                                 </button>
 
-                                <button class="decline-btn" @click="declineRequest(request.id)">
+                                <button class="decline-btn" @click="declineRequest(request.swapRequestId)">
                                     Decline
                                 </button>
 
@@ -245,7 +226,7 @@ const getStatusClass = (status: string) => {
 
                     <tr v-if="filteredRequests.length === 0">
 
-                        <td colspan="8" class="empty-state">
+                        <td colspan="7" class="empty-state">
                             No swap requests found
                         </td>
 

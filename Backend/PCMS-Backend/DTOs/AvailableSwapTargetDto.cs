@@ -11,4 +11,6 @@ public class AvailableSwapTargetDto
     public string Specialty { get; set; } = default!;
 
     public string PhysicianName { get; set; } = default!;
+
+    public int PhysicianId { get; set; }
 }

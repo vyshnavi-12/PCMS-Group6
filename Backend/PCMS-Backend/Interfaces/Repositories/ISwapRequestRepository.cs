@@ -11,4 +11,15 @@ public interface ISwapRequestRepository
       int excludedPhysicianId,
       string shiftType
   );
+    Task CreateAsync(SwapRequest request);
+
+    Task<List<SwapRequest>> GetMyRequestsAsync(int physicianId);
+
+    Task<List<SwapRequest>> GetRequestsToMeAsync(int physicianId);
+
+    Task<SwapRequest?> GetByIdAsync(int swapRequestId);
+
+    Task<List<SwapRequest>> GetSupervisorRequestsAsync();
+
+    Task SaveChangesAsync();
 }

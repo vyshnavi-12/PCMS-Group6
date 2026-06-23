@@ -19,7 +19,9 @@ public class MyScheduleRepository : IMyScheduleRepository
         return await _context.CoverageAssignments
             .AsNoTracking()
             .Include(c => c.Specialty)
-            .Where(c => c.PhysicianId == physicianId)
+            .Where(c =>
+                c.PhysicianId == physicianId &&
+                c.CoverageSchedule.Status == "PUBLISHED")
             .OrderBy(c => c.CoverageDate)
             .ToListAsync();
     }

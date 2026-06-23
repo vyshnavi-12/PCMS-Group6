@@ -155,4 +155,10 @@ public class UserService : IUserService
 
         return Result<MeResponseDto>.Ok(userResponse, "User fetched successfully");
     }
+    public async Task<Result<int>> GetPhysicianIdByUserIdAsync(int userId)
+    {
+        var physician = await _physicianRepo.GetByUserIdAsync(userId);
+        if (physician == null) return Result<int>.NotFound("Physician not found for the given user ID.");
+        return Result<int>.Ok(physician.PhysicianId);
+    }
 }

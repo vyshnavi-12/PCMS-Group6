@@ -5,7 +5,7 @@ import axios from 'axios'
 import DatePicker from 'primevue/datepicker'
 
 const route = useRoute()
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'requestCreated'])
 
 const selectedDate = ref<Date | null>(null)
 const selectedShift = ref('')
@@ -134,29 +134,39 @@ const goBack = () => {
     emit('back')
 }
 
-const submitRequest = () => {
+const submitRequest = async () => {
     if (!selectedDate.value || !selectedShift.value) {
         alert('Please select date and shift')
         return
     }
 
     if (!selectedCoverage.value) {
-        alert('No physician found for selected date and shift')
+        alert('No physician found for selected date')
         return
     }
 
-    console.log({
-        targetCoverageAssignmentId:
-            selectedCoverage.value.coverageAssignmentId,
-        targetPhysician:
-            selectedCoverage.value.physicianName,
-        date: formatDateToString(selectedDate.value),
-        shift: selectedShift.value,
-        reason: reason.value
-    })
+    try {
+        const payload = {
+            coverageAssignmentId: selectedCoverage.value.coverageAssignmentId,
+            targetPhysicianId: selectedCoverage.value.physicianId,
+            requestComments: reason.value
+        }
 
-    alert('Swap Request Submitted')
-    emit('back')
+        await axios.post(
+            'https://localhost:7119/api/SwapRequests',
+            payload,
+            {
+                withCredentials: true
+            }
+        )
+
+        alert('Swap Request Submitted')
+        emit('requestCreated')
+
+    } catch (error) {
+        console.error(error)
+        alert('Failed to submit request')
+    }
 }
 </script>
 
@@ -185,15 +195,8 @@ const submitRequest = () => {
                                 <span>*</span>
                             </label>
 
-                            <DatePicker
-                                v-model="selectedDate"
-                                :manualInput="false"
-                                :disabledDates="disabledDates"
-                                :minDate="minDate"
-                                :maxDate="maxDate"
-                                dateFormat="yy-mm-dd"
-                                showIcon
-                            />
+                            <DatePicker v-model="selectedDate" :manualInput="false" :disabledDates="disabledDates"
+                                :minDate="minDate" :maxDate="maxDate" dateFormat="yy-mm-dd" showIcon />
                         </div>
 
                         <div class="field">
@@ -202,11 +205,7 @@ const submitRequest = () => {
                                 <span>*</span>
                             </label>
 
-                            <input
-                                type="text"
-                                :value="selectedShift"
-                                disabled
-                            />
+                            <input type="text" :value="selectedShift" disabled />
                         </div>
 
                     </div>
@@ -217,11 +216,7 @@ const submitRequest = () => {
                             Reason
                         </label>
 
-                        <textarea
-                            v-model="reason"
-                            rows="8"
-                            placeholder="Enter reason for swap request"
-                        ></textarea>
+                        <textarea v-model="reason" rows="8" placeholder="Enter reason for swap request"></textarea>
 
                     </div>
 

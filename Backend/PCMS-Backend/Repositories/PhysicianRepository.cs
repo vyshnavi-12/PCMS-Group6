@@ -20,6 +20,17 @@ public class PhysicianRepository : IPhysicianRepository
             .FirstOrDefaultAsync(p => p.PhysicianCode == physicianCode);
     }
 
+    public async Task<List<CoverageAssignment>> GetAssignmentsByUserIdAsync(int userId)
+    {
+        return await _context.CoverageAssignments
+            .Include(ca => ca.Physician)
+            .Include(ca => ca.Specialty)
+            .Include(ca => ca.CoverageSchedule)
+            .Where(ca => ca.Physician.UserId == userId)
+            .OrderBy(ca => ca.CoverageDate)
+            .ToListAsync();
+    }
+
     public void Update(Physician physician)
     {
         _context.Physicians.Update(physician);
@@ -32,5 +43,13 @@ public class PhysicianRepository : IPhysicianRepository
             .Include(p => p.PhysicianSpecialtyMaps)
                 .ThenInclude(ps => ps.Specialty)
             .FirstOrDefaultAsync(p => p.UserId == userId);
+    }
+
+    public async Task<int?> GetPhysicianIdByUserIdAsync(int userId)
+    {
+        return await _context.Physicians
+            .Where(p => p.UserId == userId)
+            .Select(p => p.PhysicianId)
+            .FirstOrDefaultAsync();
     }
 }

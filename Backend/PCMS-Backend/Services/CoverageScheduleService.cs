@@ -68,5 +68,6 @@ public class CoverageScheduleService : ICoverageScheduleService
 
         return Result<CoverageScheduleDetailDto>
             .Ok(response);
+
     }
 }

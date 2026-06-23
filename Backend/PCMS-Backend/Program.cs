@@ -24,6 +24,8 @@ builder.Services.AddDbContext<PcmsDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
@@ -40,6 +42,10 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddScoped<ICoverageScheduleService, CoverageScheduleService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+
+
 
 builder.Services.AddCors(options =>
 {

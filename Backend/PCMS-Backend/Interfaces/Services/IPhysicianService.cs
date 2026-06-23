@@ -6,4 +6,5 @@ namespace PCMS_Backend.Interfaces.Services;
 public interface IPhysicianService
 {
     Task<Result<IReadOnlyList<GetAssignmentsDTO>>> GetAllAssignmentsAsync(int userId);
+    Task<int?> GetPhysicianIdByUserIdAsync();
 }

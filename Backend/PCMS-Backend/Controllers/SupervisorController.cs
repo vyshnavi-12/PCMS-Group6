@@ -16,15 +16,4 @@ public class SupervisorController : ControllerBase
     {
         _supervisorService = supervisorService;
     }
-
-    [HttpGet("open-gap-alerts")]
-    [Authorize]
-    public async Task<IActionResult> GetOpenGapAlerts()
-    {
-        // Depending on how you implemented RBAC in your JWT, 
-        // you might want to add a check here to ensure the user is actually a Supervisor.
-
-        var result = await _supervisorService.GetOpenGapAlertsAsync();
-        return result.ToActionResult();
-    }
 }

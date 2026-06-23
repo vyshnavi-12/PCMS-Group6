@@ -7,9 +7,6 @@ public class CoverageGapAlert
     public int CoverageGapAlertId { get; set; }
 
     public int CoverageAssignmentId { get; set; }
-
-    
-
     public string AlertStatus { get; set; } = default!;
 
     public string AlertReason { get; set; } = default!;

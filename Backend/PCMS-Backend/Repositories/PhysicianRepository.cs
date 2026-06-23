@@ -44,4 +44,12 @@ public class PhysicianRepository : IPhysicianRepository
                 .ThenInclude(ps => ps.Specialty)
             .FirstOrDefaultAsync(p => p.UserId == userId);
     }
+
+    public async Task<int?> GetPhysicianIdByUserIdAsync(int userId)
+    {
+        return await _context.Physicians
+            .Where(p => p.UserId == userId)
+            .Select(p => p.PhysicianId)
+            .FirstOrDefaultAsync();
+    }
 }

@@ -82,7 +82,7 @@ const handleLogout = async () => {
         <i class="pi pi-exclamation-triangle"></i>
 
         <span v-if="!isSidebarCollapsed">
-          Coverage Gap
+          Unavailable Requests
         </span>
       </RouterLink>
 

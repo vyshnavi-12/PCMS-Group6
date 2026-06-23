@@ -1,513 +1,346 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import axios from 'axios'
 
 const route = useRoute()
 
-const currentWeek = ref(
-    route.query.week?.toString() || 'Jun 02 - Jun 15, 2025'
-)
+const currentWeek = ref('')
+const scheduleStatus = ref('DRAFT')
 
-const scheduleStatus = ref(
-    route.query.status?.toString() || 'DRAFT'
-)
-
-const weeks = [
-    'May 05 - May 18, 2025',
-    'May 19 - Jun 01, 2025',
-    'Jun 02 - Jun 15, 2025',
-    'Jun 16 - Jun 29, 2025'
-]
-
-const currentWeekIndex = ref(
-    Math.max(
-        weeks.findIndex(
-            week => week === currentWeek.value
-        ),
-        0
-    )
-)
+const weeks = ref<string[]>([])
+const schedules = ref<any[]>([])
+const selectedScheduleId = ref<number | null>(null)
+const currentWeekIndex = ref(0)
 
 const isEditing = ref(false)
-
-const physicians = ref([
-    'Dr. Michael Brown',
-    'Dr. Sarah Davis',
-    'Dr. Emily Clark',
-    'Dr. James Wilson',
-    'Dr. Robert Taylor',
-    'Dr. John Miller',
-    'Dr. Sarah White',
-    'Dr. Adam Scott'
-])
-
+const physicians = ref<string[]>([])
+const specialties = ref<string[]>([])
 const activeCell = ref('')
 
+const loading = ref(false)
+const errorMessage = ref('')
+
+const coverageSchedule = ref<any[]>([])
+
+const months = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+]
+
+const formatDate = (dateString: string) => {
+  const [year, month, day] = dateString.split('-')
+  return `${months[Number(month) - 1]} ${day}, ${year}`
+}
+
+const formatWeekRange = (startDate: string, endDate: string) => {
+  const [, startMonth, startDay] = startDate.split('-')
+  const [endYear, endMonth, endDay] = endDate.split('-')
+
+  return `${months[Number(startMonth) - 1]} ${startDay} - ${months[Number(endMonth) - 1]} ${endDay}, ${endYear}`
+}
+
 const openCellEditor = (
-    date: string,
-    shift: string,
-    specialty: string
+  date: string,
+  shift: string,
+  specialty: string
 ) => {
-    activeCell.value =
-        `${date}-${shift}-${specialty}`
+  activeCell.value = `${date}-${shift}-${specialty}`
 }
 
 const closeCellEditor = () => {
-    activeCell.value = ''
+  activeCell.value = ''
 }
 
-/* =========================
-   COVERAGE SCHEDULE
-========================= */
+const fetchAllSchedules = async () => {
+  try {
+    const response = await axios.get(
+      'https://localhost:7119/api/CoverageSchedules',
+      {
+        withCredentials: true
+      }
+    )
 
-const coverageSchedule = ref([
-    {
-        date: 'Jun 02, 2025',
+    schedules.value = response.data.data
 
-        shifts: [
-            {
-                type: 'DAY',
-                cardiology: 'Dr. Michael Brown',
-                neurology: 'Dr. John Miller',
-                orthopedics: 'Dr. Adam Scott'
-            },
+    weeks.value = schedules.value.map((schedule: any) =>
+      formatWeekRange(
+        schedule.weekStartDate,
+        schedule.weekEndDate
+      )
+    )
 
-            {
-                type: 'NIGHT',
-                cardiology: 'Dr. Sarah Davis',
-                neurology: 'Dr. Sarah White',
-                orthopedics: 'Dr. Emily Clark'
-            }
-        ]
-    },
-
-    {
-        date: 'Jun 03, 2025',
-
-        shifts: [
-            {
-                type: 'DAY',
-                cardiology: 'Dr. James Wilson',
-                neurology: 'Dr. John Miller',
-                orthopedics: 'Dr. Adam Scott'
-            },
-
-            {
-                type: 'NIGHT',
-                cardiology: 'Dr. Emily Clark',
-                neurology: 'Dr. Sarah White',
-                orthopedics: '-'
-            }
-        ]
-    },
-
-    {
-        date: 'Jun 04, 2025',
-
-        shifts: [
-            {
-                type: 'DAY',
-                cardiology: 'Dr. Michael Brown',
-                neurology: 'Dr. John Miller',
-                orthopedics: 'Dr. Adam Scott'
-            },
-
-            {
-                type: 'NIGHT',
-                cardiology: 'Dr. Sarah Davis',
-                neurology: 'Dr. Sarah White',
-                orthopedics: 'Dr. Emily Clark'
-            }
-        ]
-    },
-
-    {
-        date: 'Jun 05, 2025',
-
-        shifts: [
-            {
-                type: 'DAY',
-                cardiology: 'Dr. Robert Taylor',
-                neurology: 'Dr. Sarah White',
-                orthopedics: 'Dr. Adam Scott'
-            },
-
-            {
-                type: 'NIGHT',
-                cardiology: 'Dr. Emily Clark',
-                neurology: 'Dr. John Miller',
-                orthopedics: '-'
-            }
-        ]
-    },
-
-    {
-        date: 'Jun 06, 2025',
-
-        shifts: [
-            {
-                type: 'DAY',
-                cardiology: 'Dr. Michael Brown',
-                neurology: 'Dr. John Miller',
-                orthopedics: 'Dr. Adam Scott'
-            },
-
-            {
-                type: 'NIGHT',
-                cardiology: 'Dr. Sarah Davis',
-                neurology: 'Dr. Sarah White',
-                orthopedics: 'Dr. Emily Clark'
-            }
-        ]
-    },
-
-    {
-        date: 'Jun 07, 2025',
-
-        shifts: [
-            {
-                type: 'DAY',
-                cardiology: 'Dr. James Wilson',
-                neurology: '-',
-                orthopedics: '-'
-            },
-
-            {
-                type: 'NIGHT',
-                cardiology: 'Dr. Emily Clark',
-                neurology: '-',
-                orthopedics: '-'
-            }
-        ]
-    },
-
-    {
-        date: 'Jun 08, 2025',
-
-        shifts: [
-            {
-                type: 'DAY',
-                cardiology: 'Dr. Michael Brown',
-                neurology: '-',
-                orthopedics: '-'
-            },
-
-            {
-                type: 'NIGHT',
-                cardiology: 'Dr. Sarah Davis',
-                neurology: '-',
-                orthopedics: '-'
-            }
-        ]
-    },
-
-    {
-        date: 'Jun 09, 2025',
-
-        shifts: [
-            {
-                type: 'DAY',
-                cardiology: 'Dr. James Wilson',
-                neurology: 'Dr. John Miller',
-                orthopedics: 'Dr. Adam Scott'
-            },
-
-            {
-                type: 'NIGHT',
-                cardiology: 'Dr. Emily Clark',
-                neurology: 'Dr. Sarah White',
-                orthopedics: 'Dr. Emily Clark'
-            }
-        ]
-    },
-
-    {
-        date: 'Jun 10, 2025',
-
-        shifts: [
-            {
-                type: 'DAY',
-                cardiology: 'Dr. Robert Taylor',
-                neurology: 'Dr. John Miller',
-                orthopedics: 'Dr. Adam Scott'
-            },
-
-            {
-                type: 'NIGHT',
-                cardiology: 'Dr. Sarah Davis',
-                neurology: 'Dr. Sarah White',
-                orthopedics: '-'
-            }
-        ]
-    },
-
-    {
-        date: 'Jun 11, 2025',
-
-        shifts: [
-            {
-                type: 'DAY',
-                cardiology: 'Dr. Michael Brown',
-                neurology: 'Dr. Sarah White',
-                orthopedics: 'Dr. Adam Scott'
-            },
-
-            {
-                type: 'NIGHT',
-                cardiology: 'Dr. Emily Clark',
-                neurology: 'Dr. John Miller',
-                orthopedics: 'Dr. Emily Clark'
-            }
-        ]
+    if (route.query.id) {
+      selectedScheduleId.value = Number(route.query.id)
+    } else if (schedules.value.length > 0) {
+      selectedScheduleId.value =
+        schedules.value[0].coverageScheduleId
     }
-])
 
-/* =========================
-   WEEK NAVIGATION
-========================= */
+    currentWeekIndex.value =
+      schedules.value.findIndex(
+        (schedule: any) =>
+          schedule.coverageScheduleId === selectedScheduleId.value
+      )
 
-const previousWeek = () => {
-    if (currentWeekIndex.value > 0) {
-        currentWeekIndex.value--
-
-        currentWeek.value =
-            weeks[currentWeekIndex.value]
+    if (currentWeekIndex.value === -1) {
+      currentWeekIndex.value = 0
     }
+
+    await fetchScheduleDetails()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
-const nextWeek = () => {
-    if (
-        currentWeekIndex.value <
-        weeks.length - 1
-    ) {
-        currentWeekIndex.value++
+const fetchScheduleDetails = async () => {
+  loading.value = true
+  errorMessage.value = ''
 
-        currentWeek.value =
-            weeks[currentWeekIndex.value]
-    }
+  try {
+    const scheduleId = selectedScheduleId.value
+
+    if (!scheduleId) return
+
+    const response = await axios.get(
+      `https://localhost:7119/api/CoverageSchedules/${scheduleId}`,
+      { withCredentials: true }
+    )
+
+    const scheduleData = response.data.data
+
+    currentWeek.value = formatWeekRange(
+      scheduleData.weekStartDate,
+      scheduleData.weekEndDate
+    )
+
+    scheduleStatus.value = scheduleData.status.toUpperCase()
+
+    const assignments = scheduleData.assignments
+
+    const physicianSet = new Set<string>()
+    const specialtySet = new Set<string>()
+
+    assignments.forEach((assignment: any) => {
+      physicianSet.add(assignment.physicianName)
+      specialtySet.add(assignment.specialtyName)
+    })
+
+    physicians.value = Array.from(physicianSet)
+    specialties.value = Array.from(specialtySet)
+
+    const groupedByDate: Record<string, any> = {}
+
+    assignments.forEach((assignment: any) => {
+      const formattedDate = formatDate(assignment.coverageDate)
+      const shiftType = assignment.shiftType.toUpperCase()
+      const specialty = assignment.specialtyName
+
+      if (!groupedByDate[formattedDate]) {
+        groupedByDate[formattedDate] = {
+          date: formattedDate,
+          shifts: {}
+        }
+      }
+
+      if (!groupedByDate[formattedDate].shifts[shiftType]) {
+        const emptyAssignments: Record<string, string> = {}
+
+        specialties.value.forEach(s => {
+          emptyAssignments[s] = '-'
+        })
+
+        groupedByDate[formattedDate].shifts[shiftType] = {
+          type: shiftType,
+          assignments: emptyAssignments
+        }
+      }
+
+      groupedByDate[formattedDate]
+        .shifts[shiftType]
+        .assignments[specialty] = assignment.physicianName
+    })
+
+    coverageSchedule.value = Object.values(groupedByDate).map((day: any) => ({
+      date: day.date,
+      shifts: Object.values(day.shifts)
+    }))
+  } catch (error: any) {
+    errorMessage.value =
+      error.response?.data?.message || 'Failed to load schedule'
+    console.error(error)
+  } finally {
+    loading.value = false
+  }
 }
 
-/* =========================
-   EDIT MODE
-========================= */
+onMounted(() => {
+  fetchAllSchedules()
+})
+
+const previousWeek = async () => {
+  if (currentWeekIndex.value > 0) {
+    currentWeekIndex.value--
+
+    selectedScheduleId.value =
+      schedules.value[currentWeekIndex.value]
+        .coverageScheduleId
+
+    await fetchScheduleDetails()
+  }
+}
+
+const nextWeek = async () => {
+  if (
+    currentWeekIndex.value <
+    schedules.value.length - 1
+  ) {
+    currentWeekIndex.value++
+
+    selectedScheduleId.value =
+      schedules.value[currentWeekIndex.value]
+        .coverageScheduleId
+
+    await fetchScheduleDetails()
+  }
+}
 
 const editSchedule = () => {
-    isEditing.value = true
+  isEditing.value = true
 }
 
 const updateSchedule = () => {
-    isEditing.value = false
-
-    alert('Schedule Updated')
+  isEditing.value = false
+  alert('Schedule Updated')
 }
 
 const cancelEdit = () => {
-    isEditing.value = false
+  isEditing.value = false
 }
 
-/* =========================
-   PUBLISH
-========================= */
+const publishSchedule = async () => {
+  try {
+    if (!selectedScheduleId.value) return
 
-const publishSchedule = () => {
+    await axios.post(
+      `https://localhost:7119/api/CoverageSchedules/${selectedScheduleId.value}/publish`,
+      {},
+      {
+        withCredentials: true
+      }
+    )
+
     scheduleStatus.value = 'PUBLISHED'
-
     isEditing.value = false
 
+    await fetchAllSchedules()
+
     alert('Schedule Published')
+  } catch (error) {
+    console.error(error)
+    alert('Failed to publish schedule')
+  }
 }
 </script>
 
 <template>
+  <div class="coverage-page">
+    <div class="toolbar">
+      <div class="week-navigation">
+        <button class="nav-btn" @click="previousWeek" :disabled="currentWeekIndex === 0">
+          ‹
+        </button>
 
-    <div class="coverage-page">
-
-        <div class="toolbar">
-
-            <div class="week-navigation">
-
-                <button class="nav-btn" @click="previousWeek" :disabled="currentWeekIndex === 0">
-                    ‹
-                </button>
-
-                <div class="week-label">
-                    {{ currentWeek }}
-                </div>
-
-                <button class="nav-btn" @click="nextWeek" :disabled="currentWeekIndex === weeks.length - 1">
-                    ›
-                </button>
-
-            </div>
-
-            <div v-if="scheduleStatus !== 'PUBLISHED'" class="toolbar-actions">
-
-                <button class="edit-btn" @click="editSchedule">
-                    <i class="pi pi-pencil"></i>
-                    Edit
-                </button>
-
-                <button class="publish-btn" @click="publishSchedule">
-                    Publish Schedule
-                </button>
-
-            </div>
-
+        <div class="week-label">
+          {{ currentWeek }}
         </div>
 
-        <div class="table-wrapper">
+        <button class="nav-btn" @click="nextWeek" :disabled="currentWeekIndex === weeks.length - 1">
+          ›
+        </button>
+      </div>
 
-            <table>
+      <div v-if="scheduleStatus !== 'PUBLISHED'" class="toolbar-actions">
+        <button class="edit-btn" @click="editSchedule">
+          <i class="pi pi-pencil"></i>
+          Edit
+        </button>
 
-                <thead>
-
-                    <tr>
-
-                        <th>Date</th>
-                        <th>Shift</th>
-
-                        <th>Cardiology</th>
-                        <th>Neurology</th>
-                        <th>Orthopedics</th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    <template v-for="day in coverageSchedule" :key="day.date">
-
-                        <tr v-for="(shift, index) in day.shifts" :key="day.date + shift.type">
-
-                            <td v-if="index === 0" :rowspan="2" class="date-cell">
-                                {{ day.date }}
-                            </td>
-
-                            <td class="shift-cell">
-                                {{ shift.type }}
-                            </td>
-
-                            <!-- Cardiology -->
-
-                            <td>
-
-                                <select v-if="
-                                    isEditing &&
-                                    activeCell === `${day.date}-${shift.type}-cardiology`
-                                " v-model="shift.cardiology" class="physician-dropdown" @blur="closeCellEditor">
-
-                                    <option v-for="doctor in physicians" :key="doctor" :value="doctor">
-                                        {{ doctor }}
-                                    </option>
-
-                                </select>
-
-                                <span v-else class="doctor-name" @click="
-                                    isEditing &&
-                                    openCellEditor(
-                                        day.date,
-                                        shift.type,
-                                        'cardiology'
-                                    )
-                                    ">
-                                    {{ shift.cardiology }}
-                                </span>
-
-                            </td>
-
-                            <!-- Neurology -->
-
-                            <td>
-
-                                <select v-if="
-                                    isEditing &&
-                                    activeCell === `${day.date}-${shift.type}-neurology`
-                                " v-model="shift.neurology" class="physician-dropdown" @blur="closeCellEditor">
-
-                                    <option v-for="doctor in physicians" :key="doctor" :value="doctor">
-                                        {{ doctor }}
-                                    </option>
-
-                                </select>
-
-                                <span v-else class="doctor-name" @click="
-                                    isEditing &&
-                                    openCellEditor(
-                                        day.date,
-                                        shift.type,
-                                        'neurology'
-                                    )
-                                    ">
-                                    {{ shift.neurology }}
-                                </span>
-
-                            </td>
-
-                            <!-- Orthopedics -->
-
-                            <td>
-
-                                <select v-if="
-                                    isEditing &&
-                                    activeCell === `${day.date}-${shift.type}-orthopedics`
-                                " v-model="shift.orthopedics" class="physician-dropdown" @blur="closeCellEditor">
-
-                                    <option v-for="doctor in physicians" :key="doctor" :value="doctor">
-                                        {{ doctor }}
-                                    </option>
-
-                                </select>
-
-                                <span v-else class="doctor-name" @click="
-                                    isEditing &&
-                                    openCellEditor(
-                                        day.date,
-                                        shift.type,
-                                        'orthopedics'
-                                    )
-                                    ">
-                                    {{ shift.orthopedics }}
-                                </span>
-
-                            </td>
-
-                        </tr>
-
-                    </template>
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-        <div v-if="isEditing" class="update-section">
-
-            <button class="cancel-btn" @click="cancelEdit">
-                Cancel
-            </button>
-
-            <button class="update-btn" @click="updateSchedule">
-                Update
-            </button>
-
-        </div>
-
+        <button class="publish-btn" @click="publishSchedule">
+          Publish Schedule
+        </button>
+      </div>
     </div>
 
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Shift</th>
+
+            <th v-for="specialty in specialties" :key="specialty">
+              {{ specialty }}
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <template v-for="day in coverageSchedule" :key="day.date">
+            <tr v-for="(shift, index) in day.shifts" :key="day.date + shift.type">
+              <td v-if="index === 0" :rowspan="day.shifts.length" class="date-cell">
+                {{ day.date }}
+              </td>
+
+              <td class="shift-cell">
+                {{ shift.type }}
+              </td>
+
+              <td v-for="specialty in specialties" :key="specialty">
+                <select v-if="isEditing && activeCell === `${day.date}-${shift.type}-${specialty}`"
+                  v-model="shift.assignments[specialty]" class="physician-dropdown" @blur="closeCellEditor">
+                  <option v-for="doctor in physicians" :key="doctor" :value="doctor">
+                    {{ doctor }}
+                  </option>
+                </select>
+
+                <span v-else class="doctor-name" :class="{ editable: isEditing }"
+                  @click="isEditing && openCellEditor(day.date, shift.type, specialty)">
+                  {{ shift.assignments[specialty] || '-' }}
+
+                  <span v-if="isEditing" class="edit-icon">
+                    <i class="pi pi-pencil"></i>
+                  </span>
+                </span>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+
+    <div v-if="isEditing" class="update-section">
+      <button class="cancel-btn" @click="cancelEdit">
+        Cancel
+      </button>
+
+      <button class="update-btn" @click="updateSchedule">
+        Update
+      </button>
+    </div>
+  </div>
 </template>
 
 <style scoped>
 .coverage-page {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 
-    height: calc(100vh - 150px);
-    min-height: 0;
+  height: calc(100vh - 150px);
+  min-height: 0;
 
-    overflow: hidden;
+  overflow: hidden;
 }
 
 /* =========================
@@ -515,101 +348,101 @@ const publishSchedule = () => {
 ========================= */
 
 .toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .week-navigation {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .nav-btn {
-    width: 36px;
-    height: 36px;
+  width: 36px;
+  height: 36px;
 
-    border: 1px solid #dbe2ea;
-    background: white;
+  border: 1px solid #dbe2ea;
+  background: white;
 
-    border-radius: 8px;
-    cursor: pointer;
+  border-radius: 8px;
+  cursor: pointer;
 
-    font-size: 18px;
-    transition: 0.2s;
+  font-size: 18px;
+  transition: 0.2s;
 }
 
 .nav-btn:hover:not(:disabled) {
-    background: #f8fafc;
+  background: #f8fafc;
 }
 
 .nav-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .week-label {
-    min-width: 240px;
+  min-width: 240px;
 
-    padding: 10px 18px;
+  padding: 10px 18px;
 
-    background: white;
+  background: white;
 
-    border: 1px solid #dbe2ea;
-    border-radius: 8px;
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
 
-    text-align: center;
-    font-weight: 600;
-    color: #334155;
+  text-align: center;
+  font-weight: 600;
+  color: #334155;
 }
 
 .toolbar-actions {
-    display: flex;
-    gap: 10px;
+  display: flex;
+  gap: 10px;
 }
 
 .edit-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 
-    background: white;
-    color: #334155;
+  background: white;
+  color: #334155;
 
-    border: 1px solid #dbe2ea;
-    border-radius: 8px;
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
 
-    padding: 10px 16px;
+  padding: 10px 16px;
 
-    cursor: pointer;
-    font-weight: 600;
+  cursor: pointer;
+  font-weight: 600;
 
-    transition: 0.2s;
+  transition: 0.2s;
 }
 
 .edit-btn:hover {
-    background: #f8fafc;
+  background: #f8fafc;
 }
 
 .publish-btn {
-    background: #232f72;
-    color: white;
+  background: #232f72;
+  color: white;
 
-    border: none;
-    border-radius: 8px;
+  border: none;
+  border-radius: 8px;
 
-    padding: 10px 18px;
+  padding: 10px 18px;
 
-    cursor: pointer;
-    font-weight: 600;
+  cursor: pointer;
+  font-weight: 600;
 
-    transition: 0.2s;
+  transition: 0.2s;
 }
 
 .publish-btn:hover {
-    background: #1c265f;
+  background: #1c265f;
 }
 
 /* =========================
@@ -617,17 +450,17 @@ const publishSchedule = () => {
 ========================= */
 
 .table-wrapper {
-    flex: 1;
+  flex: 1;
 
-    min-height: 0;
+  min-height: 0;
 
-    background: white;
+  background: white;
 
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
 
-    overflow-y: auto;
-    overflow-x: auto;
+  overflow-y: auto;
+  overflow-x: auto;
 }
 
 /* =========================
@@ -635,42 +468,42 @@ const publishSchedule = () => {
 ========================= */
 
 table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 900px;
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
 }
 
 thead th {
-    position: sticky;
-    top: 0;
-    z-index: 20;
+  position: sticky;
+  top: 0;
+  z-index: 20;
 
-    background: #f8fafc;
+  background: #f8fafc;
 
-    padding: 14px 12px;
+  padding: 14px 12px;
 
-    border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
 
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
 
-    text-align: center;
+  text-align: center;
 }
 
 tbody td {
-    padding: 12px;
+  padding: 12px;
 
-    border-top: 1px solid #f1f5f9;
+  border-top: 1px solid #f1f5f9;
 
-    font-size: 13px;
-    color: #334155;
+  font-size: 13px;
+  color: #334155;
 
-    text-align: center;
+  text-align: center;
 }
 
 tbody tr:hover {
-    background: #fafbfc;
+  background: #fafbfc;
 }
 
 /* =========================
@@ -678,43 +511,78 @@ tbody tr:hover {
 ========================= */
 
 .date-cell {
-    min-width: 140px;
+  min-width: 140px;
 
-    text-align: left;
+  text-align: left;
 
-    font-weight: 600;
-    color: #232f72;
+  font-weight: 600;
+  color: #232f72;
 
-    background: white;
+  background: white;
 
-    position: sticky;
-    left: 0;
-    z-index: 10;
+  position: sticky;
+  left: 0;
+  z-index: 10;
 }
 
 tbody tr:hover .date-cell {
-    background: #fafbfc;
+  background: #fafbfc;
 }
 
 .doctor-name {
-    cursor: pointer;
-    display: block;
-    padding: 6px;
-    border-radius: 4px;
+  cursor: pointer;
+  display: block;
+  padding: 6px;
+  border-radius: 4px;
 }
 
 .doctor-name:hover {
-    background: #f8fafc;
+  background: #f8fafc;
+}
+
+.doctor-name {
+    position: relative;
+}
+
+.doctor-name.editable:hover {
+    background: #f1f5f9;
+}
+
+.edit-icon {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+
+    width: 14px;
+    height: 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #64748b;
+
+    opacity: 0;
+    transition: 0.2s;
+}
+
+.edit-icon i {
+    font-size: 7px !important;
+}
+.doctor-name.editable:hover .edit-icon {
+    opacity: 1;
 }
 
 .physician-dropdown {
-    width: 100%;
-    padding: 6px 8px;
+  width: 100%;
+  padding: 6px 8px;
 
-    border: 1px solid #dbe2ea;
-    border-radius: 6px;
+  border: 1px solid #dbe2ea;
+  border-radius: 6px;
 
-    font-size: 13px;
+  font-size: 13px;
 }
 
 /* =========================
@@ -722,10 +590,10 @@ tbody tr:hover .date-cell {
 ========================= */
 
 .shift-cell {
-    width: 90px;
+  width: 90px;
 
-    font-weight: 600;
-    color: #475569;
+  font-weight: 600;
+  color: #475569;
 }
 
 /* =========================
@@ -733,21 +601,21 @@ tbody tr:hover .date-cell {
 ========================= */
 
 .assignment-input {
-    width: 100%;
+  width: 100%;
 
-    padding: 6px 8px;
+  padding: 6px 8px;
 
-    border: 1px solid #dbe2ea;
-    border-radius: 6px;
+  border: 1px solid #dbe2ea;
+  border-radius: 6px;
 
-    font-size: 12px;
+  font-size: 12px;
 
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 .assignment-input:focus {
-    outline: none;
-    border-color: #232f72;
+  outline: none;
+  border-color: #232f72;
 }
 
 /* =========================
@@ -755,47 +623,47 @@ tbody tr:hover .date-cell {
 ========================= */
 
 .update-section {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 
-    margin-top: 12px;
+  margin-top: 12px;
 }
 
 .cancel-btn {
-    background: white;
-    color: #475569;
+  background: white;
+  color: #475569;
 
-    border: 1px solid #dbe2ea;
-    border-radius: 8px;
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
 
-    padding: 10px 18px;
+  padding: 10px 18px;
 
-    cursor: pointer;
-    font-weight: 600;
+  cursor: pointer;
+  font-weight: 600;
 
-    transition: 0.2s;
+  transition: 0.2s;
 }
 
 .cancel-btn:hover {
-    background: #f8fafc;
+  background: #f8fafc;
 }
 
 .update-btn {
-    background: #232f72;
-    color: white;
+  background: #232f72;
+  color: white;
 
-    border: none;
-    border-radius: 8px;
+  border: none;
+  border-radius: 8px;
 
-    padding: 10px 18px;
+  padding: 10px 18px;
 
-    cursor: pointer;
-    font-weight: 600;
+  cursor: pointer;
+  font-weight: 600;
 }
 
 .update-btn:hover {
-    background: #1c265f;
+  background: #1c265f;
 }
 
 /* =========================
@@ -803,8 +671,8 @@ tbody tr:hover .date-cell {
 ========================= */
 
 @media (max-width: 1200px) {
-    table {
-        min-width: 1000px;
-    }
+  table {
+    min-width: 1000px;
+  }
 }
 </style>

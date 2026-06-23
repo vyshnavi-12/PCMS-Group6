@@ -1,93 +1,37 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
+import { computed, ref, onMounted } from 'vue'
+import { useNotificationStore } from '../../stores/notificationStore'
 
 const activeTab = ref('All')
 const loading = ref(false)
 const errorMessage = ref('')
 
-interface Notification {
-  notificationId: number
-  userId: number
-  notificationTitle: string
-  notificationMessage: string
-  isRead: boolean
-  createdAt: string
-  readAt: string | null
-}
+const store = useNotificationStore()
 
-interface ApiResponse {
-  data: Notification[]
-  success: boolean
-  message: string
-  statusCode: number
-}
-
-const notifications = ref<Notification[]>([])
-
-const api = axios.create({
-  baseURL: 'https://localhost:7119',
-  withCredentials: true
-})
-
-const fetchNotifications = async () => {
+const loadNotifications = async () => {
   loading.value = true
   errorMessage.value = ''
-
   try {
-    const response = await api.get<ApiResponse>('/api/notifications')
-
-    console.log('Notifications API Response:', response.data)
-
-    notifications.value = response.data.data || []
+    await store.fetchNotifications()
   } catch (error: any) {
-    console.error('Fetch Notifications Error:', error)
-    errorMessage.value =
-      error.response?.data?.message ||
-      error.message ||
-      'Something went wrong'
+    errorMessage.value = error.response?.data?.message || error.message || 'Something went wrong'
   } finally {
     loading.value = false
   }
 }
 
 onMounted(() => {
-  fetchNotifications()
+  loadNotifications()
 })
 
 const filteredNotifications = computed(() => {
   if (activeTab.value === 'Unread') {
-    return notifications.value.filter(notification => !notification.isRead)
+    return store.notifications.filter(n => !n.isRead)
   }
-  return notifications.value
+  return store.notifications
 })
-
-const markAsRead = async (notification: Notification) => {
-  if (notification.isRead) return
-
-  try {
-    await api.post(`/api/notifications/${notification.notificationId}/mark-read`)
-    notification.isRead = true
-    notification.readAt = new Date().toISOString()
-  } catch (error) {
-    console.error('Mark As Read Error:', error)
-  }
-}
-
-const markAllAsRead = async () => {
-  const unreadNotifications = notifications.value.filter(n => !n.isRead)
-
-  if (!unreadNotifications.length) return
-
-  try {
-    await Promise.all(
-      unreadNotifications.map(notification => markAsRead(notification))
-    )
-  } catch (error) {
-    console.error('Mark All As Read Error:', error)
-  }
-}
 </script>
+
 
 <template>
   <div class="notifications-page">
@@ -103,7 +47,7 @@ const markAllAsRead = async () => {
         </span>
       </div>
 
-      <button class="mark-btn" @click="markAllAsRead" :disabled="notifications.filter(n => !n.isRead).length === 0">
+      <button class="mark-btn" @click="store.markAllAsRead" :disabled="store.unreadCount === 0">
         Mark All as Read
       </button>
     </div>
@@ -133,7 +77,7 @@ const markAllAsRead = async () => {
         <tbody>
           <tr v-for="notification in filteredNotifications" :key="notification.notificationId">
             <td>
-              <input v-if="!notification.isRead" type="checkbox" @change="markAsRead(notification)" />
+              <input v-if="!notification.isRead" type="checkbox" @change="store.markAsRead(notification)" />
             </td>
 
             <td>

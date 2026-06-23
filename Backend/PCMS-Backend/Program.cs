@@ -12,6 +12,7 @@ using PCMS_Backend.Repositories;
 using PCMS_Backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
@@ -29,9 +30,14 @@ builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<ISpecialtyRepository, SpecialtyRepository>();
+builder.Services.AddScoped<ISpecialtyService, SpecialtyService>();
 builder.Services.AddScoped<IPhysicianRepository, PhysicianRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-
+builder.Services.AddScoped<IMyScheduleRepository, MyScheduleRepository>();
+builder.Services.AddScoped<IMyScheduleService, MyScheduleService>();
+builder.Services.AddScoped<ISwapRequestRepository, SwapRequestRepository>();
+builder.Services.AddScoped<ISwapRequestService, SwapRequestService>();
 builder.Services.AddScoped<ICoverageScheduleRepository, CoverageScheduleRepository>();
 
 

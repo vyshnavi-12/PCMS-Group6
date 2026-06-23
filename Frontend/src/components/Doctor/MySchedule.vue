@@ -1,131 +1,124 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 
-const schedules = [
-  {
-    date: 'Mon, May 19',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Tue, May 20',
-    shift: 'NIGHT',
-    specialty: 'Cardiology',
-    time: '04:00 PM - 12:00 AM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Wed, May 21',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Thu, May 22',
-    shift: '-',
-    specialty: '-',
-    time: '-',
-    status: 'OFF'
-  },
-  {
-    date: 'Fri, May 23',
-    shift: 'NIGHT',
-    specialty: 'Cardiology',
-    time: '04:00 PM - 12:00 AM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Sat, May 24',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Sun, May 25',
-    shift: '-',
-    specialty: '-',
-    time: '-',
-    status: 'OFF'
-  },
+interface Schedule {
+    coverageAssignmentId: number
+    originalDate: string
+    date: string
+    shift: string
+    specialty: string
+    time: string
+    status: string
+}
 
-  /* WEEK 2 */
+const schedules = ref<Schedule[]>([])
 
-  {
-    date: 'Mon, May 26',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Tue, May 27',
-    shift: 'NIGHT',
-    specialty: 'Cardiology',
-    time: '04:00 PM - 12:00 AM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Wed, May 28',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Thu, May 29',
-    shift: '-',
-    specialty: '-',
-    time: '-',
-    status: 'OFF'
-  },
-  {
-    date: 'Fri, May 30',
-    shift: 'NIGHT',
-    specialty: 'Cardiology',
-    time: '04:00 PM - 12:00 AM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Sat, May 31',
-    shift: 'DAY',
-    specialty: 'Cardiology',
-    time: '08:00 AM - 04:00 PM',
-    status: 'ASSIGNED'
-  },
-  {
-    date: 'Sun, Jun 01',
-    shift: '-',
-    specialty: '-',
-    time: '-',
-    status: 'OFF'
-  }
+const showUnavailableModal = ref(false)
+const selectedScheduleDate = ref('')
+const unavailableReason = ref('')
+
+const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ]
 
+const days = [
+    'Sun', 'Mon', 'Tue', 'Wed',
+    'Thu', 'Fri', 'Sat'
+]
+
+const formatDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-')
+
+    const date = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day)
+    )
+
+    return `${days[date.getDay()]}, ${months[Number(month) - 1]} ${day}`
+}
+
+const fetchMySchedule = async () => {
+    try {
+        const response = await axios.get(
+            'https://localhost:7119/api/MySchedule',
+            {
+                withCredentials: true
+            }
+        )
+
+        schedules.value = response.data.data.map(
+            (schedule: any) => ({
+                coverageAssignmentId: schedule.coverageAssignmentId,
+                originalDate: schedule.date,
+                date: formatDate(schedule.date),
+                shift: schedule.shift.toUpperCase(),
+                specialty: schedule.specialty,
+                time: schedule.time,
+                status: schedule.status
+            })
+        )
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+onMounted(() => {
+    fetchMySchedule()
+})
+
 const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'ASSIGNED':
-      return 'assigned'
+    switch (status) {
+        case 'ASSIGNED':
+            return 'assigned'
 
-    case 'OFF':
-      return 'off'
+        case 'OFF':
+            return 'off'
 
-    default:
-      return ''
-  }
+        default:
+            return ''
+    }
 }
 
 const markUnavailable = (scheduleDate: string) => {
-  alert(`Unavailable request submitted for ${scheduleDate}`)
+    selectedScheduleDate.value = scheduleDate
+    unavailableReason.value = ''
+    showUnavailableModal.value = true
 }
 
-const openSwapRequest = () => {
-  router.push('/doctor/swap-requests?new=true')
+const closeUnavailableModal = () => {
+    showUnavailableModal.value = false
+}
+
+const submitUnavailableRequest = () => {
+    if (!unavailableReason.value.trim()) {
+        alert('Please enter reason')
+        return
+    }
+
+    alert(
+        `Unavailable request submitted for ${selectedScheduleDate.value}`
+    )
+
+    showUnavailableModal.value = false
+}
+
+const openSwapRequest = (schedule: Schedule) => {
+    router.push({
+        path: '/doctor/swap-requests',
+        query: {
+            new: 'true',
+            assignmentId: schedule.coverageAssignmentId,
+            date: schedule.originalDate,
+            shift: schedule.shift,
+            specialty: schedule.specialty
+        }
+    })
 }
 </script>
 
@@ -133,9 +126,7 @@ const openSwapRequest = () => {
     <div class="schedule-page">
 
         <div class="table-wrapper">
-
             <table>
-
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -148,43 +139,26 @@ const openSwapRequest = () => {
                 </thead>
 
                 <tbody>
-
-                    <tr
-                        v-for="schedule in schedules"
-                        :key="schedule.date"
-                    >
+                    <tr v-for="schedule in schedules" :key="`${schedule.originalDate}-${schedule.shift}`">
                         <td>{{ schedule.date }}</td>
-
                         <td>{{ schedule.shift }}</td>
-
                         <td>{{ schedule.specialty }}</td>
-
                         <td>{{ schedule.time }}</td>
 
                         <td>
-                            <span
-                                class="status-badge"
-                                :class="getStatusClass(schedule.status)"
-                            >
+                            <span class="status-badge" :class="getStatusClass(schedule.status)">
                                 {{ schedule.status }}
                             </span>
                         </td>
 
                         <td class="action-cell">
-
                             <template v-if="schedule.status === 'ASSIGNED'">
 
-                                <button
-                                    class="unavailable-btn"
-                                    @click="markUnavailable(schedule.date)"
-                                >
+                                <button class="unavailable-btn" @click="markUnavailable(schedule.date)">
                                     Unavailable
                                 </button>
 
-                                <button
-                                    class="swap-btn"
-                                    @click="openSwapRequest"
-                                >
+                                <button class="swap-btn" @click="openSwapRequest(schedule)">
                                     Request Swap
                                 </button>
 
@@ -193,15 +167,35 @@ const openSwapRequest = () => {
                             <span v-else>
                                 -
                             </span>
-
                         </td>
-
                     </tr>
-
                 </tbody>
-
             </table>
+        </div>
 
+        <div v-if="showUnavailableModal" class="modal-overlay">
+            <div class="unavailable-modal">
+
+                <div class="modal-header">
+                    <h3>Reason</h3>
+
+                    <button class="close-btn" @click="closeUnavailableModal">
+                        ✕
+                    </button>
+                </div>
+
+                <div class="modal-body">
+
+                    <textarea v-model="unavailableReason" placeholder="Enter reason..." rows="5"></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="send-btn" @click="submitUnavailableRequest">
+                        Send
+                    </button>
+                </div>
+
+            </div>
         </div>
 
     </div>
@@ -309,6 +303,97 @@ tbody tr:hover {
 
 .swap-btn:hover {
     background: #dbeafe;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(4px);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 999;
+}
+
+.unavailable-modal {
+    width: 500px;
+    max-width: 90%;
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #232f72;
+}
+
+.close-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: #f1f5f9;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.close-btn:hover {
+    background: #e2e8f0;
+}
+
+.modal-body label {
+    display: block;
+    margin-bottom: 8px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.modal-body textarea {
+    width: 100%;
+    resize: none;
+    padding: 12px;
+    border: 1px solid #dbe2ea;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.modal-body textarea:focus {
+    border-color: #232f72;
+}
+
+.modal-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.send-btn {
+    background: #232f72;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.send-btn:hover {
+    background: #1c265f;
 }
 
 @media (max-width: 1024px) {

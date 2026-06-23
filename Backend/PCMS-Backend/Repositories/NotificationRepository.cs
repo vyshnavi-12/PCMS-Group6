@@ -29,4 +29,10 @@ public class NotificationRepository : INotificationRepository
         _context.Notifications.Update(notification);
         await _context.SaveChangesAsync();
     }
+
+    public async Task CreateAsync(Notification notification)
+    {
+        await _context.Notifications.AddAsync(notification);
+        await _context.SaveChangesAsync();
+    }
 }

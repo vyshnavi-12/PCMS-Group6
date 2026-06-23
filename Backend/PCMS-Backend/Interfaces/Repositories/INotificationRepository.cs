@@ -7,9 +7,6 @@ public interface INotificationRepository
     Task UpdateAsync(Notification notification);
 
     Task CreateAsync(Notification notification);
-}
     Task AddRangeAsync(List<Notification> notifications);
-
-   
 
 }

@@ -87,8 +87,10 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
     public async Task<CoverageSchedule> GetScheduleWithAssignmentsAsync(int id)
     {
         return await _context.CoverageSchedules
-            .Include(x => x.CoverageAssignments)
-            .FirstAsync(x => x.CoverageScheduleId == id);
+            .Include(cs => cs.CoverageAssignments)
+                .ThenInclude(ca => ca.Physician)
+                    .ThenInclude(p => p.User)
+            .FirstAsync(cs => cs.CoverageScheduleId == id);
     }
     public async Task<DateOnly?> GetLastCreatedScheduleDateAsync()
     {

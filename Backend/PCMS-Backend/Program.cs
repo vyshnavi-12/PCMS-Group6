@@ -13,10 +13,22 @@ using PCMS_Backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//DI
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IPhysicianService, PhysicianService>();
+builder.Services.AddScoped<IPhysicianRepository, PhysicianRepository>();
+builder.Services.AddScoped<ISupervisorRepository, SupervisorRepository>();
+builder.Services.AddScoped<ISupervisorService, SupervisorService>();
+builder.Services.AddScoped<ICoverageAssignmentsService, CoverageAssignmentsService>();
+builder.Services.AddScoped<ICoverageAssignmentsRepository, CoverageAssignmentsRepo>();
+
+
+
+// Controllers
 builder.Services.AddControllers();
 
 
@@ -24,6 +36,8 @@ builder.Services.AddDbContext<PcmsDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
+
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -46,6 +60,10 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddScoped<ICoverageScheduleService, CoverageScheduleService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+
+
 
 builder.Services.AddCors(options =>
 {

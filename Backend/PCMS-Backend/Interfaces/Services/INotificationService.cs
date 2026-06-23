@@ -5,4 +5,6 @@ public interface INotificationService
 {
     Task<Result<IReadOnlyList<Notification>>> GetUserNotificationsAsync(int userId);
     Task<Result> MarkAsReadAsync(int notificationId, int userId);
+
+    Task CreateSchedulePublishedNotificationsAsync(CoverageSchedule schedule);
 }

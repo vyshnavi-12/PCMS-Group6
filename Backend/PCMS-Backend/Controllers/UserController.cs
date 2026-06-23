@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using PCMS_Backend.DTOs;
-using PCMS_Backend.Shared;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using PCMS_Backend.Interfaces.Services;
+using PCMS_Backend.Shared;
+using System.Security.Claims;
 
 namespace PCMS_Backend.Controllers;
 
@@ -63,15 +63,11 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Me()
     {
-        var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (int.TryParse(claimValue, out int userId))
-        {
-            var result = await _userService.GetMeAsync(userId);
-            return result.ToActionResult();
-        }
-
-        return Unauthorized("Invalid or missing session token.");
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid or missing session token.");        
+        var result = await _userService.GetMeAsync(validUserId);
+        return result.ToActionResult();
     }
+
 
 }

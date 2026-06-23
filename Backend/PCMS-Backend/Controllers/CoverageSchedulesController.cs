@@ -22,9 +22,8 @@ public class CoverageSchedulesController : ControllerBase
 
     private int GetCurrentUserId()
     {
-       
 
-       return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
     }
 
 
@@ -68,5 +67,4 @@ public class CoverageSchedulesController : ControllerBase
 
         return result.ToActionResult();
     }
-
 }

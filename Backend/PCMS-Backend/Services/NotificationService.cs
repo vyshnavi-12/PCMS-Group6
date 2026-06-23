@@ -1,14 +1,19 @@
 ﻿using PCMS_Backend.Models;
+using PCMS_Backend.Services;
 using PCMS_Backend.Shared;
 
 public class NotificationService : INotificationService
 {
     private readonly INotificationRepository _repository;
+    private readonly IAuditLogService _auditLogService; // added by me
 
-    public NotificationService(INotificationRepository repository)
+
+    public NotificationService(INotificationRepository repository, IAuditLogService auditLogService)
     {
         _repository = repository;
+        _auditLogService = auditLogService; // added by me
     }
+
 
     public async Task<Result<IReadOnlyList<Notification>>> GetUserNotificationsAsync(int userId)
     {
@@ -31,6 +36,15 @@ public class NotificationService : INotificationService
         notification.IsRead = true;
         notification.ReadAt = DateTime.UtcNow;
         await _repository.UpdateAsync(notification);
+
+        // added by me
+        await _auditLogService.LogActionAsync(
+            "NotificationRead",
+            "Notification",
+            notification.NotificationId,
+            userId
+        );
+
 
         return Result.Ok("Notification marked as read.");
     }

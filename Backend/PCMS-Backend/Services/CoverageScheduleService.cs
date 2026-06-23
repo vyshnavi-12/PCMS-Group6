@@ -52,7 +52,7 @@ public class CoverageScheduleService : ICoverageScheduleService
         // ✅ If today is Monday → move to next week
         if (daysToAdd == 0)
             daysToAdd = 7;
-        
+
 
         return today.AddDays(daysToAdd).Date;
     }
@@ -121,6 +121,7 @@ public class CoverageScheduleService : ICoverageScheduleService
     {
         var startDate = GetNextStartDate(DateTime.UtcNow);
 
+
         var startDateOnly = DateOnly.FromDateTime(startDate);
         var slots = GenerateSlots(startDate);
         var specialties = await _coverageScheduleRepository.GetSpecialtiesAsync();
@@ -130,18 +131,18 @@ public class CoverageScheduleService : ICoverageScheduleService
 
         var existingSchedule = await _coverageScheduleRepository
             .GetByStartDateWithAssignmentsAsync(startDateOnly);
-        
+
 
 
         if (existingSchedule != null)
         {
-            
+
 
             var assignedSet = existingSchedule.CoverageAssignments
                 .Select(a => (a.CoverageDate, a.ShiftType, a.SpecialtyId))
                 .ToHashSet();
 
-            
+
 
             foreach (var slot in slots)
             {
@@ -171,21 +172,74 @@ public class CoverageScheduleService : ICoverageScheduleService
                 }
             );
         }
+        int currWeekTotalLimit = 4;
+        int currWeekNightlimit = 2;
         var physicians = await _coverageScheduleRepository.GetPhysiciansAsync();
 
         var leaves = await _coverageScheduleRepository.GetLeavesAsync();
         var shifts = await _coverageScheduleRepository.GetExternalShiftsAsync();
-        var workload = await _coverageScheduleRepository.GetWorkloadAsync();
+        // var workload = await _coverageScheduleRepository.GetWorkloadAsync();
 
-        
-       
+        var fromDate = DateTime.UtcNow.AddDays(-60);
+
+        var workloadData =
+            await _coverageScheduleRepository.GetPhysicianWorkloadLast60DaysAsync(fromDate);
+        var cutoffDate = DateTime.UtcNow.AddDays(-60);
+
+        var oldDoctors = workloadData
+            .Where(d => d.JoinDate <= cutoffDate)
+            .ToList();
+
+        var newDoctors = workloadData
+            .Where(d => d.JoinDate > cutoffDate)
+            .ToList();
+        int avgWorkload = 0;
+        int avgNightWorkload = 0;
+
+        if (oldDoctors.Count > 0)
+        {
+            avgWorkload = (int)oldDoctors.Average(d => d.MorningShiftCount);
+            avgNightWorkload = (int)oldDoctors.Average(d => d.NightShiftCount);
+        }
+
+        var normalizedPastMorningWorkload = new Dictionary<int, int>();
+        var normalizedPastNightWorkload = new Dictionary<int, int>();
+
+
+        foreach (var d in workloadData)
+        {
+            int baseWork;
+            int baseNight;
+
+            // ✅ New doctor → assign averages
+            if (d.JoinDate > cutoffDate)
+            {
+                baseWork = avgWorkload;
+                baseNight = avgNightWorkload;
+            }
+            else
+            {
+                baseWork = d.MorningShiftCount;
+                baseNight = d.NightShiftCount;
+            }
+
+            normalizedPastMorningWorkload[d.PhysicianId] = Math.Max(0, baseWork - avgWorkload);
+            normalizedPastNightWorkload[d.PhysicianId] = Math.Max(0, baseNight - avgNightWorkload);
+        }
+
+
+
+
+
+
 
         var availability = new Dictionary<(int, int), HashSet<int>>();
         var pq = new PriorityQueue<(int, int), int>();
         var assigned = new HashSet<(int, int)>();
         var blocked = new Dictionary<int, HashSet<int>>();
         var assignments = new List<CoverageAssignment>();
-        var currentWorkload = new Dictionary<int, int>(workload);
+        var currentMorningWorkload = new Dictionary<int, int>();
+        var currentNightWorkload = new Dictionary<int, int>();
 
         // ✅ PRIMARY AVAILABILITY
         foreach (var slot in slots)
@@ -204,8 +258,9 @@ public class CoverageScheduleService : ICoverageScheduleService
                 pq.Enqueue((slot.Index, spec), available.Count);
             }
         }
+        bool IsFirstPass = true;
 
-        ProcessQueue(pq, availability, specialties, slots, assigned, blocked, workload, currentWorkload, assignments);
+        ProcessQueue(pq, availability, specialties, slots, assigned, blocked, normalizedPastMorningWorkload, normalizedPastNightWorkload, currentMorningWorkload, currentNightWorkload, assignments, currWeekTotalLimit, currWeekNightlimit, IsFirstPass);
 
         // ✅ SECONDARY PASS
         var remaining = availability.Keys.Where(k => !assigned.Contains(k)).ToList();
@@ -219,7 +274,7 @@ public class CoverageScheduleService : ICoverageScheduleService
 
             var available = physicians
                 .Where(p => p.PhysicianSpecialtyMaps
-                    .Any(s => s.SpecialtyId == key.Item2 && !s.IsPrimarySpecialty))
+                    .Any(s => s.SpecialtyId == key.Item2))
                 .Where(p => !IsOnLeave(p.PhysicianId, slotObj.Date, leaves))
                 .Where(p => !HasExternalShift(p.PhysicianId, slotObj.Date, shifts))
                 .Where(p => !IsBlocked(p.PhysicianId, key.Item1, blocked))
@@ -230,15 +285,17 @@ public class CoverageScheduleService : ICoverageScheduleService
             pq2.Enqueue(key, available.Count);
         }
 
-        ProcessQueue(pq2, availability2, specialties, slots, assigned, blocked, workload, currentWorkload, assignments);
+        IsFirstPass = false;
+
+        ProcessQueue(pq2, availability2, specialties, slots, assigned, blocked, normalizedPastMorningWorkload, normalizedPastNightWorkload, currentMorningWorkload, currentNightWorkload, assignments, currWeekTotalLimit, currWeekNightlimit, IsFirstPass);
 
         // ✅ SAVE
-        var schedule = await _coverageScheduleRepository.CreateScheduleAsync(startDate,userId);
+        var schedule = await _coverageScheduleRepository.CreateScheduleAsync(startDate, userId);
 
         foreach (var a in assignments)
         {
             a.CoverageScheduleId = schedule.CoverageScheduleId;
-            a.AssignmentStatus = "Draft";
+            a.AssignmentStatus = "Assigned";
         }
 
         await _coverageScheduleRepository.SaveAssignmentsAsync(assignments);
@@ -323,9 +380,15 @@ public class CoverageScheduleService : ICoverageScheduleService
         List<Slot> slots,
         HashSet<(int, int)> assigned,
         Dictionary<int, HashSet<int>> blocked,
-        Dictionary<int, int> workload,
-        Dictionary<int,int>currWorkload,
-        List<CoverageAssignment> result)
+        Dictionary<int, int> normalizedPastMorningWorkload,
+        Dictionary<int, int> normalizedPastNightWorkload,
+
+        Dictionary<int, int> currMorningWorkload,
+        Dictionary<int, int> currNightWorkload,
+        List<CoverageAssignment> result,
+        int currWeekTotalLimit,
+        int currWeekNightLimit,
+        bool isFirstPass)
     {
         while (pq.Count > 0)
         {
@@ -335,14 +398,36 @@ public class CoverageScheduleService : ICoverageScheduleService
 
             var available = availability[key];
 
+
             int selected = -1;
             int minLoad = int.MaxValue;
+            // for selcting skipped doctors in case if we dont have any doctors after using curr week limits
+            int skippedMinload = int.MaxValue;
+            int skippedselected = -1;
 
             foreach (var d in available)
             {
                 if (IsBlocked(d, key.Item1, blocked)) continue;
 
-                var load = workload.GetValueOrDefault(d, 0);
+
+                int pastMorning = normalizedPastMorningWorkload.GetValueOrDefault(d, 0);
+                int pastNight = normalizedPastNightWorkload.GetValueOrDefault(d, 0);
+                int currMorning = currMorningWorkload.GetValueOrDefault(d, 0);
+                int currnight = currNightWorkload.GetValueOrDefault(d, 0);
+                var load = 2 * pastMorning + 3 * pastNight + 4 * currMorning + 6 * currnight;
+
+                if ((currnight >= currWeekNightLimit || (currnight + currMorning) >= currWeekTotalLimit))
+                {
+                    if (load < skippedMinload)
+                    {
+                        skippedMinload = load;
+                        skippedselected = d;
+                    }
+                    continue;
+                }
+
+
+
 
                 if (load < minLoad)
                 {
@@ -351,7 +436,13 @@ public class CoverageScheduleService : ICoverageScheduleService
                 }
             }
 
-            if (selected == -1) continue;
+            if (selected == -1)
+            {
+                if (isFirstPass == true) continue;
+                selected = skippedselected;
+                // assuming that atleast skipped slected will not be -1
+
+            }
 
             var slotObj = slots.First(s => s.Index == key.Item1);
 
@@ -364,10 +455,24 @@ public class CoverageScheduleService : ICoverageScheduleService
                 CreatedAt = DateTime.UtcNow
             });
 
-            if (!workload.ContainsKey(selected))
-                workload[selected] = 0;
+            if (slotObj.ShiftType == "Day")
+            {
+                if (!currMorningWorkload.ContainsKey(selected))
+                    currMorningWorkload[selected] = 0;
 
-            workload[selected]++;
+                currMorningWorkload[selected]++;
+
+            }
+            else
+            {
+                if (!currNightWorkload.ContainsKey(selected))
+                    currNightWorkload[selected] = 0;
+
+                currNightWorkload[selected]++;
+
+            }
+
+
 
 
             assigned.Add(key);

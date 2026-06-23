@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PCMS_Backend.Data;
-using PCMS_Backend.Models;
+using PCMS_Backend.DTOs;
 using PCMS_Backend.Interfaces.Repositories;
+using PCMS_Backend.Models;
 
 namespace PCMS_Backend.Repositories;
 
@@ -58,7 +59,7 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
             .ToDictionaryAsync(g => g.Key, g => g.Count());
     }
 
-    public async Task<CoverageSchedule> CreateScheduleAsync(DateTime start,int userId)
+    public async Task<CoverageSchedule> CreateScheduleAsync(DateTime start, int userId)
     {
         var schedule = new CoverageSchedule
         {
@@ -67,7 +68,7 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
             WeekEndDate = DateOnly.FromDateTime(start.AddDays(6)),
             Status = "Draft",
             //hard coded , neeed to change ,fetch from jwt claims
-            PublishedByUserId=userId,
+            PublishedByUserId = userId,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -103,6 +104,28 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
         return await _context.CoverageSchedules
             .Include(s => s.CoverageAssignments)
             .FirstOrDefaultAsync(s => s.WeekStartDate == startDate);
+    }
+    public async Task<List<PhysicianWorkloadDto>> GetPhysicianWorkloadLast60DaysAsync(DateTime fromDate)
+    {
+        return await _context.Physicians
+            .Select(p => new PhysicianWorkloadDto
+            {
+                PhysicianId = p.PhysicianId,
+                JoinDate = p.User.CreatedAt,
+
+                MorningShiftCount = _context.CoverageAssignments
+                    .Count(a =>
+                        a.PhysicianId == p.PhysicianId &&
+                        a.CoverageDate >= DateOnly.FromDateTime(fromDate) &&
+                        a.ShiftType == "Day"),
+
+                NightShiftCount = _context.CoverageAssignments
+                    .Count(a =>
+                        a.PhysicianId == p.PhysicianId &&
+                        a.CoverageDate >= DateOnly.FromDateTime(fromDate) &&
+                        a.ShiftType == "Night")
+            })
+            .ToListAsync();
     }
 
 

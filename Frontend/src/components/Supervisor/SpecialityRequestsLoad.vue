@@ -31,8 +31,8 @@ const chartData = {
     {
       label: 'Requests',
       data: [12, 8, 7, 6, 4, 3, 2],
-      backgroundColor: '#f89341',
-      hoverBackgroundColor: '#ea580c',
+      backgroundColor: '#9CB080',
+      hoverBackgroundColor: '#607456',
       borderRadius: 8,
       borderSkipped: false,
       barThickness: 42
@@ -110,7 +110,7 @@ const chartOptions = {
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   padding: 12px;
-  height: 100%;
+  height: calc(100vh - 270px);
 }
 
 .card-header {
@@ -121,7 +121,7 @@ const chartOptions = {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: #232f72;
 }
 
 .chart-wrapper {

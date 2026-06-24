@@ -1,20 +1,44 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
+import { useToast } from 'primevue/usetoast'
 import { useNotificationStore } from '../../stores/notificationStore'
 
 const activeTab = ref('All')
 const loading = ref(false)
 const errorMessage = ref('')
+const toast = useToast()
 
 const store = useNotificationStore()
 
 const loadNotifications = async () => {
   loading.value = true
   errorMessage.value = ''
+
   try {
+    const oldIds = store.notifications.map(n => n.notificationId)
+
     await store.fetchNotifications()
+
+    const newNotifications = store.notifications.filter(
+      n => !oldIds.includes(n.notificationId)
+    )
+
+    if (newNotifications.length > 0) {
+      const latest = newNotifications[0]
+
+      toast.add({
+        severity: 'info',
+        summary: latest.notificationTitle,
+        detail: latest.notificationMessage,
+        life: 3000
+      })
+    }
+
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.message || error.message || 'Something went wrong'
+    errorMessage.value =
+      error.response?.data?.message ||
+      error.message ||
+      'Something went wrong'
   } finally {
     loading.value = false
   }
@@ -30,6 +54,17 @@ const filteredNotifications = computed(() => {
   }
   return store.notifications
 })
+
+const markAllNotificationsRead = async () => {
+  await store.markAllAsRead()
+
+  toast.add({
+    severity: 'success',
+    summary: 'Success',
+    detail: 'All notifications marked as read',
+    life: 3000
+  })
+}
 </script>
 
 
@@ -47,7 +82,7 @@ const filteredNotifications = computed(() => {
         </span>
       </div>
 
-      <button class="mark-btn" @click="store.markAllAsRead" :disabled="store.unreadCount === 0">
+      <button class="mark-btn" @click="markAllNotificationsRead" :disabled="store.unreadCount === 0">
         Mark All as Read
       </button>
     </div>

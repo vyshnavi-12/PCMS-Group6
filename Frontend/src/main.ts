@@ -3,6 +3,8 @@ import PrimeVue from 'primevue/config'
 import Aura from '@primeuix/themes/aura'
 import { createPinia } from 'pinia'
 import VueApexCharts from "vue3-apexcharts"
+import ToastService from 'primevue/toastservice'
+import Toast from 'primevue/toast'
 
 import App from './App.vue'
 import router from '../router'
@@ -17,6 +19,8 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(VueApexCharts)
+app.use(ToastService)
+app.component('Toast', Toast)
 
 app.use(PrimeVue, {
   theme: {

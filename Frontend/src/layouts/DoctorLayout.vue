@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
 
+
 import Sidebar from '../components/Common/DoctorSideBar.vue'
 import AppHeader from '../components/Common/AppHeader.vue'
 
@@ -33,6 +34,8 @@ const pageTitle = computed(() => {
 
 <template>
     <div class="doctor-layout">
+
+        <Toast position="bottom-right" />
 
         <Sidebar />
 

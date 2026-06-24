@@ -22,10 +22,10 @@ const pageTitle = computed(() => {
       return 'Profile'
 
     case '/supervisor/coverage-schedule':
-      return 'Bi-Weekly Coverage Schedule'
+      return 'Coverage Schedule'
 
     case '/supervisor/gap-alerts':
-      return 'Coverage Gap Alerts'
+      return 'Unavailable Requests'
 
     case '/supervisor/swap-requests':
       return 'Swap Requests'

@@ -2,9 +2,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
+import { useToast } from 'primevue/usetoast'
 import DatePicker from 'primevue/datepicker'
 
 const route = useRoute()
+const toast = useToast()
 const emit = defineEmits(['back', 'requestCreated'])
 
 const selectedDate = ref<Date | null>(null)
@@ -136,17 +138,32 @@ const goBack = () => {
 
 const submitRequest = async () => {
     if (!selectedDate.value || !selectedShift.value) {
-        alert('Please select date and shift')
+        toast.add({
+            severity: 'warn',
+            summary: 'Validation',
+            detail: 'Please select date and shift',
+            life: 3000
+        })
         return
     }
 
     if (!reason.value.trim()) {
-        alert('Please enter reason')
+        toast.add({
+            severity: 'warn',
+            summary: 'Validation',
+            detail: 'Please enter reason',
+            life: 3000
+        })
         return
     }
 
     if (!selectedCoverage.value) {
-        alert('No physician found for selected date')
+        toast.add({
+            severity: 'warn',
+            summary: 'Validation',
+            detail: 'No physician found for selected date',
+            life: 3000
+        })
         return
     }
 
@@ -165,12 +182,22 @@ const submitRequest = async () => {
             }
         )
 
-        alert('Swap Request Submitted')
+        toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Swap request submitted successfully',
+            life: 3000
+        })
         emit('requestCreated')
 
     } catch (error) {
         console.error(error)
-        alert('Failed to submit request')
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to submit request',
+            life: 3000
+        })
     }
 }
 </script>

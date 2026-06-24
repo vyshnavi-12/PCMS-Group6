@@ -8,27 +8,6 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
 
     <div class="stats-grid">
 
-      <!-- Physicians -->
-      <div class="stat-card">
-        <div class="icon blue">
-          <i class="pi pi-users"></i>
-        </div>
-
-        <div>
-          <div class="stat-title">
-            Physicians
-          </div>
-
-          <div class="stat-value">
-            34
-          </div>
-
-          <div class="stat-subtitle">
-            Total physicians
-          </div>
-        </div>
-      </div>
-
       <!-- Swap Requests -->
       <div class="stat-card">
         <div class="icon orange">
@@ -52,7 +31,7 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
 
       <!-- Unavailable Requests -->
       <div class="stat-card">
-        <div class="icon light-blue">
+        <div class="icon purple">
           <i class="pi pi-exclamation-circle"></i>
         </div>
 
@@ -73,7 +52,7 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
 
       <!-- Days Left -->
       <div class="stat-card">
-        <div class="icon dark-orange">
+        <div class="icon blue">
           <i class="pi pi-calendar"></i>
         </div>
 
@@ -116,7 +95,7 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
@@ -159,33 +138,23 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
   flex-shrink: 0;
 }
 
-.icon i {
-  font-size: 22px;
-  font-weight: 700;
-}
 
-/* Physicians */
+/* Days Left */
 .blue {
-  background: #bfdbfe;
+  background: #dbeafe;
   color: #2563eb;
 }
 
 /* Swap Requests */
 .orange {
-  background: #fed7aa;
-  color: #ea580c;
+  background: #fef3c7;
+  color: #d97706;
 }
 
 /* Unavailable Requests */
-.light-blue {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-/* Days Left */
-.dark-orange {
-  background: #fdba74;
-  color: #c2410c;
+.purple {
+  background: #ede9fe;
+  color: #7c3aed;
 }
 
 .stat-title {

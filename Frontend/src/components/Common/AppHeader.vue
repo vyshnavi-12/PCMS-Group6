@@ -91,7 +91,7 @@ const openNotifications = () => {
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #1f2937;
+  color: #232f72;
 }
 
 .header-actions {

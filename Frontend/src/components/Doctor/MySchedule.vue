@@ -169,6 +169,12 @@ const openSwapRequest = (schedule: Schedule) => {
                             </span>
                         </td>
                     </tr>
+
+                    <tr v-if="schedules.length === 0">
+                        <td colspan="6" class="empty-state">
+                            No schedules available
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -394,6 +400,13 @@ tbody tr:hover {
 
 .send-btn:hover {
     background: #1c265f;
+}
+
+.empty-state {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+    padding: 28px;
 }
 
 @media (max-width: 1024px) {

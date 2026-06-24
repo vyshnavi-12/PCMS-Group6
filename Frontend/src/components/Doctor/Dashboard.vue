@@ -318,12 +318,12 @@ const assignmentCount = computed(() => {
       <div class="legend">
         <span>
           <span class="dot day"></span>
-          Day Shift
+          Day Shift (6:00 AM -6:00 PM)
         </span>
 
         <span>
           <span class="dot night"></span>
-          Night Shift
+          Night Shift (6:00 PM - 6:00 AM)
         </span>
       </div>
 

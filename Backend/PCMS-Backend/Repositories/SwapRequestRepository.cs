@@ -96,7 +96,7 @@ public class SwapRequestRepository : ISwapRequestRepository
             .Include(s => s.TargetPhysician)
                 .ThenInclude(p => p.User)
             .Include(s => s.CoverageAssignment)
-            
+            .Where(s => s.RequestStatus == "TARGET_ACCEPTED" || s.ReviewedByUserId != null)
             .OrderByDescending(s => s.RequestedAt)
             .ToListAsync();
     }

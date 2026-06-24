@@ -140,6 +140,11 @@ const submitRequest = async () => {
         return
     }
 
+    if (!reason.value.trim()) {
+        alert('Please enter reason')
+        return
+    }
+
     if (!selectedCoverage.value) {
         alert('No physician found for selected date')
         return
@@ -149,7 +154,7 @@ const submitRequest = async () => {
         const payload = {
             coverageAssignmentId: selectedCoverage.value.coverageAssignmentId,
             targetPhysicianId: selectedCoverage.value.physicianId,
-            requestComments: reason.value
+            requestComments: reason.value.trim()
         }
 
         await axios.post(

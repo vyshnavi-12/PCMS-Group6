@@ -173,6 +173,15 @@ const closeRequest = () => {
                             </td>
 
                         </tr>
+
+                        <tr v-if="filteredGaps.length === 0">
+                            <td colspan="7" class="empty-state">
+                                {{ activeTab === 'Open'
+                                    ? 'No open unavailable requests'
+                                    : 'No resolved unavailable requests'
+                                }}
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

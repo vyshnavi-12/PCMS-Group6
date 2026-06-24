@@ -288,7 +288,7 @@ public class SwapRequestService : ISwapRequestService
         if (request == null)
             return Result.NotFound("Request not found");
 
-        request.RequestStatus = "REQUEST_REJECTED";
+        request.RequestStatus = "SUPERVISOR_DECLINED";
         request.ReviewedAt = DateTime.UtcNow;
         request.ReviewedByUserId = userId;
 

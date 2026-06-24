@@ -14,18 +14,21 @@ public class UserService : IUserService
     private readonly IRoleRepository _roleRepo;
     private readonly PasswordHasher<User> _passwordHasher;
     private readonly AuthService _authService;
+    private readonly IAuditLogService _auditLogService; // ✅ use interface
 
     public UserService(
         IUserRepository userRepo,
         IPhysicianRepository physicianRepo,
         IRoleRepository roleRepo,
-        AuthService authService)
+        AuthService authService,
+        IAuditLogService auditLogService) // ✅ inject interface
     {
         _userRepo = userRepo;
         _physicianRepo = physicianRepo;
         _roleRepo = roleRepo;
         _passwordHasher = new PasswordHasher<User>();
         _authService = authService;
+        _auditLogService = auditLogService;
     }
 
     public async Task<Result> RegisterAsync(RegisterRequestDto req)
@@ -115,6 +118,14 @@ public class UserService : IUserService
             FullName = user.FullName,
             Role = user.Role.RoleName
         };
+
+        // ✅ Audit log via interface
+        await _auditLogService.LogActionAsync(
+            actionType: "Login",
+            entityName: "User",
+            entityRecordId: user.UserId,
+            performedByUserId: user.UserId
+        );
 
         return Result<LoginResponseDto>.Ok(userResponse, "Login successful", token);
     }

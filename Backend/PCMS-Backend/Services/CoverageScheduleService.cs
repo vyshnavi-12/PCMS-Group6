@@ -11,13 +11,15 @@ public class CoverageScheduleService : ICoverageScheduleService
 {
     private readonly ICoverageScheduleRepository _coverageScheduleRepository;
     private readonly INotificationService _notificationService;
+  
 
 
     public CoverageScheduleService(
-        ICoverageScheduleRepository coverageScheduleRepository, INotificationService notificationService)
+        ICoverageScheduleRepository coverageScheduleRepository, INotificationService notificationService, IAuditLogService auditLogService) // added by me
     {
         _coverageScheduleRepository = coverageScheduleRepository;
         _notificationService = notificationService;
+        
     }
     private List<Slot> GenerateSlots(DateTime startDate)
     {
@@ -304,6 +306,9 @@ public class CoverageScheduleService : ICoverageScheduleService
 
         await _coverageScheduleRepository.SaveAssignmentsAsync(assignments);
 
+        
+
+
 
         foreach (var slot in slots)
         {
@@ -371,6 +376,9 @@ public class CoverageScheduleService : ICoverageScheduleService
         await _notificationService.CreateSchedulePublishedNotificationsAsync(schedule);
 
         await _coverageScheduleRepository.SaveChangesAsync();
+
+       
+
 
         return Result<bool>.Ok(true);
     }

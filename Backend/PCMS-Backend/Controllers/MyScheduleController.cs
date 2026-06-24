@@ -21,11 +21,10 @@ public class MyScheduleController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetMySchedule()
     {
-        var userId = int.Parse(
-            User.FindFirst(ClaimTypes.NameIdentifier)!.Value
-        );
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
 
-        var result = await _service.GetMyScheduleAsync(userId);
+
+        var result = await _service.GetMyScheduleAsync(validUserId);
 
         return result.ToActionResult();
     }

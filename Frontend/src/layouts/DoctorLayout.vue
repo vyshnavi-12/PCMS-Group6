@@ -64,7 +64,7 @@ const pageTitle = computed(() => {
 
 .content-area {
     flex: 1;
-    padding: 24px;
+    padding: 20px 20px 18px 20px;
     overflow: hidden;
 }
 </style>

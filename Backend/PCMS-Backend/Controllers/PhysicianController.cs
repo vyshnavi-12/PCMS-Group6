@@ -22,15 +22,17 @@ public class PhysicianController : ControllerBase
 
     [HttpGet("assignments")]
     public async Task<IActionResult> GetAllAssignments()
-    {
-        var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (int.TryParse(claimValue, out int userId))
-        {
-            var result = await _physicianService.GetAllAssignmentsAsync(userId);
+    {
+
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
+
+      
+       
+            var result = await _physicianService.GetAllAssignmentsAsync(validUserId);
             return result.ToActionResult();
-        }
-          return Unauthorized("Invalid or missing session token.");
+        
+         
     }
 
 }

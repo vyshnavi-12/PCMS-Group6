@@ -172,6 +172,7 @@ const assignmentCount = computed(() => {
     <!-- SUMMARY CARDS -->
     <div class="stats-grid">
 
+      <!-- My Assignments -->
       <div class="stat-card">
         <div class="icon blue">
           <i class="pi pi-calendar"></i>
@@ -182,16 +183,17 @@ const assignmentCount = computed(() => {
             My Assignments
           </div>
 
-          <div class="stat-subtitle">
-            This Week
-          </div>
-
           <div class="stat-value">
             {{ assignmentCount }}
+          </div>
+
+          <div class="stat-subtitle">
+            This Week
           </div>
         </div>
       </div>
 
+      <!-- Swap Requests -->
       <div class="stat-card">
         <div class="icon orange">
           <i class="pi pi-arrow-right-arrow-left"></i>
@@ -202,32 +204,33 @@ const assignmentCount = computed(() => {
             Swap Requests
           </div>
 
-          <div class="stat-subtitle">
-            Pending
-          </div>
-
           <div class="stat-value">
             1
+          </div>
+
+          <div class="stat-subtitle">
+            Pending
           </div>
         </div>
       </div>
 
+      <!-- Unavailable Requests -->
       <div class="stat-card">
-        <div class="icon red">
-          <i class="pi pi-bell"></i>
+        <div class="icon purple">
+          <i class="pi pi-ban"></i>
         </div>
 
         <div>
           <div class="stat-title">
-            Notifications
-          </div>
-
-          <div class="stat-subtitle">
-            Unread
+            Unavailable Requests
           </div>
 
           <div class="stat-value">
-            3
+            2
+          </div>
+
+          <div class="stat-subtitle">
+            Sent this week
           </div>
         </div>
       </div>
@@ -250,11 +253,7 @@ const assignmentCount = computed(() => {
 
       <div class="week-toolbar">
 
-        <button
-          class="nav-btn"
-          @click="previousWeek"
-          :disabled="currentWeekIndex === 0"
-        >
+        <button class="nav-btn" @click="previousWeek" :disabled="currentWeekIndex === 0">
           ‹
         </button>
 
@@ -262,11 +261,7 @@ const assignmentCount = computed(() => {
           {{ currentWeek }}
         </span>
 
-        <button
-          class="nav-btn"
-          @click="nextWeek"
-          :disabled="currentWeekIndex === weekRanges.length - 1"
-        >
+        <button class="nav-btn" @click="nextWeek" :disabled="currentWeekIndex === weekRanges.length - 1">
           ›
         </button>
 
@@ -278,10 +273,7 @@ const assignmentCount = computed(() => {
           <tr>
             <th></th>
 
-            <th
-              v-for="(date, index) in weekDates"
-              :key="index"
-            >
+            <th v-for="(date, index) in weekDates" :key="index">
               {{ ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index] }}
               {{ date.getDate() }}
             </th>
@@ -290,10 +282,7 @@ const assignmentCount = computed(() => {
 
         <tbody>
 
-          <tr
-            v-for="row in schedule"
-            :key="row.label"
-          >
+          <tr v-for="row in schedule" :key="row.label">
             <td class="shift-column">
               <div class="shift-name">
                 {{ row.label }}
@@ -304,20 +293,14 @@ const assignmentCount = computed(() => {
               </div>
             </td>
 
-            <td
-              v-for="(assignment, index) in row.assignments"
-              :key="`${row.label}-${index}`"
-            >
-              <div
-                v-if="assignment"
-                :class="[
-                  row.label === 'DAY'
-                    ? 'day-badge'
-                    : row.label === 'NIGHT'
-                      ? 'night-badge'
-                      : 'off-badge'
-                ]"
-              >
+            <td v-for="(assignment, index) in row.assignments" :key="`${row.label}-${index}`">
+              <div v-if="assignment" :class="[
+                row.label === 'DAY'
+                  ? 'day-badge'
+                  : row.label === 'NIGHT'
+                    ? 'night-badge'
+                    : 'off-badge'
+              ]">
                 {{ assignment }}
               </div>
 
@@ -373,12 +356,13 @@ const assignmentCount = computed(() => {
   display: flex;
   align-items: center;
   gap: 16px;
+
+  min-height: 100px;
 }
 
 .icon {
   width: 52px;
   height: 52px;
-
   border-radius: 12px;
 
   display: flex;
@@ -398,9 +382,9 @@ const assignmentCount = computed(() => {
   color: #d97706;
 }
 
-.red {
-  background: #fee2e2;
-  color: #dc2626;
+.purple {
+  background: #ede9fe;
+  color: #7c3aed;
 }
 
 .stat-title {
@@ -409,17 +393,17 @@ const assignmentCount = computed(() => {
   color: #1e293b;
 }
 
-.stat-subtitle {
-  font-size: 13px;
-  color: #64748b;
-}
-
 .stat-value {
   font-size: 30px;
   font-weight: 700;
   color: #0f172a;
+  margin: 4px 0;
 }
 
+.stat-subtitle {
+  font-size: 13px;
+  color: #64748b;
+}
 /* SCHEDULE CARD */
 
 .schedule-card {
@@ -508,7 +492,7 @@ const assignmentCount = computed(() => {
 }
 
 .day-badge,
-.night-badge{
+.night-badge {
   border-radius: 8px;
   padding: 10px;
   font-size: 12px;

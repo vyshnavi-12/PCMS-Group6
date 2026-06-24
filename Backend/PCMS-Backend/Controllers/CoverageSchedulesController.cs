@@ -20,12 +20,6 @@ public class CoverageSchedulesController : ControllerBase
         _coverageScheduleService = coverageScheduleService;
     }
 
-    private int GetCurrentUserId()
-    {
-
-        return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-    }
-
 
     [HttpGet]
     public async Task<IActionResult> GetAllSchedules()
@@ -49,9 +43,8 @@ public class CoverageSchedulesController : ControllerBase
     [HttpPost("generate")]
     public async Task<IActionResult> Generate()
     {
-        int userId = GetCurrentUserId();
-
-        var result = await _coverageScheduleService.GenerateScheduleAsync(userId);
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
+        var result = await _coverageScheduleService.GenerateScheduleAsync(validUserId);
 
         return result.ToActionResult();
     }
@@ -60,10 +53,10 @@ public class CoverageSchedulesController : ControllerBase
     [HttpPost("{id}/publish")]
     public async Task<IActionResult> Publish(int id)
     {
-        int userId = GetCurrentUserId();
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
 
         var result = await _coverageScheduleService
-            .PublishScheduleAsync(id, userId);
+            .PublishScheduleAsync(id, validUserId);
 
         return result.ToActionResult();
     }

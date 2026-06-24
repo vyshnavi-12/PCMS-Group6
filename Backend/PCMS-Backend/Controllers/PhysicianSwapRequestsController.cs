@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PCMS_Backend.DTOs;
 using PCMS_Backend.Interfaces.Services;
+using PCMS_Backend.Shared;
 using System.Security.Claims;
 
 namespace PCMS_Backend.Controllers;
@@ -37,15 +38,15 @@ public class PhysicianSwapRequestsController : ControllerBase
         [FromBody] CreateSwapRequestDto dto
     )
     {
-        var claimValue = User.FindFirstValue(
-            ClaimTypes.NameIdentifier
-        );
 
-        if (!int.TryParse(claimValue, out int userId))
-            return Unauthorized();
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
+
+       
+
+        
 
         var result = await _service
-            .CreateSwapRequestAsync(userId, dto);
+            .CreateSwapRequestAsync(validUserId, dto);
 
         return StatusCode(result.StatusCode ?? 500, result);
     }
@@ -53,15 +54,12 @@ public class PhysicianSwapRequestsController : ControllerBase
     [HttpGet("my")]
     public async Task<IActionResult> GetMyRequests()
     {
-        var claimValue = User.FindFirstValue(
-            ClaimTypes.NameIdentifier
-        );
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
 
-        if (!int.TryParse(claimValue, out int userId))
-            return Unauthorized();
+
 
         var result = await _service
-            .GetMyRequestsAsync(userId);
+            .GetMyRequestsAsync(validUserId);
 
         return StatusCode(result.StatusCode, result);
     }
@@ -69,15 +67,13 @@ public class PhysicianSwapRequestsController : ControllerBase
     [HttpGet("to-me")]
     public async Task<IActionResult> GetRequestsToMe()
     {
-        var claimValue = User.FindFirstValue(
-            ClaimTypes.NameIdentifier
-        );
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
 
-        if (!int.TryParse(claimValue, out int userId))
-            return Unauthorized();
+
+        
 
         var result = await _service
-            .GetRequestsToMeAsync(userId);
+            .GetRequestsToMeAsync(validUserId);
 
         return StatusCode(result.StatusCode, result);
     }
@@ -85,12 +81,9 @@ public class PhysicianSwapRequestsController : ControllerBase
     [HttpPut("{id}/accept")]
     public async Task<IActionResult> AcceptRequest(int id)
     {
-        var claimValue = User.FindFirstValue(
-            ClaimTypes.NameIdentifier
-        );
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
 
-        if (!int.TryParse(claimValue, out int userId))
-            return Unauthorized();
+
 
         var result = await _service
             .AcceptRequestAsync(id, userId);
@@ -101,15 +94,13 @@ public class PhysicianSwapRequestsController : ControllerBase
     [HttpPut("{id}/decline")]
     public async Task<IActionResult> DeclineRequest(int id)
     {
-        var claimValue = User.FindFirstValue(
-            ClaimTypes.NameIdentifier
-        );
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
 
-        if (!int.TryParse(claimValue, out int userId))
-            return Unauthorized();
+
+        
 
         var result = await _service
-            .DeclineRequestAsync(id, userId);
+            .DeclineRequestAsync(id, validUserId);
 
         return StatusCode(result.StatusCode ?? 500, result);
     }

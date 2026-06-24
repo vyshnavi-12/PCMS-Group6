@@ -105,4 +105,11 @@ public class SwapRequestRepository : ISwapRequestRepository
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<int> GetPhysiciansSwapRequestsCount(int physicianId)
+    {
+        return await _context.SwapRequests
+            .Where(s=>(s.RequestedByPhysicianId == physicianId || s.TargetPhysicianId==physicianId) )
+            .CountAsync();
+    }
 }

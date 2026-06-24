@@ -12,8 +12,21 @@ public class SupervisorController : ControllerBase
 {
     private readonly ISupervisorService _supervisorService;
 
-    public SupervisorController(ISupervisorService supervisorService)
+    private readonly ICoverageScheduleService _coverageScheduleService;
+
+    public SupervisorController(ISupervisorService supervisorService, ICoverageScheduleService coverageScheduleService)
     {
         _supervisorService = supervisorService;
+        _coverageScheduleService = coverageScheduleService;
     }
+
+
+    [HttpGet("dashboard/top-per-specialty")]
+    public async Task<IActionResult> GetTopPerSpecialty()
+    {
+        var result = await _coverageScheduleService.GetTopPerSpecialty();
+
+        return result.ToActionResult();
+    }
+
 }

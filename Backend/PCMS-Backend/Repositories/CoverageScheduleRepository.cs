@@ -107,6 +107,14 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
             .Include(s => s.CoverageAssignments)
             .FirstOrDefaultAsync(s => s.WeekStartDate == startDate);
     }
+
+    public async Task<int> GetScheduleIdByStartDate(DateOnly startDate)
+    {
+        return await _context.CoverageSchedules
+            .Where(c => c.WeekStartDate == startDate)
+            .Select(c=>c.CoverageScheduleId)
+            .FirstOrDefaultAsync();
+    }
     public async Task<List<PhysicianWorkloadDto>> GetPhysicianWorkloadLast60DaysAsync(DateTime fromDate)
     {
         return await _context.Physicians
@@ -129,6 +137,54 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
             })
             .ToListAsync();
     }
+
+    public async Task<List<TopPhysicianRawDto>> GetTopPhysiciansPerSpecialtyRawAsync(int scheduleId)
+    {
+        return await _context.CoverageAssignments
+    .Where(a => a.CoverageScheduleId == scheduleId)
+    .GroupBy(a => new
+    {
+        a.SpecialtyId,
+        SpecialtyName = a.Specialty.SpecialtyName
+    })
+    .Select(g => g
+        .GroupBy(a => new
+        {
+            a.PhysicianId,
+            Name = a.Physician.User.FullName
+        })
+        .Select(pg => new TopPhysicianRawDto
+        {
+            PhysicianId = pg.Key.PhysicianId,
+            PhysicianName = pg.Key.Name,
+            SpecialtyId = g.Key.SpecialtyId,
+            SpecialtyName = g.Key.SpecialtyName,
+            TotalAssignments = pg.Count()
+        })
+        .OrderByDescending(x => x.TotalAssignments)
+        .FirstOrDefault()
+    )
+    .Where(x => x != null)
+    .Select(x => x!)  
+    .ToListAsync();
+    }
+
+
+    public async Task<List<AssignmentRawDto>> GetAssignmentsByPhysiciansAsync(int scheduleId, List<int> physicianIds)
+    {
+        return await _context.CoverageAssignments
+            .Where(a => a.CoverageScheduleId == scheduleId &&
+                        physicianIds.Contains(a.PhysicianId))
+            .Select(a => new AssignmentRawDto
+            {
+                PhysicianId = a.PhysicianId,
+                SpecialtyId = a.SpecialtyId,
+                Date = a.CoverageDate,
+                ShiftType = a.ShiftType
+            })
+            .ToListAsync();
+    }
+
 
 
     public async Task SaveChangesAsync()

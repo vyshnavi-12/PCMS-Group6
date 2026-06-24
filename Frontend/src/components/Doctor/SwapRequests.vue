@@ -23,14 +23,14 @@ const goBackToList = () => {
 const fetchSwapRequests = async () => {
     try {
         const myResponse = await axios.get(
-            'https://localhost:7119/api/SwapRequests/my',
+            'https://localhost:7119/api/Physician/SwapRequests/my',
             { withCredentials: true }
         )
 
         myRequests.value = myResponse.data.data
 
         const toMeResponse = await axios.get(
-            'https://localhost:7119/api/SwapRequests/to-me',
+            'https://localhost:7119/api/Physician/SwapRequests/to-me',
             { withCredentials: true }
         )
 
@@ -44,7 +44,7 @@ const fetchSwapRequests = async () => {
 const acceptRequest = async (requestId: number) => {
     try {
         await axios.put(
-            `https://localhost:7119/api/SwapRequests/${requestId}/approve`,
+            `https://localhost:7119/api/Physician/SwapRequests/${requestId}/accept`,
             {},
             { withCredentials: true }
         )
@@ -58,7 +58,7 @@ const acceptRequest = async (requestId: number) => {
 const declineRequest = async (requestId: number) => {
     try {
         await axios.put(
-            `https://localhost:7119/api/SwapRequests/${requestId}/decline`,
+            `https://localhost:7119/api/Physician/SwapRequests/${requestId}/decline`,
             {},
             { withCredentials: true }
         )

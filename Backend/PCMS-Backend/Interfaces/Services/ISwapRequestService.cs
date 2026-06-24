@@ -19,8 +19,12 @@ public interface ISwapRequestService
     Task<Result<List<RequestToMeDto>>> GetRequestsToMeAsync(int userId);
 
     Task<Result> ApproveRequestAsync(int swapRequestId, int userId);
+    Task<Result> AcceptRequestAsync(int swapRequestId, int userId);
+
 
     Task<Result> DeclineRequestAsync(int swapRequestId, int userId);
+    Task<Result> RejectRequestAsync(int swapRequestId, int userId);
+
 
     Task<Result<List<SupervisorSwapRequestDto>>> GetSupervisorRequestsAsync();
 }

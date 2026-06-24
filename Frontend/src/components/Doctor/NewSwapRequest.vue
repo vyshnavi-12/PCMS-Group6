@@ -47,7 +47,7 @@ const fetchSchedule = async () => {
         }
 
         const response = await axios.get(
-            `https://localhost:7119/api/SwapRequests/available-targets/${assignmentId}`,
+            `https://localhost:7119/api/Physician/SwapRequests/available-targets/${assignmentId}`,
             {
                 withCredentials: true
             }
@@ -153,7 +153,7 @@ const submitRequest = async () => {
         }
 
         await axios.post(
-            'https://localhost:7119/api/SwapRequests',
+            'https://localhost:7119/api/Physician/SwapRequests',
             payload,
             {
                 withCredentials: true

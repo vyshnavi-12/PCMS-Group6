@@ -6,14 +6,15 @@ using System.Security.Claims;
 
 namespace PCMS_Backend.Controllers;
 
-[Authorize]
-[Route("api/[controller]")]
 [ApiController]
-public class SwapRequestsController : ControllerBase
+[Authorize(Roles = "Physician")]
+[Route("api/Physician/SwapRequests")]
+
+public class PhysicianSwapRequestsController : ControllerBase
 {
     private readonly ISwapRequestService _service;
 
-    public SwapRequestsController(
+    public PhysicianSwapRequestsController(
         ISwapRequestService service
     )
     {
@@ -81,8 +82,8 @@ public class SwapRequestsController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
-    [HttpPut("{id}/approve")]
-    public async Task<IActionResult> ApproveRequest(int id)
+    [HttpPut("{id}/accept")]
+    public async Task<IActionResult> AcceptRequest(int id)
     {
         var claimValue = User.FindFirstValue(
             ClaimTypes.NameIdentifier
@@ -92,7 +93,7 @@ public class SwapRequestsController : ControllerBase
             return Unauthorized();
 
         var result = await _service
-            .ApproveRequestAsync(id, userId);
+            .AcceptRequestAsync(id, userId);
 
         return StatusCode(result.StatusCode ?? 500, result);
     }
@@ -113,10 +114,7 @@ public class SwapRequestsController : ControllerBase
         return StatusCode(result.StatusCode ?? 500, result);
     }
 
-    [HttpGet("supervisor")]
-    public async Task<IActionResult> GetSupervisorRequests()
-    {
-        var result = await _service.GetSupervisorRequestsAsync();
-        return StatusCode(result.StatusCode, result);
-    }
+    
+
+
 }

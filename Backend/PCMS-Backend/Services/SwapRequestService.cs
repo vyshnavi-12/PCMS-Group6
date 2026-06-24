@@ -148,7 +148,7 @@ public class SwapRequestService : ISwapRequestService
         return Result<List<RequestToMeDto>>.Ok(response);
     }
 
-    public async Task<Result> ApproveRequestAsync(int swapRequestId, int userId)
+    public async Task<Result> AcceptRequestAsync(int swapRequestId, int userId)
     {
         var request = await _repository.GetByIdAsync(swapRequestId);
 
@@ -197,6 +197,58 @@ public class SwapRequestService : ISwapRequestService
         return Result.Ok("Request approved");
     }
 
+
+    public async Task<Result> ApproveRequestAsync(int swapRequestId,int userId)
+    {
+        var request = await _repository.GetByIdAsync(swapRequestId);
+
+        if (request == null)
+            return Result.NotFound("Request not found");
+
+        request.RequestStatus = "SUPERVISOR_APPROVED";
+        request.ReviewedAt = DateTime.UtcNow;
+        request.ReviewedByUserId = userId;
+
+
+        await _repository.SaveChangesAsync();
+
+        var requesterUserId = request.RequestedByPhysician.UserId;
+
+        if (requesterUserId.HasValue)
+        {
+            var notification = new Notification
+            {
+                UserId = requesterUserId.Value,
+                NotificationTitle = "Swap Request Approved By Supervisor",
+                NotificationMessage =
+                    $"Supervisor. {request.ReviewedByUser?.FullName} approved the Swap request .",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _notificationRepository.CreateAsync(notification);
+        }
+        var targetUserId=request.TargetPhysicianId; 
+
+       
+
+      
+            var targetPhysicianNotification = new Notification
+            {
+                UserId = targetUserId,
+                NotificationTitle = "Swap Request Approved By Supervisor",
+                NotificationMessage =
+                    $"Supervisor. {request.ReviewedByUser?.FullName} approved the Swap request .",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _notificationRepository.CreateAsync(targetPhysicianNotification);
+        
+
+        return Result.Ok("Request approved");
+    }
+
     public async Task<Result> DeclineRequestAsync(int swapRequestId, int userId)
     {
         var request = await _repository.GetByIdAsync(swapRequestId);
@@ -227,6 +279,56 @@ public class SwapRequestService : ISwapRequestService
         }
 
         return Result.Ok("Request declined");
+    }
+
+    public async Task<Result> RejectRequestAsync(int swapRequestId, int userId)
+    {
+        var request = await _repository.GetByIdAsync(swapRequestId);
+
+        if (request == null)
+            return Result.NotFound("Request not found");
+
+        request.RequestStatus = "REQUEST_REJECTED";
+        request.ReviewedAt = DateTime.UtcNow;
+        request.ReviewedByUserId = userId;
+
+        await _repository.SaveChangesAsync();
+
+        var requesterUserId = request.RequestedByPhysician.UserId;
+
+        if (requesterUserId.HasValue)
+        {
+            var notification = new Notification
+            {
+                UserId = requesterUserId.Value,
+                NotificationTitle = "Swap Request Rejected By Supervisor",
+                NotificationMessage =
+                     $"Supervisor. {request.ReviewedByUser?.FullName} rejected the Swap request .",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _notificationRepository.CreateAsync(notification);
+        }
+
+        var targetUserId = request.TargetPhysicianId;
+
+
+
+
+        var targetPhysicianNotification = new Notification
+        {
+            UserId = targetUserId,
+            NotificationTitle = "Swap Request Approved By Supervisor",
+            NotificationMessage =
+                $"Supervisor. {request.ReviewedByUser?.FullName} declined the Swap request .",
+            IsRead = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _notificationRepository.CreateAsync(targetPhysicianNotification);
+
+        return Result.Ok("Request Rejected");
     }
 
     public async Task<Result<List<SupervisorSwapRequestDto>>> GetSupervisorRequestsAsync()

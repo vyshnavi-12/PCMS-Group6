@@ -11,7 +11,7 @@ const requests = ref<any[]>([])
 const fetchSupervisorRequests = async () => {
     try {
         const response = await axios.get(
-            'https://localhost:7119/api/SwapRequests/supervisor',
+            'https://localhost:7119/api/Supervisor/SwapRequests/my',
             { withCredentials: true }
         )
 
@@ -34,11 +34,11 @@ const filteredRequests = computed(() => {
         )
     }
 
-    if (selectedFilter.value) {
-        data = data.filter(
-            request => request.status === selectedFilter.value
-        )
-    }
+    // if (selectedFilter.value) {
+    //     data = data.filter(
+    //         request => request.status === selectedFilter.value
+    //     )
+    // }
 
     return data
 })
@@ -46,7 +46,7 @@ const filteredRequests = computed(() => {
 const approveRequest = async (requestId: number) => {
     try {
         await axios.put(
-            `https://localhost:7119/api/SwapRequests/${requestId}/supervisor-approve`,
+            `https://localhost:7119/api/Supervisor/SwapRequests/${requestId}/approve`,
             {},
             { withCredentials: true }
         )
@@ -60,7 +60,7 @@ const approveRequest = async (requestId: number) => {
 const declineRequest = async (requestId: number) => {
     try {
         await axios.put(
-            `https://localhost:7119/api/SwapRequests/${requestId}/supervisor-decline`,
+            `https://localhost:7119/api/Supervisor/SwapRequests/${requestId}/reject`,
             {},
             { withCredentials: true }
         )

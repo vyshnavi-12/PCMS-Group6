@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import NewSwapRequest from './NewSwapRequest.vue'
 
 const route = useRoute()
+const router = useRouter()
 
 const showNewRequest = ref(false)
 const activeTab = ref('My Requests')
@@ -90,7 +91,10 @@ const getStatusClass = (status: string) => {
 const handleRequestCreated = async () => {
     showNewRequest.value = false
     activeTab.value = 'My Requests'
+
     await fetchSwapRequests()
+
+    router.replace('/doctor/swap-requests')
 }
 
 onMounted(() => {
@@ -146,28 +150,30 @@ onMounted(() => {
                         <th>Shift</th>
                         <th>Requested With</th>
                         <th>Reason</th>
-                        <th>Status</th>
                         <th>Requested On</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
 
                 <tbody>
-
                     <tr v-for="request in myRequests" :key="request.swapRequestId">
                         <td>{{ request.date }}</td>
                         <td>{{ request.shift }}</td>
                         <td>{{ request.requestedWith }}</td>
                         <td>{{ request.reason }}</td>
-
+                        <td>{{ request.requestedOn }}</td>
                         <td>
                             <span class="status-badge" :class="getStatusClass(request.status)">
                                 {{ request.status }}
                             </span>
                         </td>
-
-                        <td>{{ request.requestedOn }}</td>
                     </tr>
 
+                    <tr v-if="myRequests.length === 0">
+                        <td colspan="6" class="empty-state">
+                            No swap requests found
+                        </td>
+                    </tr>
                 </tbody>
 
             </table>
@@ -185,6 +191,7 @@ onMounted(() => {
                         <th>Requested By</th>
                         <th>Reason</th>
                         <th>Requested On</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -198,6 +205,12 @@ onMounted(() => {
                         <td>{{ request.reason }}</td>
                         <td>{{ request.requestedOn }}</td>
 
+                        <td>
+                            <span class="status-badge" :class="getStatusClass(request.status)">
+                                {{ request.status }}
+                            </span>
+                        </td>
+
                         <td class="action-cell">
 
                             <template v-if="request.status === 'PENDING_TARGET'">
@@ -210,14 +223,18 @@ onMounted(() => {
                                 </button>
                             </template>
 
-                            <template v-else>
-                                <span class="status-badge" :class="getStatusClass(request.status)">
-                                    {{ request.status }}
-                                </span>
-                            </template>
+                            <span v-else>
+                                -
+                            </span>
 
                         </td>
 
+                    </tr>
+
+                    <tr v-if="requestsToMe.length === 0">
+                        <td colspan="7" class="empty-state">
+                            No requests available
+                        </td>
                     </tr>
                 </tbody>
 
@@ -380,6 +397,13 @@ td {
 
 .action-cell {
     white-space: nowrap;
+}
+
+.empty-state {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+    padding: 28px;
 }
 
 @media (max-width: 1024px) {

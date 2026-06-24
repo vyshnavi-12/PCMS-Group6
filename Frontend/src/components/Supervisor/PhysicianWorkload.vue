@@ -134,7 +134,7 @@ const workloadData = [
 .card-header h3 {
   margin: 0;
   font-size: 20px;
-  color: #1e293b;
+  color: #232f72;
 }
 
 .specialty-section {
@@ -207,14 +207,14 @@ const workloadData = [
 
 /* DAY SHIFT = BLUE */
 .day {
-  background: #bfdbfe;
+  background: #eff6ff;
   color: #2563eb;
 }
 
 /* NIGHT SHIFT = ORANGE */
 .night {
-  background: #fed7aa;
-  color: #ea580c;
+   background: #f3e8ff;
+  color: #7c3aed;
 }
 
 /* Scrollbar */

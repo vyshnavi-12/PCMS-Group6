@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
+
+const router = useRouter()
 
 const currentWeek = ref('')
 const currentWeekIndex = ref(0)
@@ -37,8 +40,17 @@ const months = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ]
 
+const shortDays = [
+  'Sun', 'Mon', 'Tue', 'Wed',
+  'Thu', 'Fri', 'Sat'
+]
+
 const formatWeekLabel = (start: Date, end: Date) => {
   return `${months[start.getMonth()]} ${String(start.getDate()).padStart(2, '0')} – ${months[end.getMonth()]} ${String(end.getDate()).padStart(2, '0')}, ${end.getFullYear()}`
+}
+
+const formatHeaderDate = (date: Date) => {
+  return `${shortDays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`
 }
 
 const buildWeeks = () => {
@@ -147,7 +159,7 @@ const nextWeek = () => {
 }
 
 const openCalendar = () => {
-  console.log('Open Calendar')
+  router.push('/doctor/schedule')
 }
 
 const assignmentCount = computed(() => {
@@ -172,66 +184,47 @@ const assignmentCount = computed(() => {
     <!-- SUMMARY CARDS -->
     <div class="stats-grid">
 
-      <!-- My Assignments -->
       <div class="stat-card">
         <div class="icon blue">
           <i class="pi pi-calendar"></i>
         </div>
 
         <div>
-          <div class="stat-title">
-            My Assignments
-          </div>
+          <div class="stat-title">My Assignments</div>
 
           <div class="stat-value">
             {{ assignmentCount }}
           </div>
 
-          <div class="stat-subtitle">
-            This Week
-          </div>
+          <div class="stat-subtitle">This Week</div>
         </div>
       </div>
 
-      <!-- Swap Requests -->
       <div class="stat-card">
         <div class="icon orange">
           <i class="pi pi-arrow-right-arrow-left"></i>
         </div>
 
         <div>
-          <div class="stat-title">
-            Swap Requests
-          </div>
+          <div class="stat-title">Swap Requests</div>
 
-          <div class="stat-value">
-            1
-          </div>
+          <div class="stat-value">1</div>
 
-          <div class="stat-subtitle">
-            Pending
-          </div>
+          <div class="stat-subtitle">Pending</div>
         </div>
       </div>
 
-      <!-- Unavailable Requests -->
       <div class="stat-card">
         <div class="icon purple">
           <i class="pi pi-ban"></i>
         </div>
 
         <div>
-          <div class="stat-title">
-            Unavailable Requests
-          </div>
+          <div class="stat-title">Unavailable Requests</div>
 
-          <div class="stat-value">
-            2
-          </div>
+          <div class="stat-value">2</div>
 
-          <div class="stat-subtitle">
-            Sent this week
-          </div>
+          <div class="stat-subtitle">Sent this week</div>
         </div>
       </div>
 
@@ -241,9 +234,7 @@ const assignmentCount = computed(() => {
     <div class="schedule-card">
 
       <div class="card-header">
-        <h3>
-          My Schedule Overview (Weekly)
-        </h3>
+        <h3>My Schedule Overview (Weekly)</h3>
 
         <button class="calendar-btn" @click="openCalendar">
           <i class="pi pi-calendar"></i>
@@ -271,11 +262,8 @@ const assignmentCount = computed(() => {
 
         <thead>
           <tr>
-            <th></th>
-
-            <th v-for="(date, index) in weekDates" :key="index">
-              {{ ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index] }}
-              {{ date.getDate() }}
+            <th v-for="date in weekDates" :key="date.toISOString()">
+              {{ formatHeaderDate(date) }}
             </th>
           </tr>
         </thead>
@@ -283,15 +271,6 @@ const assignmentCount = computed(() => {
         <tbody>
 
           <tr v-for="row in schedule" :key="row.label">
-            <td class="shift-column">
-              <div class="shift-name">
-                {{ row.label }}
-              </div>
-
-              <div class="shift-time">
-                {{ row.time }}
-              </div>
-            </td>
 
             <td v-for="(assignment, index) in row.assignments" :key="`${row.label}-${index}`">
               <div v-if="assignment" :class="[
@@ -318,12 +297,12 @@ const assignmentCount = computed(() => {
       <div class="legend">
         <span>
           <span class="dot day"></span>
-          Day Shift
+          Day Shift (6:00 AM - 6:00 PM)
         </span>
 
         <span>
           <span class="dot night"></span>
-          Night Shift
+          Night Shift (6:00 PM - 6:00 AM)
         </span>
       </div>
 
@@ -361,9 +340,9 @@ const assignmentCount = computed(() => {
 }
 
 .icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
 
   display: flex;
   justify-content: center;
@@ -404,6 +383,7 @@ const assignmentCount = computed(() => {
   font-size: 13px;
   color: #64748b;
 }
+
 /* SCHEDULE CARD */
 
 .schedule-card {

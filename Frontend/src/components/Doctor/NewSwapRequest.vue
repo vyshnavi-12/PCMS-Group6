@@ -2,10 +2,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
+import { useToast } from 'primevue/usetoast'
 import DatePicker from 'primevue/datepicker'
 
 const route = useRoute()
-const emit = defineEmits(['back'])
+const toast = useToast()
+const emit = defineEmits(['back', 'requestCreated'])
 
 const selectedDate = ref<Date | null>(null)
 const selectedShift = ref('')
@@ -47,7 +49,7 @@ const fetchSchedule = async () => {
         }
 
         const response = await axios.get(
-            `https://localhost:7119/api/SwapRequests/available-targets/${assignmentId}`,
+            `https://localhost:7119/api/Physician/SwapRequests/available-targets/${assignmentId}`,
             {
                 withCredentials: true
             }
@@ -134,29 +136,69 @@ const goBack = () => {
     emit('back')
 }
 
-const submitRequest = () => {
+const submitRequest = async () => {
     if (!selectedDate.value || !selectedShift.value) {
-        alert('Please select date and shift')
+        toast.add({
+            severity: 'warn',
+            summary: 'Validation',
+            detail: 'Please select date and shift',
+            life: 3000
+        })
+        return
+    }
+
+    if (!reason.value.trim()) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Validation',
+            detail: 'Please enter reason',
+            life: 3000
+        })
         return
     }
 
     if (!selectedCoverage.value) {
-        alert('No physician found for selected date and shift')
+        toast.add({
+            severity: 'warn',
+            summary: 'Validation',
+            detail: 'No physician found for selected date',
+            life: 3000
+        })
         return
     }
 
-    console.log({
-        targetCoverageAssignmentId:
-            selectedCoverage.value.coverageAssignmentId,
-        targetPhysician:
-            selectedCoverage.value.physicianName,
-        date: formatDateToString(selectedDate.value),
-        shift: selectedShift.value,
-        reason: reason.value
-    })
+    try {
+        const payload = {
+            coverageAssignmentId: selectedCoverage.value.coverageAssignmentId,
+            targetPhysicianId: selectedCoverage.value.physicianId,
+            requestComments: reason.value.trim()
+        }
 
-    alert('Swap Request Submitted')
-    emit('back')
+        await axios.post(
+            'https://localhost:7119/api/Physician/SwapRequests',
+            payload,
+            {
+                withCredentials: true
+            }
+        )
+
+        toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Swap request submitted successfully',
+            life: 3000
+        })
+        emit('requestCreated')
+
+    } catch (error) {
+        console.error(error)
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to submit request',
+            life: 3000
+        })
+    }
 }
 </script>
 
@@ -185,15 +227,8 @@ const submitRequest = () => {
                                 <span>*</span>
                             </label>
 
-                            <DatePicker
-                                v-model="selectedDate"
-                                :manualInput="false"
-                                :disabledDates="disabledDates"
-                                :minDate="minDate"
-                                :maxDate="maxDate"
-                                dateFormat="yy-mm-dd"
-                                showIcon
-                            />
+                            <DatePicker v-model="selectedDate" :manualInput="false" :disabledDates="disabledDates"
+                                :minDate="minDate" :maxDate="maxDate" dateFormat="yy-mm-dd" showIcon />
                         </div>
 
                         <div class="field">
@@ -202,11 +237,7 @@ const submitRequest = () => {
                                 <span>*</span>
                             </label>
 
-                            <input
-                                type="text"
-                                :value="selectedShift"
-                                disabled
-                            />
+                            <input type="text" :value="selectedShift" disabled />
                         </div>
 
                     </div>
@@ -217,11 +248,7 @@ const submitRequest = () => {
                             Reason
                         </label>
 
-                        <textarea
-                            v-model="reason"
-                            rows="8"
-                            placeholder="Enter reason for swap request"
-                        ></textarea>
+                        <textarea v-model="reason" rows="8" placeholder="Enter reason for swap request"></textarea>
 
                     </div>
 

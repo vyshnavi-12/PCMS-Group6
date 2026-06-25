@@ -7,4 +7,10 @@ public interface INotificationService
     Task<Result> MarkAsReadAsync(int notificationId, int userId);
 
     Task CreateSchedulePublishedNotificationsAsync(CoverageSchedule schedule);
+
+    Task CreateAndSendNotificationAsync(
+    int userId,
+    string title,
+    string message
+);
 }

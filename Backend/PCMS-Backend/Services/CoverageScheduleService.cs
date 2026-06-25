@@ -1,9 +1,12 @@
-﻿using PCMS_Backend.DTOs;
-using PCMS_Backend.Interfaces.Services;
+﻿using Microsoft.AspNetCore.SignalR;
+using PCMS_Backend.DTOs;
+using PCMS_Backend.Hubs;
 using PCMS_Backend.Interfaces.Repositories;
+using PCMS_Backend.Interfaces.Services;
 using PCMS_Backend.Models;
-using PCMS_Backend.Shared;
 using PCMS_Backend.Models.Scheduling;
+using PCMS_Backend.Repositories;
+using PCMS_Backend.Shared;
 
 namespace PCMS_Backend.Services;
 
@@ -11,13 +14,20 @@ public class CoverageScheduleService : ICoverageScheduleService
 {
     private readonly ICoverageScheduleRepository _coverageScheduleRepository;
     private readonly INotificationService _notificationService;
+    private readonly IHubContext<ScheduleHub> _scheduleHubContext;
+
 
 
     public CoverageScheduleService(
-        ICoverageScheduleRepository coverageScheduleRepository, INotificationService notificationService)
+    ICoverageScheduleRepository coverageScheduleRepository,
+    INotificationService notificationService,
+    IAuditLogService auditLogService,
+    IHubContext<ScheduleHub> scheduleHubContext)
     {
         _coverageScheduleRepository = coverageScheduleRepository;
         _notificationService = notificationService;
+        _scheduleHubContext = scheduleHubContext;
+
     }
     private List<Slot> GenerateSlots(DateTime startDate)
     {
@@ -304,6 +314,9 @@ public class CoverageScheduleService : ICoverageScheduleService
 
         await _coverageScheduleRepository.SaveAssignmentsAsync(assignments);
 
+        
+
+
 
         foreach (var slot in slots)
         {
@@ -368,9 +381,28 @@ public class CoverageScheduleService : ICoverageScheduleService
             a.AssignmentStatus = "Active";
         }
 
+        await _coverageScheduleRepository.SaveChangesAsync();
+
+        var assignedUserIds = schedule.CoverageAssignments
+            .Select(a => a.Physician.UserId)
+            .Distinct()
+            .ToList();
+
+        foreach (var assignedUserId in assignedUserIds)
+        {
+            await _scheduleHubContext.Clients
+                .Group($"User_{assignedUserId}")
+                .SendAsync("SchedulePublished", new
+                {
+                    scheduleId = schedule.CoverageScheduleId,
+                    message = "Schedule Published"
+                });
+        }
+
         await _notificationService.CreateSchedulePublishedNotificationsAsync(schedule);
 
-        await _coverageScheduleRepository.SaveChangesAsync();
+
+
 
         return Result<bool>.Ok(true);
     }
@@ -422,7 +454,7 @@ public class CoverageScheduleService : ICoverageScheduleService
                 int currnight = currNightWorkload.GetValueOrDefault(d, 0);
                 var load = 2 * pastMorning + 3 * pastNight + 4 * currMorning + 6 * currnight;
 
-                if ((currnight > currWeekNightLimit || (currnight + currMorning) > currWeekTotalLimit))
+                if ((currnight >= currWeekNightLimit || (currnight + currMorning) >= currWeekTotalLimit))
                 {
                     if (load < skippedMinload)
                     {

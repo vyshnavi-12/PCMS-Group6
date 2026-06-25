@@ -7,7 +7,7 @@ import { logoutUser } from '../../services/authService'
 const route = useRoute()
 const router = useRouter()
 
-const isSidebarCollapsed = ref(false)
+const isSidebarCollapsed = ref(true)
 
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value

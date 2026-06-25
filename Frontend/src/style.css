@@ -1,6 +1,10 @@
+* {
+  box-sizing: border-box;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+
 body,
 #app {
   margin: 0;
   padding: 0;
 }
-

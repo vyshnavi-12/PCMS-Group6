@@ -42,4 +42,67 @@ public class SwapRequestRepository : ISwapRequestRepository
                 a.ShiftType == shiftType)
             .ToListAsync();
     }
+
+    public async Task CreateAsync(SwapRequest request)
+    {
+        await _context.SwapRequests.AddAsync(request);
+    }
+
+    public async Task<List<SwapRequest>> GetMyRequestsAsync(
+    int physicianId
+)
+    {
+        return await _context.SwapRequests
+            .Include(s => s.CoverageAssignment)
+            .Include(s => s.TargetPhysician)
+                .ThenInclude(p => p.User)
+            .Where(s => s.RequestedByPhysicianId == physicianId)
+            .OrderByDescending(s => s.RequestedAt)
+            .ToListAsync();
+    }
+
+    public async Task<List<SwapRequest>> GetRequestsToMeAsync(
+    int physicianId
+)
+    {
+        return await _context.SwapRequests
+            .Include(s => s.CoverageAssignment)
+            .Include(s => s.RequestedByPhysician)
+                .ThenInclude(p => p.User)
+            .Where(s => s.TargetPhysicianId == physicianId)
+            .OrderByDescending(s => s.RequestedAt)
+            .ToListAsync();
+    }
+
+    public async Task<SwapRequest?> GetByIdAsync(
+    int swapRequestId
+)
+    {
+        return await _context.SwapRequests
+            .Include(s => s.RequestedByPhysician)
+                .ThenInclude(p => p.User)
+            .Include(s => s.TargetPhysician)
+                .ThenInclude(p => p.User)
+            .Include(s => s.CoverageAssignment)
+            .FirstOrDefaultAsync(s =>
+                s.SwapRequestId == swapRequestId);
+            }
+
+    public async Task<List<SwapRequest>> GetSupervisorRequestsAsync()
+    {
+        return await _context.SwapRequests
+            .Include(s => s.RequestedByPhysician)
+                .ThenInclude(p => p.User)
+            .Include(s => s.TargetPhysician)
+                .ThenInclude(p => p.User)
+            .Include(s => s.CoverageAssignment)
+            .Where(s => s.RequestStatus == "TARGET_ACCEPTED" || s.ReviewedByUserId != null)
+            .OrderByDescending(s => s.RequestedAt)
+            .ToListAsync();
+    }
+
+    public async Task SaveChangesAsync()
+    {
+        await _context.SaveChangesAsync();
+    }
 }

@@ -1,6 +1,7 @@
 ﻿namespace PCMS_Backend.DTOs;
 public class OpenAlertsResponseDto
 { 
+    public int AlertId { get; set; }
     public DateOnly Date { get; set; }  
     public string Specialty { get; set; } = default!;
 

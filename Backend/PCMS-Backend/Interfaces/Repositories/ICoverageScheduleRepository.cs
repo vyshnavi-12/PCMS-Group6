@@ -24,5 +24,6 @@ public interface ICoverageScheduleRepository
     Task<List<PhysicianWorkloadDto>> GetPhysicianWorkloadLast60DaysAsync(DateTime fromDate);
 
     Task SaveChangesAsync();
+    Task<CoverageAssignment?> GetAssignmentByIdAsync(int assignmentId);
 
 }

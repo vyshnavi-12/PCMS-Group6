@@ -33,11 +33,33 @@ public class CoverageAssignmentsController : ControllerBase
         return result.ToActionResult();
     }
 
-    [HttpGet("open")]
+    [HttpGet("alerts")]
     [Authorize(Roles = "Supervisor")]
     public async Task<IActionResult> GetOpenAlerts()
     {
-        var result = await _coverageService.GetOpenAlertsAsync();
+        var result = await _coverageService.GetAlertsAsync();
+        return result.ToActionResult();
+    }
+    [HttpGet("alerts/{alertId}/details")]
+    [Authorize(Roles = "Supervisor")]
+public async Task<IActionResult> GetOpenAlertDetails(int alertId)
+    {
+        var result = await _coverageService.GetAlertDetailsAsync(alertId);
+        return result.ToActionResult();
+    }
+    [HttpPatch("alerts/{alertId}/update-physician/{physicianId}")]
+    [Authorize(Roles = "Supervisor")]
+    public async Task<IActionResult> UpdatePhysician(int alertId, int physicianId)
+    {
+        var result = await _coverageService.UpdateAlertPhysicianAsync(alertId, physicianId); 
+        return result.ToActionResult();
+    }
+
+    [HttpPatch("alerts/{alertId}/decline-request")]
+    [Authorize(Roles = "Supervisor")]
+    public async Task<IActionResult> DeclineUnavailableRequest(int alertId)
+    {
+        var result = await _coverageService.DeclineUnavailableRequestAsync(alertId);
         return result.ToActionResult();
     }
 }

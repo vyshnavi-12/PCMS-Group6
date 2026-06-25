@@ -29,9 +29,10 @@ public class Physician
 
         public ICollection<CoverageAssignment> CoverageAssignments { get; set; } = default!;
 
-    
+    public ICollection<CoverageGapAlert> CoverageGapAlert { get; set; } = default!;
 
-        public ICollection<SwapRequest> RequestedSwapRequests { get; set; } = default!;
+
+    public ICollection<SwapRequest> RequestedSwapRequests { get; set; } = default!;
 
         public ICollection<SwapRequest> TargetSwapRequests { get; set; } = default!;
     }

@@ -1,4 +1,6 @@
-﻿using PCMS_Backend.DTOs;
+﻿using Microsoft.AspNetCore.SignalR;
+using PCMS_Backend.DTOs;
+using PCMS_Backend.Hubs;
 using PCMS_Backend.Interfaces.Repositories;
 using PCMS_Backend.Interfaces.Services;
 using PCMS_Backend.Models;
@@ -12,26 +14,28 @@ public class SwapRequestService : ISwapRequestService
     private readonly IPhysicianRepository _physicianRepository;
     private readonly INotificationService _notificationService;
     private readonly IUserRepository _userRepository;
+    private readonly IHubContext<SwapRequestHub> _hubContext;
 
     public SwapRequestService(
     ISwapRequestRepository repository,
     IPhysicianRepository physicianRepository,
     IUserRepository userRepository,
-    INotificationService notificationService
+    INotificationService notificationService,
+    IHubContext<SwapRequestHub> hubContext
 )
     {
         _repository = repository;
         _physicianRepository = physicianRepository;
         _userRepository = userRepository;
         _notificationService = notificationService;
+        _hubContext = hubContext;
     }
 
-    public async Task<Result<List<AvailableSwapTargetDto>>> GetAvailableTargetsAsync(
-        int coverageAssignmentId
-    )
+
+
+    public async Task<Result<List<AvailableSwapTargetDto>>> GetAvailableTargetsAsync(int coverageAssignmentId)
     {
         var selectedAssignment = await _repository.GetAssignmentByIdAsync(coverageAssignmentId);
-
         if (selectedAssignment == null)
             return Result<List<AvailableSwapTargetDto>>.NotFound("Assignment not found");
 
@@ -54,18 +58,13 @@ public class SwapRequestService : ISwapRequestService
         return Result<List<AvailableSwapTargetDto>>.Ok(response);
     }
 
-    public async Task<Result> CreateSwapRequestAsync(
-        int userId,
-        CreateSwapRequestDto dto
-    )
+    public async Task<Result> CreateSwapRequestAsync(int userId, CreateSwapRequestDto dto)
     {
         var physician = await _physicianRepository.GetByUserIdAsync(userId);
-
         if (physician == null)
             return Result.NotFound("Physician not found");
 
         var targetAssignment = await _repository.GetAssignmentByIdAsync(dto.CoverageAssignmentId);
-
         if (targetAssignment == null)
             return Result.NotFound("Assignment not found");
 
@@ -83,14 +82,27 @@ public class SwapRequestService : ISwapRequestService
         await _repository.SaveChangesAsync();
 
         var targetUserId = targetAssignment.Physician.UserId;
-
         if (targetUserId.HasValue)
         {
+            // ✅ Send notification
             await _notificationService.CreateAndSendNotificationAsync(
                 targetUserId.Value,
                 "New Swap Request",
                 $"Dr. {physician.User.FullName} requested a swap for {targetAssignment.ShiftType} shift on {targetAssignment.CoverageDate:yyyy-MM-dd}."
             );
+
+            // ✅ Push real-time swap request via SignalR
+            await _hubContext.Clients.Group($"User_{targetUserId.Value}")
+                .SendAsync("ReceiveSwapRequest", new
+                {
+                    swapRequestId = request.SwapRequestId,
+                    date = targetAssignment.CoverageDate.ToString("yyyy-MM-dd"),
+                    shift = targetAssignment.ShiftType,
+                    requestedBy = physician.User.FullName,
+                    reason = request.RequestComments,
+                    requestedOn = request.RequestedAt.ToString("yyyy-MM-dd HH:mm"),
+                    status = request.RequestStatus
+                });
         }
 
         return Result.Created("Swap request created");

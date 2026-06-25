@@ -38,7 +38,7 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
 
 
     public async Task<List<Physician>> GetPhysiciansAsync()
-            => await _context.Physicians.Include(p => p.PhysicianSpecialtyMaps).ToListAsync();
+            => await _context.Physicians.Include(p => p.PhysicianSpecialtyMaps).Include(p => p.User).ToListAsync();
 
     public async Task<List<int>> GetSpecialtiesAsync()
         => await _context.Specialties.Select(s => s.SpecialtyId).ToListAsync();
@@ -190,6 +190,12 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<CoverageAssignment?> GetAssignmentByIdAsync(int assignmentId)
+    {
+        return await _context.CoverageAssignments
+            .FirstOrDefaultAsync(a => a.CoverageAssignmentId == assignmentId);
     }
 
 }

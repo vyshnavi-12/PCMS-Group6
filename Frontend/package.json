@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@microsoft/signalr": "^10.0.0",
     "@primeuix/themes": "^2.0.3",
     "apexcharts": "^5.15.2",
     "axios": "^1.18.0",

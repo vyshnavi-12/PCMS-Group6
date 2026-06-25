@@ -27,5 +27,6 @@ public interface ICoverageScheduleRepository
     Task<List<AssignmentRawDto>> GetAssignmentsByPhysiciansAsync(int scheduleId, List<int> physicianIds);
 
     Task SaveChangesAsync();
+    Task<CoverageAssignment?> GetAssignmentByIdAsync(int assignmentId);
 
 }

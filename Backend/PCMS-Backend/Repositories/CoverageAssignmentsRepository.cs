@@ -21,14 +21,15 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
             .FirstOrDefaultAsync(c => c.CoverageAssignmentId == assignmentId);
     }
 
-    public async Task CreateAlertAsync(CoverageGapAlertDto alert)
+    public async Task CreateAlertAsync(CoverageGapAlertDto alert, int physicianId)
     {
         var alertEntity = new CoverageGapAlert
         {
             CoverageAssignmentId = alert.CoverageAssignmentId,
             CreatedAt = DateTime.UtcNow,
             AlertReason = alert.AlertReason,
-            AlertStatus = alert.AlertStatus
+            AlertStatus = alert.AlertStatus,
+            RequestedByPhysicianId = physicianId
 
         };
 
@@ -36,7 +37,7 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<IReadOnlyList<OpenAlertsResponseDto>> GetOpenAlertsAsync()
+    public async Task<IReadOnlyList<OpenAlertsResponseDto>> GetAlertsAsync()
     {
         var currentScheduleWeek = await _context.CoverageSchedules
             .Where(s => s.Status == "Published")
@@ -47,13 +48,14 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
         DateTime endDateTime = currentScheduleWeek.endDate.ToDateTime(TimeOnly.MinValue)!;
 
         var openAlerts = await _context.CoverageGapAlerts
-            .Where(a => a.AlertStatus == "Open" && startDateTime <= a.CreatedAt.Date && a.CreatedAt.Date <= endDateTime)
+            .Where(a => startDateTime <= a.CreatedAt.Date && a.CreatedAt.Date <= endDateTime)
             .Select(a => new OpenAlertsResponseDto
             {
+                AlertId = a.CoverageGapAlertId,
                 Date = a.CoverageAssignment.CoverageDate,
                 Specialty = a.CoverageAssignment.Specialty.SpecialtyName,
                 Shift = a.CoverageAssignment.ShiftType,
-                RequestedBy = a.CoverageAssignment.Physician.User.FullName,
+                RequestedBy = a.AlertStatus == "Open" ? a.CoverageAssignment.Physician.User.FullName : a.Physician.User.FullName,
                 Status = a.AlertStatus,
                 CreatedAt = a.CreatedAt
             })
@@ -61,6 +63,30 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
         return openAlerts;
     }
 
+    public async Task<CoverageGapAlert?> GetAlertDetailsByIdAsync(int alertId)
+    {
+        return await _context.CoverageGapAlerts
+            .FirstOrDefaultAsync(a => a.CoverageGapAlertId == alertId);
+    }
+    public async Task<bool> UpdateAlertStatusToResolvedAsync(int alertId)
+    {
+        var alert = await _context.CoverageGapAlerts.FindAsync(alertId);
+        if (alert == null) return false;
+        alert.ResolvedAt = DateTime.UtcNow;        
+        alert.AlertStatus = "Resolved";
+        await _context.SaveChangesAsync();
+        return true;
+    }
+    public async Task<bool> UpdateAssignmentPhysicianAsync(int alertId, int physicianId)
+    {
+        var alert = await _context.CoverageGapAlerts
+            .Include(a => a.CoverageAssignment)
+            .FirstOrDefaultAsync(a => a.CoverageGapAlertId == alertId);
+        if (alert == null || alert.CoverageAssignment == null) return false;
+            alert.CoverageAssignment.PhysicianId = physicianId;
+            await _context.SaveChangesAsync();
+        return true;
+    }
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();

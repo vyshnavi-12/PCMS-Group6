@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 using PCMS_Backend.Data;
+using PCMS_Backend.Hubs;
 
 using PCMS_Backend.Interfaces.Repositories;
 using PCMS_Backend.Interfaces.Services;
@@ -52,8 +53,6 @@ builder.Services.AddScoped<ISwapRequestRepository, SwapRequestRepository>();
 builder.Services.AddScoped<ISwapRequestService, SwapRequestService>();
 builder.Services.AddScoped<ICoverageScheduleRepository, CoverageScheduleRepository>();
 
-
-
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<AuthService>();
 
@@ -63,7 +62,7 @@ builder.Services.AddScoped<ICoverageScheduleService, CoverageScheduleService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
-
+builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
 {
@@ -110,7 +109,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -134,5 +133,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<NotificationHub>("/notificationHub");
+app.MapHub<ScheduleHub>("/scheduleHub");
+app.MapHub<SwapRequestHub>("/swapRequests");
+
 
 app.Run();

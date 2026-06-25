@@ -1,69 +1,10 @@
 <script setup lang="ts">
-
-const weekDays = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su']
-
-const workloadData = [
-  {
-    specialty: 'CARDIOLOGY',
-    physicians: [
-      {
-        initials: 'JK',
-        name: 'Dr. Kumar',
-        shifts: ['D', null, 'N', 'N', null, null, null]
-      }
-    ]
-  },
-  {
-    specialty: 'NEUROLOGY',
-    physicians: [
-      {
-        initials: 'RL',
-        name: 'Dr. Lee',
-        shifts: [null, null, 'D', 'D', null, null, null]
-      }
-    ]
-  },
-  {
-    specialty: 'ORTHOPEDICS',
-    physicians: [
-      {
-        initials: 'MF',
-        name: 'Dr. Fritch',
-        shifts: [null, 'N', 'N', null, null, null, null]
-      }
-    ]
-  },
-  {
-    specialty: 'EMERGENCY MEDICINE',
-    physicians: [
-      {
-        initials: 'RO',
-        name: 'Dr. Okafor',
-        shifts: ['D', null, null, 'D', 'N', 'N', null]
-      }
-    ]
-  },
-  {
-    specialty: 'RADIOLOGY',
-    physicians: [
-      {
-        initials: 'TR',
-        name: 'Dr. Rao',
-        shifts: [null, null, null, 'D', 'N', 'D', null]
-      }
-    ]
-  },
-  {
-    specialty: 'ANESTHESIOLOGY',
-    physicians: [
-      {
-        initials: 'AS',
-        name: 'Dr. Smith',
-        shifts: ['N', 'N', null, null, 'D', null, null]
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
 const workloadData = ref<any[]>([])
+
+const weekDays = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su']
 
 // Helper → get initials from full name
 const getInitials = (name: string) => {

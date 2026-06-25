@@ -112,7 +112,7 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
     {
         return await _context.CoverageSchedules
             .Where(c => c.WeekStartDate == startDate)
-            .Select(c=>c.CoverageScheduleId)
+            .Select(c => c.CoverageScheduleId)
             .FirstOrDefaultAsync();
     }
     public async Task<List<PhysicianWorkloadDto>> GetPhysicianWorkloadLast60DaysAsync(DateTime fromDate)
@@ -140,35 +140,35 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
 
     public async Task<List<TopPhysicianRawDto>> GetTopPhysiciansPerSpecialtyRawAsync(int scheduleId)
     {
-        return await _context.CoverageAssignments
-    .Where(a => a.CoverageScheduleId == scheduleId)
-    .GroupBy(a => new
-    {
-        a.SpecialtyId,
-        SpecialtyName = a.Specialty.SpecialtyName
-    })
-    .Select(g => g
-        .GroupBy(a => new
-        {
-            a.PhysicianId,
-            Name = a.Physician.User.FullName
-        })
-        .Select(pg => new TopPhysicianRawDto
-        {
-            PhysicianId = pg.Key.PhysicianId,
-            PhysicianName = pg.Key.Name,
-            SpecialtyId = g.Key.SpecialtyId,
-            SpecialtyName = g.Key.SpecialtyName,
-            TotalAssignments = pg.Count()
-        })
-        .OrderByDescending(x => x.TotalAssignments)
-        .FirstOrDefault()
-    )
-    .Where(x => x != null)
-    .Select(x => x!)  
-    .ToListAsync();
-    }
+        var workloadData = await _context.CoverageAssignments
+            .Where(a => a.CoverageScheduleId == scheduleId)
+            .GroupBy(a => new
+            {
+                a.SpecialtyId,
+                SpecialtyName = a.Specialty.SpecialtyName,
+                a.PhysicianId,
+                PhysicianName = a.Physician.User.FullName
+            })
+            .Select(g => new TopPhysicianRawDto
+            {
+                SpecialtyId = g.Key.SpecialtyId,
+                SpecialtyName = g.Key.SpecialtyName,
+                PhysicianId = g.Key.PhysicianId,
+                PhysicianName = g.Key.PhysicianName,
+                TotalAssignments = g.Count()
+            })
+            .ToListAsync();
 
+        var result = workloadData
+            .GroupBy(x => new { x.SpecialtyId, x.SpecialtyName })
+            .Select(g => g
+                .OrderByDescending(x => x.TotalAssignments)
+                .First()
+            )
+            .ToList();
+
+        return result;
+    }
 
     public async Task<List<AssignmentRawDto>> GetAssignmentsByPhysiciansAsync(int scheduleId, List<int> physicianIds)
     {

@@ -8,6 +8,7 @@ public interface ICoverageAssignmentsRepository
     Task CreateAlertAsync(CoverageGapAlertDto alert);
 
     Task<IReadOnlyList<OpenAlertsResponseDto>> GetOpenAlertsAsync();
-    Task<List<TopPhysicianRawDto>> GetTopPhysiciansPerSpecialtyRawAsync(int scheduleId);
-    Task<List<AssignmentRawDto>> GetAssignmentsByPhysiciansAsync(int scheduleId, List<int> physicianIds);
+    Task SaveChangesAsync();
+
+
 }

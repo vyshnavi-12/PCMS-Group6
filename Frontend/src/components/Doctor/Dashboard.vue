@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { useScheduleStore } from '../../stores/scheduleStore'
 
 const router = useRouter()
+const scheduleStore = useScheduleStore()
 
 const currentWeek = ref('')
 const currentWeekIndex = ref(0)
 
-const rawSchedules = ref<any[]>([])
 const weekRanges = ref<any[]>([])
 const weekDates = ref<Date[]>([])
 
@@ -54,11 +54,13 @@ const formatHeaderDate = (date: Date) => {
 }
 
 const buildWeeks = () => {
-  if (rawSchedules.value.length === 0) return
+  const rawSchedules = scheduleStore.doctorSchedules
 
-  const sortedDates = rawSchedules.value
-    .map(item => parseDateOnly(item.date))
-    .sort((a, b) => a.getTime() - b.getTime())
+  if (rawSchedules.length === 0) return
+
+  const sortedDates = rawSchedules
+    .map((item: any) => parseDateOnly(item.date))
+    .sort((a: Date, b: Date) => a.getTime() - b.getTime())
 
   const firstDate = sortedDates[0]
   const lastDate = sortedDates[sortedDates.length - 1]
@@ -102,7 +104,7 @@ const buildCurrentWeekGrid = () => {
     weekDates.value.push(day)
   }
 
-  rawSchedules.value.forEach(item => {
+  scheduleStore.doctorSchedules.forEach((item: any) => {
     const assignmentDate = parseDateOnly(item.date)
 
     const diff = Math.floor(
@@ -122,17 +124,9 @@ const buildCurrentWeekGrid = () => {
   })
 }
 
-const fetchMySchedule = async () => {
+const fetchDashboard = async () => {
   try {
-    const response = await axios.get(
-      'https://localhost:7119/api/MySchedule',
-      {
-        withCredentials: true
-      }
-    )
-
-    rawSchedules.value = response.data.data
-
+    await scheduleStore.fetchDoctorSchedules()
     buildWeeks()
     buildCurrentWeekGrid()
   } catch (error) {
@@ -141,7 +135,7 @@ const fetchMySchedule = async () => {
 }
 
 onMounted(() => {
-  fetchMySchedule()
+  fetchDashboard()
 })
 
 const previousWeek = () => {
@@ -167,7 +161,7 @@ const assignmentCount = computed(() => {
 
   const selectedWeek = weekRanges.value[currentWeekIndex.value]
 
-  return rawSchedules.value.filter(item => {
+  return scheduleStore.doctorSchedules.filter((item: any) => {
     const assignmentDate = parseDateOnly(item.date)
 
     return (

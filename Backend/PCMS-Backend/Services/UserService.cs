@@ -115,6 +115,7 @@ public class UserService : IUserService
 
         var userResponse = new LoginResponseDto
         {
+            UserId = user.UserId,
             FullName = user.FullName,
             Role = user.Role.RoleName
         };

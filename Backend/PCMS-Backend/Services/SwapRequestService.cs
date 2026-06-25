@@ -10,20 +10,20 @@ public class SwapRequestService : ISwapRequestService
 {
     private readonly ISwapRequestRepository _repository;
     private readonly IPhysicianRepository _physicianRepository;
-    private readonly INotificationRepository _notificationRepository;
+    private readonly INotificationService _notificationService;
     private readonly IUserRepository _userRepository;
 
     public SwapRequestService(
     ISwapRequestRepository repository,
     IPhysicianRepository physicianRepository,
-    INotificationRepository notificationRepository,
-    IUserRepository userRepository
+    IUserRepository userRepository,
+    INotificationService notificationService
 )
     {
         _repository = repository;
         _physicianRepository = physicianRepository;
-        _notificationRepository = notificationRepository;
         _userRepository = userRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<Result<List<AvailableSwapTargetDto>>> GetAvailableTargetsAsync(
@@ -86,17 +86,11 @@ public class SwapRequestService : ISwapRequestService
 
         if (targetUserId.HasValue)
         {
-            var notification = new Notification
-            {
-                UserId = targetUserId.Value,
-                NotificationTitle = "New Swap Request",
-                NotificationMessage =
-                    $"Dr. {physician.User.FullName} requested a swap for {targetAssignment.ShiftType} shift on {targetAssignment.CoverageDate:yyyy-MM-dd}.",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _notificationRepository.CreateAsync(notification);
+            await _notificationService.CreateAndSendNotificationAsync(
+                targetUserId.Value,
+                "New Swap Request",
+                $"Dr. {physician.User.FullName} requested a swap for {targetAssignment.ShiftType} shift on {targetAssignment.CoverageDate:yyyy-MM-dd}."
+            );
         }
 
         return Result.Created("Swap request created");
@@ -164,34 +158,22 @@ public class SwapRequestService : ISwapRequestService
 
         if (requesterUserId.HasValue)
         {
-            var notification = new Notification
-            {
-                UserId = requesterUserId.Value,
-                NotificationTitle = "Swap Request Accepted",
-                NotificationMessage =
-                    $"Dr. {request.TargetPhysician.User.FullName} accepted your swap request. Waiting for supervisor approval.",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _notificationRepository.CreateAsync(notification);
+            await _notificationService.CreateAndSendNotificationAsync(
+                requesterUserId.Value,
+                "Swap Request Accepted",
+                $"Dr. {request.TargetPhysician.User.FullName} accepted your swap request. Waiting for supervisor approval."
+            );
         }
 
         var supervisor = await _userRepository.GetUserByIdWithRoleAsync(6);
 
         if (supervisor != null)
         {
-            var supervisorNotification = new Notification
-            {
-                UserId = supervisor.UserId,
-                NotificationTitle = "Swap Request Needs Approval",
-                NotificationMessage =
-                    $"Swap request between Dr. {request.RequestedByPhysician.User.FullName} and Dr. {request.TargetPhysician.User.FullName} is awaiting approval.",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _notificationRepository.CreateAsync(supervisorNotification);
+            await _notificationService.CreateAndSendNotificationAsync(
+                supervisor.UserId,
+                "Swap Request Needs Approval",
+                $"Swap request between Dr. {request.RequestedByPhysician.User.FullName} and Dr. {request.TargetPhysician.User.FullName} is awaiting approval."
+            );
         }
 
         return Result.Ok("Request approved");
@@ -216,35 +198,20 @@ public class SwapRequestService : ISwapRequestService
 
         if (requesterUserId.HasValue)
         {
-            var notification = new Notification
-            {
-                UserId = requesterUserId.Value,
-                NotificationTitle = "Swap Request Approved By Supervisor",
-                NotificationMessage =
-                    $"Supervisor. {request.ReviewedByUser?.FullName} approved the Swap request .",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _notificationRepository.CreateAsync(notification);
+            await _notificationService.CreateAndSendNotificationAsync(
+                requesterUserId.Value,
+                "Swap Request Approved By Supervisor",
+                $"Supervisor approved the swap request."
+            );
         }
-        var targetUserId=request.TargetPhysicianId; 
+        var targetUserId = request.TargetPhysician.UserId;
 
-       
+        await _notificationService.CreateAndSendNotificationAsync(
+            targetUserId.Value,
+            "Swap Request Approved By Supervisor",
+            $"Supervisor approved the swap request."
+        );
 
-      
-            var targetPhysicianNotification = new Notification
-            {
-                UserId = targetUserId,
-                NotificationTitle = "Swap Request Approved By Supervisor",
-                NotificationMessage =
-                    $"Supervisor. {request.ReviewedByUser?.FullName} approved the Swap request .",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _notificationRepository.CreateAsync(targetPhysicianNotification);
-        
 
         return Result.Ok("Request approved");
     }
@@ -265,17 +232,11 @@ public class SwapRequestService : ISwapRequestService
 
         if (requesterUserId.HasValue)
         {
-            var notification = new Notification
-            {
-                UserId = requesterUserId.Value,
-                NotificationTitle = "Swap Request Declined",
-                NotificationMessage =
-                    $"Dr. {request.TargetPhysician.User.FullName} declined your swap request for {request.CoverageAssignment.ShiftType} shift on {request.CoverageAssignment.CoverageDate:yyyy-MM-dd}.",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _notificationRepository.CreateAsync(notification);
+            await _notificationService.CreateAndSendNotificationAsync(
+                requesterUserId.Value,
+                "Swap Request Declined",
+                $"Dr. {request.TargetPhysician.User.FullName} declined your swap request for {request.CoverageAssignment.ShiftType} shift on {request.CoverageAssignment.CoverageDate:yyyy-MM-dd}."
+            );
         }
 
         return Result.Ok("Request declined");
@@ -298,35 +259,20 @@ public class SwapRequestService : ISwapRequestService
 
         if (requesterUserId.HasValue)
         {
-            var notification = new Notification
-            {
-                UserId = requesterUserId.Value,
-                NotificationTitle = "Swap Request Rejected By Supervisor",
-                NotificationMessage =
-                     $"Supervisor. {request.ReviewedByUser?.FullName} rejected the Swap request .",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _notificationRepository.CreateAsync(notification);
+            await _notificationService.CreateAndSendNotificationAsync(
+                requesterUserId.Value,
+                "Swap Request Rejected By Supervisor",
+                $"Supervisor rejected the swap request."
+            );
         }
 
-        var targetUserId = request.TargetPhysicianId;
+        var targetUserId = request.TargetPhysician.UserId;
 
-
-
-
-        var targetPhysicianNotification = new Notification
-        {
-            UserId = targetUserId,
-            NotificationTitle = "Swap Request Approved By Supervisor",
-            NotificationMessage =
-                $"Supervisor. {request.ReviewedByUser?.FullName} declined the Swap request .",
-            IsRead = false,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        await _notificationRepository.CreateAsync(targetPhysicianNotification);
+        await _notificationService.CreateAndSendNotificationAsync(
+            targetUserId.Value,
+            "Swap Request Rejected By Supervisor",
+            $"Supervisor rejected the swap request."
+        );
 
         return Result.Ok("Request Rejected");
     }

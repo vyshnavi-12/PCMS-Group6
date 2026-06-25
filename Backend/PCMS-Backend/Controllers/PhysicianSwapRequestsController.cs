@@ -79,14 +79,12 @@ public class PhysicianSwapRequestsController : ControllerBase
     }
 
     [HttpPut("{id}/accept")]
-    public async Task<IActionResult> AcceptRequest(int id, int userId)
+    public async Task<IActionResult> AcceptRequest(int id)
     {
-        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
+        if (User.GetCurrentUserId() is not int validUserId)
+            return Unauthorized("Invalid session token.");
 
-
-
-        var result = await _service
-            .AcceptRequestAsync(id, userId);
+        var result = await _service.AcceptRequestAsync(id, validUserId);
 
         return StatusCode(result.StatusCode ?? 500, result);
     }

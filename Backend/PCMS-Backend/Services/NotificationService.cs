@@ -1,17 +1,21 @@
-﻿using PCMS_Backend.Models;
+﻿using Microsoft.AspNetCore.SignalR;
+using PCMS_Backend.Models;
 using PCMS_Backend.Services;
 using PCMS_Backend.Shared;
+using PCMS_Backend.Hubs;
 
 public class NotificationService : INotificationService
 {
     private readonly INotificationRepository _repository;
+    private readonly IHubContext<NotificationHub> _hubContext;
     private readonly IAuditLogService _auditLogService; // added by me
 
 
-    public NotificationService(INotificationRepository repository, IAuditLogService auditLogService)
+    public NotificationService(INotificationRepository repository, IAuditLogService auditLogService, IHubContext<NotificationHub> hubContext)
     {
         _repository = repository;
         _auditLogService = auditLogService; // added by me
+        _hubContext = hubContext;
     }
 
 
@@ -48,23 +52,50 @@ public class NotificationService : INotificationService
 
         return Result.Ok("Notification marked as read.");
     }
-    public async Task CreateSchedulePublishedNotificationsAsync(
-    CoverageSchedule schedule)
+    public async Task CreateSchedulePublishedNotificationsAsync(CoverageSchedule schedule)
     {
-        var notifications = schedule.CoverageAssignments
+        var userIds = schedule.CoverageAssignments
             .Select(ca => ca.Physician.UserId)
             .Distinct()
-            .Select(userId => new Notification
-            {
-                UserId =(int) userId,
-                NotificationTitle = "On-Call Schedule Published",
-                NotificationMessage =
-                    $"You have been assigned on-call duties in '{schedule.ScheduleName}'. Please review your schedule.",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow
-            })
             .ToList();
 
-        await _repository.AddRangeAsync(notifications);
+        foreach (var userId in userIds)
+        {
+            if (userId != null)
+            {
+                await CreateAndSendNotificationAsync(
+                    (int)userId,
+                    "On-Call Schedule Published",
+                    $"You have been assigned on-call duties in '{schedule.ScheduleName}'. Please review your schedule."
+                );
+            }
+        }
+    }
+
+    public async Task CreateAndSendNotificationAsync(
+    int userId,
+    string title,
+    string message)
+    {
+        var notification = new Notification
+        {
+            UserId = userId,
+            NotificationTitle = title,
+            NotificationMessage = message,
+            IsRead = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _repository.CreateAsync(notification);
+
+        await _hubContext.Clients
+            .Group($"User_{userId}")
+            .SendAsync("ReceiveNotification", new
+            {
+                notificationId = notification.NotificationId,
+                title = notification.NotificationTitle,
+                message = notification.NotificationMessage,
+                createdAt = notification.CreatedAt
+            });
     }
 }

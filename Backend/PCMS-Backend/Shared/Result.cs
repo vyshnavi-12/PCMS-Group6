@@ -32,4 +32,6 @@ public class Result
 
     public static Result Unauthorized(string message = "Unauthorized") =>
             new() { Success = false, Message = message, StatusCode = StatusCodes.Status401Unauthorized };
+    public static Result ServerError(string message = "Internal server error") =>
+           new() { Success = false, Message = message, StatusCode = StatusCodes.Status500InternalServerError };
 }

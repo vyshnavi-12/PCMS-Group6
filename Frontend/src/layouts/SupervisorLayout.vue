@@ -59,17 +59,20 @@ const pageTitle = computed(() => {
   display: flex;
   min-height: 100vh;
   background: #f8fafc;
+  overflow: visible;
 }
 
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: visible;
 }
 
 .content-area {
-    flex: 1;
-    padding: 24px;
-    overflow: hidden;
+  flex: 1;
+  padding: 24px;
+  overflow: visible;
 }
 </style>

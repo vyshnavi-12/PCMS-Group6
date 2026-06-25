@@ -7,11 +7,16 @@ import SupervisorSideBar from '../components/Common/SupervisorSideBar.vue'
 import AppHeader from '../components/Common/AppHeader.vue'
 
 import { useNotificationStore } from '../stores/notificationStore'
-import { startNotificationSignalRConnection } from '../services/notificationSignalRService.ts'
+import { useSupervisorSwapRequestsStore } from '../stores/supervisorSwapRequestsStore'
+
+import { startNotificationSignalRConnection } from '../services/notificationSignalRService'
+import supervisorSwapSignalRService from '../services/supervisorSwapSignalRService'
 
 const route = useRoute()
 const toast = useToast()
-const store = useNotificationStore()
+
+const notificationStore = useNotificationStore()
+const swapRequestsStore = useSupervisorSwapRequestsStore()
 
 onMounted(async () => {
   const user = localStorage.getItem('loggedInUser')
@@ -22,7 +27,7 @@ onMounted(async () => {
   await startNotificationSignalRConnection(
     parsedUser.userId.toString(),
     (payload) => {
-      store.addNotification({
+      notificationStore.addNotification({
         notificationId: payload.notificationId,
         userId: parsedUser.userId,
         notificationTitle: payload.title,
@@ -40,6 +45,15 @@ onMounted(async () => {
       })
     }
   )
+
+  await supervisorSwapSignalRService.startConnection(
+    parsedUser.userId.toString()
+  )
+
+  supervisorSwapSignalRService.onRefreshSupervisorRequests(async () => {
+    console.log('Supervisor swap refresh received')
+    await swapRequestsStore.fetchSupervisorRequests()
+  })
 })
 
 const pageTitle = computed(() => {

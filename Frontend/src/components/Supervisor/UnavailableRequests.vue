@@ -294,4 +294,10 @@ td {
 tbody tr:hover {
     background: #fafbfc;
 }
+
+.empty-state {
+    text-align: center;
+    padding: 30px;
+    color: #64748b;
+}
 </style>

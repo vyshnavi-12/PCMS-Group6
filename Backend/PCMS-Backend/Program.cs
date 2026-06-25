@@ -109,7 +109,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -136,5 +136,7 @@ app.MapControllers();
 
 app.MapHub<NotificationHub>("/notificationHub");
 app.MapHub<ScheduleHub>("/scheduleHub");
+app.MapHub<SwapRequestHub>("/swapRequests");
+
 
 app.Run();

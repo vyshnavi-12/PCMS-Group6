@@ -35,7 +35,7 @@ const handleLogout = async () => {
         </div>
 
         <span v-if="!isSidebarCollapsed" class="logo-text">
-          PCMS
+          Care On-Call
         </span>
       </div>
 
@@ -166,7 +166,7 @@ const handleLogout = async () => {
 }
 
 .logo-text {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: 0.5px;
 }

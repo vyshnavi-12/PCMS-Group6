@@ -43,7 +43,7 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
             .Where(s => s.Status == "Published")
             .Select(s => new { startDate = s.WeekStartDate, endDate = s.WeekEndDate })
             .FirstOrDefaultAsync();
-        if(currentScheduleWeek == null) return new List<OpenAlertsResponseDto>();
+        if (currentScheduleWeek == null) return new List<OpenAlertsResponseDto>();
         DateTime startDateTime = currentScheduleWeek.startDate.ToDateTime(TimeOnly.MinValue)!;
         DateTime endDateTime = currentScheduleWeek.endDate.ToDateTime(TimeOnly.MinValue)!;
 
@@ -87,5 +87,10 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
             await _context.SaveChangesAsync();
         return true;
     }
+    public async Task SaveChangesAsync()
+    {
+        await _context.SaveChangesAsync();
+    }
+
 
 }

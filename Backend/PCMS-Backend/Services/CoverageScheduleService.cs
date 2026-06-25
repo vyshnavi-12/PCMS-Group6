@@ -72,9 +72,8 @@ public class CoverageScheduleService : ICoverageScheduleService
 
     private DateTime GetCurrStartDate(DateTime today)
     {
-        int daysToAdd = ((int)DayOfWeek.Monday - (int)today.DayOfWeek ) % 7;
+        int daysToAdd = ((int)DayOfWeek.Monday - (int)today.DayOfWeek ) ;
 
-        // ✅ If today is Monday → move to next week
        
 
 
@@ -102,6 +101,53 @@ public class CoverageScheduleService : ICoverageScheduleService
     .ToList();
 
         return Result<IReadOnlyList<CoverageScheduleDto>>.Ok(response);
+    }
+
+
+    public async Task<Result<List<TopPhysicianPerSpecialtyDto>>> GetTopPerSpecialty()
+    {
+        var startDate = GetCurrStartDate(DateTime.UtcNow);
+        
+
+
+        var startDateOnly = DateOnly.FromDateTime(startDate);
+
+        int scheduleId = await _coverageScheduleRepository.GetScheduleIdByStartDate(startDateOnly);
+
+        var topData = await _coverageScheduleRepository.GetTopPhysiciansPerSpecialtyRawAsync(scheduleId);
+
+        var physicianIds = topData
+            .Select(x => x.PhysicianId)
+            .ToList();
+
+       
+        var assignments = await _coverageScheduleRepository.GetAssignmentsByPhysiciansAsync(scheduleId, physicianIds);
+
+        
+        var result = topData.Select(x => new TopPhysicianPerSpecialtyDto
+        {
+            PhysicianId = x.PhysicianId,
+            PhysicianName = x.PhysicianName,
+
+            SpecialtyId = x.SpecialtyId,
+            SpecialtyName = x.SpecialtyName,
+
+            TotalAssignments = x.TotalAssignments,
+
+            Assignments = assignments
+                .Where(a => a.PhysicianId == x.PhysicianId &&
+                            a.SpecialtyId == x.SpecialtyId)
+                .Select(a => new AssignmentInfoDto
+                {
+                    Date = a.Date,
+                    ShiftType = a.ShiftType
+                })
+                .ToList()
+
+        }).ToList();
+
+        return Result<List<TopPhysicianPerSpecialtyDto>>
+            .Ok(result, "Top physicians per specialty fetched successfully");
     }
 
     public async Task<Result<CoverageScheduleDetailDto>> GetScheduleByIdAsync(int scheduleId)

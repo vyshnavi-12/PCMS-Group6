@@ -60,21 +60,77 @@ const workloadData = [
         initials: 'AS',
         name: 'Dr. Smith',
         shifts: ['N', 'N', null, null, 'D', null, null]
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+
+const workloadData = ref<any[]>([])
+
+// Helper → get initials from full name
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+}
+
+// Helper → build 7-day shift array
+const buildShifts = (assignments: any[]) => {
+  const shifts: (string | null)[] = new Array(7).fill(null)
+
+  // get current week (Mon → Sun)
+  const today = new Date()
+  const start = new Date(today)
+  start.setDate(today.getDate() - today.getDay() + 1)
+
+  assignments.forEach(a => {
+    const date = new Date(a.date)
+    const diff = Math.floor((date.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (diff >= 0 && diff < 7) {
+      shifts[diff] = a.shiftType === 'Day' ? 'D' : 'N'
+    }
+  })
+
+  return shifts
+}
+
+const fetchData = async () => {
+  try {
+    const res = await axios.get(
+      'https://localhost:7119/api/supervisor/dashboard/top-per-specialty',
+      {withCredentials:true}
+    )
+
+    const apiData = res.data.data
+
+    // Transform API → UI structure
+    const grouped: any = {}
+
+    apiData.forEach((item: any) => {
+      if (!grouped[item.specialtyName]) {
+        grouped[item.specialtyName] = {
+          specialty: item.specialtyName.toUpperCase(),
+          physicians: []
+        }
       }
-    ]
-  },
-  {
-    specialty: 'GENERAL SURGERY',
-    physicians: [
-      {
-        initials: 'MB',
-        name: 'Dr. Brown',
-        shifts: [null, 'D', 'D', null, null, 'N', null]
-      }
-    ]
+
+      grouped[item.specialtyName].physicians.push({
+        initials: getInitials(item.physicianName),
+        name: item.physicianName,
+        shifts: buildShifts(item.assignments)
+      })
+    })
+
+    workloadData.value = Object.values(grouped)
+  } catch (error) {
+    console.error('Error fetching workload data:', error)
   }
-]
+}
+
+onMounted(fetchData)
 </script>
+
 
 <template>
   <div class="workload-card">

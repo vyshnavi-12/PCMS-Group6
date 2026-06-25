@@ -15,4 +15,8 @@ public interface ICoverageAssignmentsRepository
 
     Task<bool> UpdateAlertStatusToResolvedAsync(int alertId);
 
+    Task<IReadOnlyList<OpenAlertsResponseDto>> GetOpenAlertsAsync();
+    Task SaveChangesAsync();
+
+
 }

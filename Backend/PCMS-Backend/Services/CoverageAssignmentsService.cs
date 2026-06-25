@@ -85,4 +85,11 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         return Result.NoContent();
     }
 
+    public async Task<Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>> GetUnavailableRequestsPerSpecialtyAsync()
+    {
+        var data =  await _coverageAssignmentsRepo.GetUnavailableRequestsPerSpecialtyAsync();
+        if (data == null) return Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>.ServerError("Failed to fetch data");
+        return Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>.Ok(data);
+    }
+
 }

@@ -62,4 +62,12 @@ public async Task<IActionResult> GetOpenAlertDetails(int alertId)
         var result = await _coverageService.DeclineUnavailableRequestAsync(alertId);
         return result.ToActionResult();
     }
+
+    [HttpGet("alerts/unavailable-requests-per-specialty")]
+    [Authorize(Roles = "Supervisor")]
+    public async Task<IActionResult> GetUnavailableRequestsPerSpecialty()
+    {
+        var result = await _coverageService.GetUnavailableRequestsPerSpecialtyAsync();
+        return result.ToActionResult();
+    }
 }

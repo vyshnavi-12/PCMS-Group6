@@ -11,4 +11,5 @@ public interface ICoverageAssignmentsService
     Task<Result> UpdateAlertPhysicianAsync(int alertId, int physicianId);
 
     Task<Result> DeclineUnavailableRequestAsync(int alertId);
+    Task<Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>> GetUnavailableRequestsPerSpecialtyAsync();
 }

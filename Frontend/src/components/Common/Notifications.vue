@@ -3,7 +3,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useNotificationStore } from '../../stores/notificationStore'
 
-const activeTab = ref('All')
+const activeTab = ref('Unread')
 const loading = ref(false)
 const errorMessage = ref('')
 const toast = useToast()
@@ -73,12 +73,12 @@ const markAllNotificationsRead = async () => {
 
     <div class="notifications-toolbar">
       <div class="tabs">
-        <span :class="{ active: activeTab === 'All' }" @click="activeTab = 'All'">
-          All
-        </span>
-
         <span :class="{ active: activeTab === 'Unread' }" @click="activeTab = 'Unread'">
           Unread
+        </span>
+
+        <span :class="{ active: activeTab === 'All' }" @click="activeTab = 'All'">
+          All
         </span>
       </div>
 

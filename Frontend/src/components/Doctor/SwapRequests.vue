@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
+import { storeToRefs } from 'pinia'
+import { useRoute } from 'vue-router'
 import NewSwapRequest from './NewSwapRequest.vue'
 
+import { useDoctorSwapRequestsStore } from '../../stores/doctorSwapRequestsStore'
+
 const route = useRoute()
-const router = useRouter()
+
+const swapRequestsStore = useDoctorSwapRequestsStore()
 
 const showNewRequest = ref(false)
 const activeTab = ref('My Requests')
 
-const myRequests = ref<any[]>([])
-const requestsToMe = ref<any[]>([])
+const { myRequests, requestsToMe } = storeToRefs(swapRequestsStore)
 
 const openNewRequest = () => {
     showNewRequest.value = true
@@ -22,35 +24,12 @@ const goBackToList = () => {
 }
 
 const fetchSwapRequests = async () => {
-    try {
-        const myResponse = await axios.get(
-            'https://localhost:7119/api/Physician/SwapRequests/my',
-            { withCredentials: true }
-        )
-
-        myRequests.value = myResponse.data.data
-
-        const toMeResponse = await axios.get(
-            'https://localhost:7119/api/Physician/SwapRequests/to-me',
-            { withCredentials: true }
-        )
-
-        requestsToMe.value = toMeResponse.data.data
-
-    } catch (error) {
-        console.error(error)
-    }
+    await swapRequestsStore.fetchDoctorRequests()
 }
 
 const acceptRequest = async (requestId: number) => {
     try {
-        await axios.put(
-            `https://localhost:7119/api/Physician/SwapRequests/${requestId}/accept`,
-            {},
-            { withCredentials: true }
-        )
-
-        fetchSwapRequests()
+        await swapRequestsStore.acceptRequest(requestId)
     } catch (error) {
         console.error(error)
     }
@@ -58,13 +37,7 @@ const acceptRequest = async (requestId: number) => {
 
 const declineRequest = async (requestId: number) => {
     try {
-        await axios.put(
-            `https://localhost:7119/api/Physician/SwapRequests/${requestId}/decline`,
-            {},
-            { withCredentials: true }
-        )
-
-        fetchSwapRequests()
+        await swapRequestsStore.declineRequest(requestId)
     } catch (error) {
         console.error(error)
     }
@@ -93,16 +66,14 @@ const handleRequestCreated = async () => {
     activeTab.value = 'My Requests'
 
     await fetchSwapRequests()
-
-    router.replace('/doctor/swap-requests')
 }
 
-onMounted(() => {
+onMounted(async () => {
     if (route.query.new === 'true') {
         showNewRequest.value = true
     }
 
-    fetchSwapRequests()
+    await fetchSwapRequests()
 })
 </script>
 
@@ -116,12 +87,12 @@ onMounted(() => {
 
                 <button class="tab-button" :class="{ active: activeTab === 'My Requests' }"
                     @click="activeTab = 'My Requests'">
-                    My Requests
+                    My Requests ({{ myRequests.length }})
                 </button>
 
                 <button class="tab-button" :class="{ active: activeTab === 'Requests To Me' }"
                     @click="activeTab = 'Requests To Me'">
-                    Requests To Me
+                    Requests To Me ({{ requestsToMe.length }})
                 </button>
 
             </div>

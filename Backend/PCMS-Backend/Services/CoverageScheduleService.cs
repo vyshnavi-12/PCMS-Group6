@@ -70,6 +70,17 @@ public class CoverageScheduleService : ICoverageScheduleService
         return today.AddDays(daysToAdd).Date;
     }
 
+    private DateTime GetCurrStartDate(DateTime today)
+    {
+        int daysToAdd = ((int)DayOfWeek.Monday - (int)today.DayOfWeek ) % 7;
+
+        // ✅ If today is Monday → move to next week
+       
+
+
+        return today.AddDays(daysToAdd).Date;
+    }
+
     // =========================================
     // ✅ EXISTING METHODS (UNCHANGED)
     // =========================================

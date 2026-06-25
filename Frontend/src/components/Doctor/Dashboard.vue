@@ -256,6 +256,8 @@ const assignmentCount = computed(() => {
 
         <thead>
           <tr>
+            <th class="shift-column">Shift</th>
+
             <th v-for="date in weekDates" :key="date.toISOString()">
               {{ formatHeaderDate(date) }}
             </th>
@@ -263,28 +265,39 @@ const assignmentCount = computed(() => {
         </thead>
 
         <tbody>
+  <tr v-for="row in schedule" :key="row.label">
 
-          <tr v-for="row in schedule" :key="row.label">
+    <!-- NEW COLUMN -->
+    <td class="shift-column">
+      <div class="shift-name">
+        {{ row.label }}
+      </div>
+    </td>
 
-            <td v-for="(assignment, index) in row.assignments" :key="`${row.label}-${index}`">
-              <div v-if="assignment" :class="[
-                row.label === 'DAY'
-                  ? 'day-badge'
-                  : row.label === 'NIGHT'
-                    ? 'night-badge'
-                    : 'off-badge'
-              ]">
-                {{ assignment }}
-              </div>
+    <td
+      v-for="(assignment, index) in row.assignments"
+      :key="`${row.label}-${index}`"
+    >
+      <div
+        v-if="assignment"
+        :class="[
+          row.label === 'DAY'
+            ? 'day-badge'
+            : row.label === 'NIGHT'
+              ? 'night-badge'
+              : 'off-badge'
+        ]"
+      >
+        {{ assignment }}
+      </div>
 
-              <span v-else class="empty-slot">
-                —
-              </span>
-            </td>
+      <span v-else class="empty-slot">
+        —
+      </span>
+    </td>
 
-          </tr>
-
-        </tbody>
+  </tr>
+</tbody>
 
       </table>
 

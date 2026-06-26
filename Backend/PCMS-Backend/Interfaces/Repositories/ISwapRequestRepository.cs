@@ -22,4 +22,5 @@ public interface ISwapRequestRepository
     Task<List<SwapRequest>> GetSupervisorRequestsAsync();
 
     Task SaveChangesAsync();
+    Task<int> GetTargetAcceptedCountAsync();
 }

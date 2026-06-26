@@ -23,9 +23,8 @@ public class SwapRequestService : ISwapRequestService
     IPhysicianRepository physicianRepository,
     IUserRepository userRepository,
     INotificationService notificationService,
-    IHubContext<SwapRequestHub> hubContext
+    IHubContext<SwapRequestHub> hubContext,
     INotificationRepository notificationRepository,
-    IUserRepository userRepository,
     ICoverageAssignmentsRepository coverageAssignmentsRepository
 )
     {
@@ -223,12 +222,6 @@ public class SwapRequestService : ISwapRequestService
 
         //await _repository.SaveChangesAsync();
 
-
-
-
-
-
-
         //    var targetPhysician = await _physicianRepository
         //.GetByIdAsync(request.TargetPhysicianId);
 
@@ -257,18 +250,18 @@ public class SwapRequestService : ISwapRequestService
             );
         }
 
-        var targetUserId = request.TargetPhysician.UserId;
+        var targetUserId = swapRequest.TargetPhysician.UserId;
 
         await _notificationService.CreateAndSendNotificationAsync(
-            targetUserId,
+            targetUserId.Value,
             "Swap Request Approved By Supervisor",
             $"Supervisor approved the swap request."
         );
 
-        await _hubContext.Clients.Group($"User_{request.RequestedByPhysician.UserId}")
+        await _hubContext.Clients.Group($"User_{swapRequest.RequestedByPhysician.UserId}")
             .SendAsync("RefreshSwapRequests");
 
-        await _hubContext.Clients.Group($"User_{request.TargetPhysician.UserId}")
+        await _hubContext.Clients.Group($"User_{swapRequest.TargetPhysician.UserId}")
             .SendAsync("RefreshSwapRequests");
 
         await _hubContext.Clients.Group("User_6")

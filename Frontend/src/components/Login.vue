@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from 'primevue/usetoast'
 
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
@@ -10,6 +11,7 @@ import Button from 'primevue/button'
 import { loginUser } from '../services/authService'
 
 const router = useRouter()
+const toast = useToast()
 
 const email = ref('')
 const password = ref('')
@@ -44,6 +46,13 @@ const handleLogin = async () => {
 
     const user = response.data
 
+    toast.add({
+      severity: 'success',
+      summary: 'Login Successful',
+      detail: `Welcome ${user.fullName || ''}`,
+      life: 3000
+    })
+
     localStorage.setItem(
       "loggedInUser",
       JSON.stringify(user)
@@ -56,8 +65,14 @@ const handleLogin = async () => {
     }
   } catch (error: any) {
     loginError.value =
-      error?.response?.data?.message ||
-      "Login failed"
+      error?.response?.data?.message || "Login failed"
+
+    toast.add({
+      severity: 'error',
+      summary: 'Login Failed',
+      detail: loginError.value,
+      life: 3000
+    })
   }
 }
 </script>
@@ -125,13 +140,7 @@ const handleLogin = async () => {
               </RouterLink>
             </div>
 
-            <Password
-              v-model="password"
-              :feedback="false"
-              toggleMask
-              placeholder="Enter your password"
-              fluid
-            />
+            <Password v-model="password" :feedback="false" toggleMask placeholder="Enter your password" fluid />
 
             <small v-if="submitted && password.length === 0" class="error-text">
               Password is required

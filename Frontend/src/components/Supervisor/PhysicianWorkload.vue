@@ -1,11 +1,8 @@
-
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
 const workloadData = ref<any[]>([])
-const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const weekDays = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su']
 

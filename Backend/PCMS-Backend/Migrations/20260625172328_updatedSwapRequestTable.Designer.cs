@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PCMS_Backend.Data;
 
@@ -11,9 +12,11 @@ using PCMS_Backend.Data;
 namespace PCMS_Backend.Migrations
 {
     [DbContext(typeof(PcmsDbContext))]
-    partial class PcmsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260625172328_updatedSwapRequestTable")]
+    partial class updatedSwapRequestTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -9,7 +9,11 @@ namespace PCMS_Backend.Models;
         
         public int SwapRequestId { get; set; }
 
-        public int CoverageAssignmentId { get; set; }
+        public int RequestedPhysicianCoverageAssignmentId { get; set; }
+        
+        public int TargetedPhysicianCoverageAssignmentId{ get; set; }
+
+    
 
         public int RequestedByPhysicianId { get; set; }
 
@@ -27,9 +31,10 @@ namespace PCMS_Backend.Models;
 
         public DateTime? ReviewedAt { get; set; }
 
-        public CoverageAssignment CoverageAssignment { get; set; } = default!;
+        public CoverageAssignment RequestedPhysicianCoverageAssignment { get; set; } = default!;
+        public CoverageAssignment TargetedPhysicianCoverageAssignment { get; set; } = default!;
 
-        public Physician RequestedByPhysician { get; set; } = default!;
+    public Physician RequestedByPhysician { get; set; } = default!;
 
         public Physician TargetPhysician { get; set; } = default!;
 

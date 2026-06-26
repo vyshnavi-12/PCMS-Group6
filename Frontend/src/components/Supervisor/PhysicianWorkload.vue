@@ -20,12 +20,19 @@ const buildShifts = (assignments: any[]) => {
   const shifts: (string | null)[] = new Array(7).fill(null)
 
   // get current week (Mon → Sun)
-  const today = new Date()
-  const start = new Date(today)
-  start.setDate(today.getDate() - today.getDay() + 1)
+
+ const today = new Date()
+const day = today.getDay()
+
+// convert Sunday (0) → 7
+const normalizedDay = day === 0 ? 7 : day
+
+const start = new Date(today)
+start.setDate(today.getDate() - normalizedDay + 1)
+start.setHours(0, 0, 0, 0)
 
   assignments.forEach(a => {
-    const date = new Date(a.date)
+    const date = new Date(a.date + 'T00:00:00')
     const diff = Math.floor((date.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
 
     if (diff >= 0 && diff < 7) {
@@ -71,8 +78,6 @@ const fetchData = async () => {
 
 onMounted(fetchData)
 </script>
-
-
 <template>
   <div class="workload-card">
     <div class="card-header">

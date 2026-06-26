@@ -14,16 +14,22 @@ const fetchUnavailableRequests =  async() =>
 }
 
 const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    
-    const date = new Date(dateString);
-    
+    if (!dateString) return ''
+
+    const parts = dateString.split('-')
+    const year = Number(parts[0])
+    const month = Number(parts[1]) - 1
+    const day = Number(parts[2])
+
+    const date = new Date(year, month, day)
+
     return date.toLocaleDateString('en-US', {
-        month: 'short', 
-        day: 'numeric', 
+        month: 'short',
+        day: 'numeric',
         year: 'numeric'
-    });
+    })
 }
+
 const openCount = computed(() => {
     return gapAlerts.value.filter(g => g.status === 'Open').length;
 });
@@ -120,7 +126,7 @@ onMounted(() =>
                     <tbody>
                         <tr v-for="gap in filteredGaps" :key="gap.id">
 
-                            <td>{{ formatDate(gap.date) }}</td>
+                            <td>{{ formatDate(gap.date)}}</td>
                             <td>{{ gap.specialty }}</td>
                             <td>{{ gap.shift }}</td>
                             <td>{{ gap.requestedBy }}</td>

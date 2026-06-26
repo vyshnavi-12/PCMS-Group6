@@ -28,5 +28,6 @@ public class CoverageAssignment
 
     public ICollection<CoverageGapAlert>? CoverageGapAlerts { get; set; }
 
-    public ICollection<SwapRequest>? SwapRequests { get; set; }
+    public ICollection<SwapRequest>? RequestedSwapRequests { get; set; }
+    public ICollection<SwapRequest>? TargetedSwapRequests { get; set; }
 }

@@ -4,7 +4,8 @@ public class MySwapRequestDto
 {
     public int SwapRequestId { get; set; }
 
-    public string Date { get; set; } = default!;
+    public string CurrentDate { get; set; } = default!;
+    public string RequestedDate { get; set; } = default!;
 
     public string Shift { get; set; } = default!;
 

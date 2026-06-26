@@ -15,20 +15,23 @@ public class CoverageScheduleService : ICoverageScheduleService
     private readonly ICoverageScheduleRepository _coverageScheduleRepository;
     private readonly INotificationService _notificationService;
     private readonly IHubContext<ScheduleHub> _scheduleHubContext;
+    private readonly IAuditLogService _auditLogService;
+
 
 
 
     public CoverageScheduleService(
-    ICoverageScheduleRepository coverageScheduleRepository,
-    INotificationService notificationService,
-    IAuditLogService auditLogService,
-    IHubContext<ScheduleHub> scheduleHubContext)
+       ICoverageScheduleRepository coverageScheduleRepository,
+       INotificationService notificationService,
+       IAuditLogService auditLogService,
+       IHubContext<ScheduleHub> scheduleHubContext)
     {
         _coverageScheduleRepository = coverageScheduleRepository;
         _notificationService = notificationService;
+        _auditLogService = auditLogService;   // ✅ assign
         _scheduleHubContext = scheduleHubContext;
-
     }
+
     private List<Slot> GenerateSlots(DateTime startDate)
     {
         var slots = new List<Slot>();
@@ -413,21 +416,11 @@ public class CoverageScheduleService : ICoverageScheduleService
         var schedule = await _coverageScheduleRepository
             .GetScheduleWithAssignmentsAsync(scheduleId);
 
-        // ✅ NOT FOUND
         if (schedule is null)
-        {
             return Result<bool>.NotFound("Schedule not found.");
-        }
 
-        // ✅ ALREADY PUBLISHED CHECK
         if (schedule.Status == "Published")
-        {
             return Result<bool>.BadRequest("Schedule is already published.");
-        }
-
-        // ======================================
-        // ✅ PUBLISH
-        // ======================================
 
         schedule.Status = "Published";
         schedule.PublishedAt = DateTime.UtcNow;
@@ -458,8 +451,13 @@ public class CoverageScheduleService : ICoverageScheduleService
 
         await _notificationService.CreateSchedulePublishedNotificationsAsync(schedule);
 
-
-
+        // ✅ Audit log entry
+        await _auditLogService.LogActionAsync(
+            "PublishSchedule",
+            "CoverageSchedule",
+            schedule.CoverageScheduleId,
+            userId
+        );
 
         return Result<bool>.Ok(true);
     }

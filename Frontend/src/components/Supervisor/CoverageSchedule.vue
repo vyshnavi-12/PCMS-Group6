@@ -53,6 +53,10 @@ const fetchAllSchedules = async () => {
   try {
     await scheduleStore.fetchSchedules()
 
+    scheduleStore.schedules.sort((a: any, b: any) =>
+      new Date(a.weekStartDate).getTime() - new Date(b.weekStartDate).getTime()
+    )
+
     weeks.value = scheduleStore.schedules.map((schedule: any) =>
       formatWeekRange(schedule.weekStartDate, schedule.weekEndDate)
     )
@@ -98,6 +102,10 @@ const fetchScheduleDetails = async () => {
     scheduleStatus.value = scheduleData.status.toUpperCase()
 
     const assignments = scheduleData.assignments
+
+    assignments.sort((a: any, b: any) =>
+      new Date(a.coverageDate).getTime() - new Date(b.coverageDate).getTime()
+    )
 
     const physicianSet = new Set<string>()
     const specialtySet = new Set<string>()

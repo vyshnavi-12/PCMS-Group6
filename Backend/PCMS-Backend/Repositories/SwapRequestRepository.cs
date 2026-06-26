@@ -53,7 +53,9 @@ public class SwapRequestRepository : ISwapRequestRepository
 )
     {
         return await _context.SwapRequests
-            .Include(s => s.CoverageAssignment)
+            .Include(s => s.RequestedPhysicianCoverageAssignment)
+            .Include(s=>s.TargetedPhysicianCoverageAssignment)
+
             .Include(s => s.TargetPhysician)
                 .ThenInclude(p => p.User)
             .Where(s => s.RequestedByPhysicianId == physicianId)
@@ -66,7 +68,8 @@ public class SwapRequestRepository : ISwapRequestRepository
 )
     {
         return await _context.SwapRequests
-            .Include(s => s.CoverageAssignment)
+            .Include(s => s.TargetedPhysicianCoverageAssignment)
+            .Include(s=>s.RequestedPhysicianCoverageAssignment)
             .Include(s => s.RequestedByPhysician)
                 .ThenInclude(p => p.User)
             .Where(s => s.TargetPhysicianId == physicianId)
@@ -83,7 +86,8 @@ public class SwapRequestRepository : ISwapRequestRepository
                 .ThenInclude(p => p.User)
             .Include(s => s.TargetPhysician)
                 .ThenInclude(p => p.User)
-            .Include(s => s.CoverageAssignment)
+            .Include(s => s.RequestedPhysicianCoverageAssignment)
+            .Include(s=>s.TargetedPhysicianCoverageAssignment)
             .FirstOrDefaultAsync(s =>
                 s.SwapRequestId == swapRequestId);
             }
@@ -95,7 +99,8 @@ public class SwapRequestRepository : ISwapRequestRepository
                 .ThenInclude(p => p.User)
             .Include(s => s.TargetPhysician)
                 .ThenInclude(p => p.User)
-            .Include(s => s.CoverageAssignment)
+            .Include(s => s.RequestedPhysicianCoverageAssignment)
+            .Include(s=>s.TargetedPhysicianCoverageAssignment)
             .Where(s => s.RequestStatus == "TARGET_ACCEPTED" || s.ReviewedByUserId != null)
             .OrderByDescending(s => s.RequestedAt)
             .ToListAsync();
@@ -104,5 +109,12 @@ public class SwapRequestRepository : ISwapRequestRepository
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<int> GetPhysiciansSwapRequestsCount(int physicianId)
+    {
+        return await _context.SwapRequests
+            .Where(s=>(s.RequestedByPhysicianId == physicianId || s.TargetPhysicianId==physicianId) )
+            .CountAsync();
     }
 }

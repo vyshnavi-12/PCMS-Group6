@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using PCMS_Backend.DTOs;
 using PCMS_Backend.Hubs;
 using PCMS_Backend.Interfaces.Repositories;
@@ -14,6 +15,7 @@ public class SwapRequestService : ISwapRequestService
     private readonly IPhysicianRepository _physicianRepository;
     private readonly INotificationService _notificationService;
     private readonly IUserRepository _userRepository;
+    private readonly ICoverageAssignmentsRepository _coverageAssignmentsRepository;
     private readonly IHubContext<SwapRequestHub> _hubContext;
 
     public SwapRequestService(
@@ -22,6 +24,9 @@ public class SwapRequestService : ISwapRequestService
     IUserRepository userRepository,
     INotificationService notificationService,
     IHubContext<SwapRequestHub> hubContext
+    INotificationRepository notificationRepository,
+    IUserRepository userRepository,
+    ICoverageAssignmentsRepository coverageAssignmentsRepository
 )
     {
         _repository = repository;
@@ -29,6 +34,7 @@ public class SwapRequestService : ISwapRequestService
         _userRepository = userRepository;
         _notificationService = notificationService;
         _hubContext = hubContext;
+        _coverageAssignmentsRepository = coverageAssignmentsRepository;
     }
 
 
@@ -64,14 +70,15 @@ public class SwapRequestService : ISwapRequestService
         if (physician == null)
             return Result.NotFound("Physician not found");
 
-        var targetAssignment = await _repository.GetAssignmentByIdAsync(dto.CoverageAssignmentId);
+        var targetAssignment = await _repository.GetAssignmentByIdAsync(dto.TargetedPhysicianCoverageAssignmentId);
         if (targetAssignment == null)
             return Result.NotFound("Assignment not found");
 
         var request = new SwapRequest
         {
-            CoverageAssignmentId = dto.CoverageAssignmentId,
+            RequestedPhysicianCoverageAssignmentId = dto.RequestedPhysicianCoverageAssignmentId,
             RequestedByPhysicianId = physician.PhysicianId,
+            TargetedPhysicianCoverageAssignmentId=dto.TargetedPhysicianCoverageAssignmentId,
             TargetPhysicianId = dto.TargetPhysicianId,
             RequestComments = dto.RequestComments,
             RequestStatus = "PENDING_TARGET",
@@ -84,25 +91,17 @@ public class SwapRequestService : ISwapRequestService
         var targetUserId = targetAssignment.Physician.UserId;
         if (targetUserId.HasValue)
         {
-            // ✅ Send notification
             await _notificationService.CreateAndSendNotificationAsync(
                 targetUserId.Value,
                 "New Swap Request",
                 $"Dr. {physician.User.FullName} requested a swap for {targetAssignment.ShiftType} shift on {targetAssignment.CoverageDate:yyyy-MM-dd}."
             );
 
-            // ✅ Push real-time swap request via SignalR
             await _hubContext.Clients.Group($"User_{targetUserId.Value}")
-                .SendAsync("ReceiveSwapRequest", new
-                {
-                    swapRequestId = request.SwapRequestId,
-                    date = targetAssignment.CoverageDate.ToString("yyyy-MM-dd"),
-                    shift = targetAssignment.ShiftType,
-                    requestedBy = physician.User.FullName,
-                    reason = request.RequestComments,
-                    requestedOn = request.RequestedAt.ToString("yyyy-MM-dd HH:mm"),
-                    status = request.RequestStatus
-                });
+               .SendAsync("RefreshSwapRequests");
+
+            await _hubContext.Clients.Group($"User_{userId}")
+               .SendAsync("RefreshSwapRequests");
         }
 
         return Result.Created("Swap request created");
@@ -116,12 +115,14 @@ public class SwapRequestService : ISwapRequestService
             return Result<List<MySwapRequestDto>>.NotFound("Physician not found");
 
         var requests = await _repository.GetMyRequestsAsync(physician.PhysicianId);
+        //changing MySwapRequestDto
 
         var response = requests.Select(r => new MySwapRequestDto
         {
             SwapRequestId = r.SwapRequestId,
-            Date = r.CoverageAssignment.CoverageDate.ToString("yyyy-MM-dd"),
-            Shift = r.CoverageAssignment.ShiftType,
+            CurrentDate = r.RequestedPhysicianCoverageAssignment.CoverageDate.ToString("yyyy-MM-dd"),
+            RequestedDate=r.TargetedPhysicianCoverageAssignment.CoverageDate.ToString("yyyy-MM-dd"),
+            Shift = r.RequestedPhysicianCoverageAssignment.ShiftType,
             RequestedWith = r.TargetPhysician.User.FullName,
             Status = r.RequestStatus,
             RequestedOn = r.RequestedAt.ToString("yyyy-MM-dd HH:mm"),
@@ -143,8 +144,9 @@ public class SwapRequestService : ISwapRequestService
         var response = requests.Select(r => new RequestToMeDto
         {
             SwapRequestId = r.SwapRequestId,
-            Date = r.CoverageAssignment.CoverageDate.ToString("yyyy-MM-dd"),
-            Shift = r.CoverageAssignment.ShiftType,
+            CurrentDate = r.TargetedPhysicianCoverageAssignment.CoverageDate.ToString("yyyy-MM-dd"),
+            NewDate = r.RequestedPhysicianCoverageAssignment.CoverageDate.ToString("yyyy-MM-dd"),
+            Shift = r.TargetedPhysicianCoverageAssignment.ShiftType,
             RequestedBy = r.RequestedByPhysician.User.FullName,
             Reason = r.RequestComments,
             RequestedOn = r.RequestedAt.ToString("yyyy-MM-dd HH:mm"),
@@ -188,25 +190,63 @@ public class SwapRequestService : ISwapRequestService
             );
         }
 
+        await _hubContext.Clients.Group($"User_{request.RequestedByPhysician.UserId}")
+             .SendAsync("RefreshSwapRequests");
+
+        await _hubContext.Clients.Group($"User_{request.TargetPhysician.UserId}")
+            .SendAsync("RefreshSwapRequests");
+
+        await _hubContext.Clients.Group("User_6")
+            .SendAsync("RefreshSupervisorSwapRequests");
+
         return Result.Ok("Request approved");
     }
 
 
-    public async Task<Result> ApproveRequestAsync(int swapRequestId,int userId)
+    public async Task<Result> ApproveRequestAsync(int swapRequestId, int userId)
     {
-        var request = await _repository.GetByIdAsync(swapRequestId);
+        var swapRequest = await _repository.GetByIdAsync(swapRequestId);
 
-        if (request == null)
+        if (swapRequest == null)
             return Result.NotFound("Request not found");
 
-        request.RequestStatus = "SUPERVISOR_APPROVED";
-        request.ReviewedAt = DateTime.UtcNow;
-        request.ReviewedByUserId = userId;
+        if (swapRequest.RequestedPhysicianCoverageAssignment==null || swapRequest.TargetedPhysicianCoverageAssignment==null)
+            return Result.NotFound("Assignments not found");
+
+
+        var temp = swapRequest.RequestedPhysicianCoverageAssignment.PhysicianId;
+
+        swapRequest.RequestedPhysicianCoverageAssignment.PhysicianId =
+           swapRequest.TargetedPhysicianCoverageAssignment.PhysicianId;
+
+        swapRequest.TargetedPhysicianCoverageAssignment.PhysicianId = temp;
+
+        //await _repository.SaveChangesAsync();
+
+
+
+
+
+
+
+        //    var targetPhysician = await _physicianRepository
+        //.GetByIdAsync(request.TargetPhysicianId);
+
+        //    if (targetPhysician == null)
+        //        return Result.NotFound("Target physician not found");
+
+        //assignment.PhysicianId = request.TargetPhysicianId;
+
+        //await _coverageAssignmentsRepository.SaveChangesAsync();
+
+        swapRequest.RequestStatus = "SUPERVISOR_APPROVED";
+        swapRequest.ReviewedAt = DateTime.UtcNow;
+        swapRequest.ReviewedByUserId = userId;
 
 
         await _repository.SaveChangesAsync();
 
-        var requesterUserId = request.RequestedByPhysician.UserId;
+        var requesterUserId = swapRequest.RequestedByPhysician.UserId;
 
         if (requesterUserId.HasValue)
         {
@@ -216,13 +256,23 @@ public class SwapRequestService : ISwapRequestService
                 $"Supervisor approved the swap request."
             );
         }
+
         var targetUserId = request.TargetPhysician.UserId;
 
         await _notificationService.CreateAndSendNotificationAsync(
-            targetUserId.Value,
+            targetUserId,
             "Swap Request Approved By Supervisor",
             $"Supervisor approved the swap request."
         );
+
+        await _hubContext.Clients.Group($"User_{request.RequestedByPhysician.UserId}")
+            .SendAsync("RefreshSwapRequests");
+
+        await _hubContext.Clients.Group($"User_{request.TargetPhysician.UserId}")
+            .SendAsync("RefreshSwapRequests");
+
+        await _hubContext.Clients.Group("User_6")
+            .SendAsync("RefreshSupervisorSwapRequests");
 
 
         return Result.Ok("Request approved");
@@ -247,9 +297,15 @@ public class SwapRequestService : ISwapRequestService
             await _notificationService.CreateAndSendNotificationAsync(
                 requesterUserId.Value,
                 "Swap Request Declined",
-                $"Dr. {request.TargetPhysician.User.FullName} declined your swap request for {request.CoverageAssignment.ShiftType} shift on {request.CoverageAssignment.CoverageDate:yyyy-MM-dd}."
+                $"Dr. {request.TargetPhysician.User.FullName} declined your swap request for {request.RequestedPhysicianCoverageAssignment.ShiftType} shift on {request.RequestedPhysicianCoverageAssignment.CoverageDate:yyyy-MM-dd}."
             );
         }
+
+        await _hubContext.Clients.Group($"User_{request.RequestedByPhysician.UserId}")
+            .SendAsync("RefreshSwapRequests");
+
+        await _hubContext.Clients.Group($"User_{request.TargetPhysician.UserId}")
+            .SendAsync("RefreshSwapRequests");
 
         return Result.Ok("Request declined");
     }
@@ -261,7 +317,7 @@ public class SwapRequestService : ISwapRequestService
         if (request == null)
             return Result.NotFound("Request not found");
 
-        request.RequestStatus = "SUPERVISOR_DECLINED";
+        request.RequestStatus = "REQUEST_REJECTED";
         request.ReviewedAt = DateTime.UtcNow;
         request.ReviewedByUserId = userId;
 
@@ -280,11 +336,24 @@ public class SwapRequestService : ISwapRequestService
 
         var targetUserId = request.TargetPhysician.UserId;
 
-        await _notificationService.CreateAndSendNotificationAsync(
-            targetUserId.Value,
-            "Swap Request Rejected By Supervisor",
-            $"Supervisor rejected the swap request."
-        );
+        if (targetUserId.HasValue)
+        {
+
+            await _notificationService.CreateAndSendNotificationAsync(
+                targetUserId.Value,
+                "Swap Request Rejected By Supervisor",
+                $"Supervisor rejected the swap request."
+            );
+        }
+
+        await _hubContext.Clients.Group($"User_{request.RequestedByPhysician.UserId}")
+            .SendAsync("RefreshSwapRequests");
+
+        await _hubContext.Clients.Group($"User_{request.TargetPhysician.UserId}")
+            .SendAsync("RefreshSwapRequests");
+
+        await _hubContext.Clients.Group("User_6")
+            .SendAsync("RefreshSupervisorSwapRequests");
 
         return Result.Ok("Request Rejected");
     }
@@ -298,8 +367,9 @@ public class SwapRequestService : ISwapRequestService
             SwapRequestId = r.SwapRequestId,
             RequestedBy = r.RequestedByPhysician.User.FullName,
             TargetPhysician = r.TargetPhysician.User.FullName,
-            Shift = r.CoverageAssignment.ShiftType,
-            Date = r.CoverageAssignment.CoverageDate.ToString("yyyy-MM-dd"),
+            Shift = r.RequestedPhysicianCoverageAssignment.ShiftType,
+            RequestedPhysicianDate = r.RequestedPhysicianCoverageAssignment.CoverageDate.ToString("yyyy-MM-dd"),
+            TargetedPhysicianDate = r.TargetedPhysicianCoverageAssignment.CoverageDate.ToString("yyyy-MM-dd"),
             Status = r.RequestStatus
         }).ToList();
 

@@ -8,6 +8,7 @@ public interface ICoverageScheduleRepository
     Task<IReadOnlyList<CoverageSchedule>> GetAllAsync();
 
     Task<CoverageSchedule?> GetByIdAsync(int scheduleId);
+    Task<int> GetScheduleIdByStartDate(DateOnly startDate);
 
     Task<List<Physician>> GetPhysiciansAsync();
     Task<List<int>> GetSpecialtiesAsync();
@@ -22,6 +23,8 @@ public interface ICoverageScheduleRepository
     Task<DateOnly?> GetLastCreatedScheduleDateAsync();
     Task<CoverageSchedule?> GetByStartDateWithAssignmentsAsync(DateOnly startDate);
     Task<List<PhysicianWorkloadDto>> GetPhysicianWorkloadLast60DaysAsync(DateTime fromDate);
+    Task<List<TopPhysicianRawDto>> GetTopPhysiciansPerSpecialtyRawAsync(int scheduleId);
+    Task<List<AssignmentRawDto>> GetAssignmentsByPhysiciansAsync(int scheduleId, List<int> physicianIds);
 
     Task SaveChangesAsync();
     Task<CoverageAssignment?> GetAssignmentByIdAsync(int assignmentId);

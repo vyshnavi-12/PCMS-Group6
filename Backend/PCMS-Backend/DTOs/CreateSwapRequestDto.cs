@@ -2,7 +2,8 @@
 
 public class CreateSwapRequestDto
 {
-    public int CoverageAssignmentId { get; set; }
+    public int RequestedPhysicianCoverageAssignmentId { get; set; }
+    public int TargetedPhysicianCoverageAssignmentId { get; set; }
 
     public int TargetPhysicianId { get; set; }
 

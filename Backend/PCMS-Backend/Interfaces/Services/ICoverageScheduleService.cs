@@ -15,5 +15,7 @@ public interface ICoverageScheduleService
 
     Task<Result<bool>> PublishScheduleAsync(int scheduleId, int userId);
 
+    Task<Result<List<TopPhysicianPerSpecialtyDto>>> GetTopPerSpecialty();
+
 
 }

@@ -1,46 +1,40 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
+import { storeToRefs } from 'pinia'
+import { useSupervisorSwapRequestsStore } from '../../stores/supervisorSwapRequestsStore'
 
 const activeTab = ref('All')
-const requests = ref<any[]>([])
+
+const swapRequestsStore = useSupervisorSwapRequestsStore()
+const { supervisorRequests } = storeToRefs(swapRequestsStore)
+
+const pendingCount = computed(() => {
+    return supervisorRequests.value.filter(
+        (request: any) => request.status === 'TARGET_ACCEPTED'
+    ).length
+})
 
 const fetchSupervisorRequests = async () => {
-    try {
-        const response = await axios.get(
-            'https://localhost:7119/api/Supervisor/SwapRequests/my',
-            { withCredentials: true }
-        )
-
-        requests.value = response.data.data
-    } catch (error) {
-        console.error(error)
-    }
+    await swapRequestsStore.fetchSupervisorRequests()
 }
 
-onMounted(() => {
-    fetchSupervisorRequests()
+onMounted(async () => {
+    await fetchSupervisorRequests()
 })
 
 const filteredRequests = computed(() => {
     if (activeTab.value === 'Pending') {
-        return requests.value.filter(
-            request => request.status === 'TARGET_ACCEPTED'
+        return supervisorRequests.value.filter(
+            (request: any) => request.status === 'TARGET_ACCEPTED'
         )
     }
 
-    return requests.value
+    return supervisorRequests.value
 })
 
 const approveRequest = async (requestId: number) => {
     try {
-        await axios.put(
-            `https://localhost:7119/api/Supervisor/SwapRequests/${requestId}/approve`,
-            {},
-            { withCredentials: true }
-        )
-
-        fetchSupervisorRequests()
+        await swapRequestsStore.approveRequest(requestId)
     } catch (error) {
         console.error(error)
     }
@@ -48,13 +42,7 @@ const approveRequest = async (requestId: number) => {
 
 const declineRequest = async (requestId: number) => {
     try {
-        await axios.put(
-            `https://localhost:7119/api/Supervisor/SwapRequests/${requestId}/reject`,
-            {},
-            { withCredentials: true }
-        )
-
-        fetchSupervisorRequests()
+        await swapRequestsStore.rejectRequest(requestId)
     } catch (error) {
         console.error(error)
     }
@@ -87,11 +75,11 @@ const getStatusClass = (status: string) => {
             <div class="tabs">
 
                 <button class="tab-button" :class="{ active: activeTab === 'All' }" @click="activeTab = 'All'">
-                    All
+                    All ({{ supervisorRequests.length }})
                 </button>
 
                 <button class="tab-button" :class="{ active: activeTab === 'Pending' }" @click="activeTab = 'Pending'">
-                    Pending
+                    Pending ({{ pendingCount }})
                 </button>
 
             </div>

@@ -1,98 +1,108 @@
-<script setup lang="ts">
-const workloadData = [
-  {
-    specialty: 'CARDIOLOGY',
-    physicians: [
-      {
-        initials: 'JK',
-        name: 'Dr. Kumar',
-        shifts: ['D', null, 'N', 'N', null, null, null]
-      }
-    ]
-  },
-  {
-    specialty: 'NEUROLOGY',
-    physicians: [
-      {
-        initials: 'RL',
-        name: 'Dr. Lee',
-        shifts: [null, null, 'D', 'D', null, null, null]
-      }
-    ]
-  },
-  {
-    specialty: 'ORTHOPEDICS',
-    physicians: [
-      {
-        initials: 'MF',
-        name: 'Dr. Fritch',
-        shifts: [null, 'N', 'N', null, null, null, null]
-      }
-    ]
-  },
-  {
-    specialty: 'EMERGENCY MEDICINE',
-    physicians: [
-      {
-        initials: 'RO',
-        name: 'Dr. Okafor',
-        shifts: ['D', null, null, 'D', 'N', 'N', null]
-      }
-    ]
-  },
-  {
-    specialty: 'RADIOLOGY',
-    physicians: [
-      {
-        initials: 'TR',
-        name: 'Dr. Rao',
-        shifts: [null, null, null, 'D', 'N', 'D', null]
-      }
-    ]
-  },
-  {
-    specialty: 'ANESTHESIOLOGY',
-    physicians: [
-      {
-        initials: 'AS',
-        name: 'Dr. Smith',
-        shifts: ['N', 'N', null, null, 'D', null, null]
-      }
-    ]
-  },
-  {
-    specialty: 'GENERAL SURGERY',
-    physicians: [
-      {
-        initials: 'MB',
-        name: 'Dr. Brown',
-        shifts: [null, 'D', 'D', null, null, 'N', null]
-      }
-    ]
-  }
-]
-</script>
 
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+
+const workloadData = ref<any[]>([])
+const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+const weekDays = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su']
+
+// Helper → get initials from full name
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+}
+
+// Helper → build 7-day shift array
+const buildShifts = (assignments: any[]) => {
+  const shifts: (string | null)[] = new Array(7).fill(null)
+
+  // get current week (Mon → Sun)
+
+ const today = new Date()
+const day = today.getDay()
+
+// convert Sunday (0) → 7
+const normalizedDay = day === 0 ? 7 : day
+
+const start = new Date(today)
+start.setDate(today.getDate() - normalizedDay + 1)
+start.setHours(0, 0, 0, 0)
+
+  assignments.forEach(a => {
+    const date = new Date(a.date + 'T00:00:00')
+    const diff = Math.floor((date.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (diff >= 0 && diff < 7) {
+      shifts[diff] = a.shiftType === 'Day' ? 'D' : 'N'
+    }
+  })
+
+  return shifts
+}
+
+const fetchData = async () => {
+  try {
+    const res = await axios.get(
+      'https://localhost:7119/api/supervisor/dashboard/top-per-specialty',
+      {withCredentials:true}
+    )
+
+    const apiData = res.data.data
+
+    // Transform API → UI structure
+    const grouped: any = {}
+
+    apiData.forEach((item: any) => {
+      if (!grouped[item.specialtyName]) {
+        grouped[item.specialtyName] = {
+          specialty: item.specialtyName.toUpperCase(),
+          physicians: []
+        }
+      }
+
+      grouped[item.specialtyName].physicians.push({
+        initials: getInitials(item.physicianName),
+        name: item.physicianName,
+        shifts: buildShifts(item.assignments)
+      })
+    })
+
+    workloadData.value = Object.values(grouped)
+  } catch (error) {
+    console.error('Error fetching workload data:', error)
+  }
+}
+
+onMounted(fetchData)
+</script>
 <template>
   <div class="workload-card">
     <div class="card-header">
       <h3>Physician workload (Weekly) </h3>
     </div>
 
-    <div
-      v-for="group in workloadData"
-      :key="group.specialty"
-      class="specialty-section"
-    >
+    <div v-for="group in workloadData" :key="group.specialty" class="specialty-section">
       <div class="specialty-title">
         {{ group.specialty }}
       </div>
 
-      <div
-        v-for="doctor in group.physicians"
-        :key="doctor.name"
-        class="doctor-row"
-      >
+      <div class="days-row">
+        <div class="doctor-info-placeholder"></div>
+
+        <div class="shift-grid">
+          <div v-for="day in weekDays" :key="day" class="day-label">
+            {{ day }}
+          </div>
+        </div>
+      </div>
+
+      <div v-for="doctor in group.physicians" :key="doctor.name" class="doctor-row">
         <div class="doctor-info">
           <div class="doctor-avatar">
             {{ doctor.initials }}
@@ -104,15 +114,11 @@ const workloadData = [
         </div>
 
         <div class="shift-grid">
-          <div
-            v-for="(shift, index) in doctor.shifts"
-            :key="index"
-            :class="[
-              'shift-box',
-              shift === 'D' ? 'day' : '',
-              shift === 'N' ? 'night' : ''
-            ]"
-          >
+          <div v-for="(shift, index) in doctor.shifts" :key="index" :class="[
+            'shift-box',
+            shift === 'D' ? 'day' : '',
+            shift === 'N' ? 'night' : ''
+          ]">
             {{ shift }}
           </div>
         </div>
@@ -126,9 +132,18 @@ const workloadData = [
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
-  padding: 18px;
   height: calc(100vh - 270px);
   overflow-y: auto;
+  padding: 0 12px 0 12px;
+}
+
+.card-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: white;
+  padding: 18px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .card-header h3 {
@@ -137,7 +152,7 @@ const workloadData = [
   color: #232f72;
 }
 
-.specialty-section {
+.specialty-title {
   margin-top: 18px;
 }
 
@@ -213,7 +228,7 @@ const workloadData = [
 
 /* NIGHT SHIFT = ORANGE */
 .night {
-   background: #f3e8ff;
+  background: #f3e8ff;
   color: #7c3aed;
 }
 
@@ -230,5 +245,24 @@ const workloadData = [
 .workload-card::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 10px;
+}
+
+.days-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.doctor-info-placeholder {
+  width: 140px;
+}
+
+.day-label {
+  width: 22px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
 }
 </style>

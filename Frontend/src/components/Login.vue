@@ -5,7 +5,6 @@ import { useRouter } from 'vue-router'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
-import Checkbox from 'primevue/checkbox'
 import Button from 'primevue/button'
 
 import { loginUser } from '../services/authService'
@@ -14,7 +13,6 @@ const router = useRouter()
 
 const email = ref('')
 const password = ref('')
-const rememberMe = ref(false)
 
 const submitted = ref(false)
 const loginError = ref('')
@@ -73,10 +71,9 @@ const handleLogin = async () => {
 
         <div class="brand-logo">
           <i class="pi pi-shield"></i>
-          <h1>PCMS</h1>
+          <h1>Care On-Call</h1>
         </div>
 
-        <h2>Physician Coverage Management System</h2>
 
 
         <div class="mission-card">
@@ -106,7 +103,7 @@ const handleLogin = async () => {
       <Card class="login-card">
         <template #content>
           <div class="header">
-            <h1>PCMS Portal</h1>
+            <h1>COC Portal</h1>
             <p>Coverage Scheduling & Management</p>
           </div>
 
@@ -143,11 +140,6 @@ const handleLogin = async () => {
             <small v-else-if="submitted && password.length < 8" class="error-text">
               Password must be at least 8 characters
             </small>
-          </div>
-
-          <div class="remember-row">
-            <Checkbox v-model="rememberMe" :binary="true" />
-            <label>Remember me</label>
           </div>
 
           <Button label="Log In" class="login-btn" @click="handleLogin" />
@@ -225,7 +217,6 @@ const handleLogin = async () => {
   color: rgba(255, 255, 255, 0.85);
 }
 
-/* MISSION CARD */
 .mission-card {
   margin-top: 40px;
   padding: 28px;
@@ -336,20 +327,6 @@ const handleLogin = async () => {
 
 .full-width {
   width: 100%;
-}
-
-/* REMEMBER ME */
-.remember-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 22px;
-}
-
-.remember-row label {
-  margin: 0;
-  font-size: 14px;
-  color: #475569;
 }
 
 /* LOGIN BUTTON */

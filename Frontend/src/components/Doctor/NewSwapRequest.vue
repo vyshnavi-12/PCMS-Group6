@@ -169,7 +169,8 @@ const submitRequest = async () => {
 
     try {
         const payload = {
-            coverageAssignmentId: selectedCoverage.value.coverageAssignmentId,
+            requestedPhysicianCoverageAssignmentId:route.query.assignmentId,
+            targetedPhysicianCoverageAssignmentId: selectedCoverage.value.coverageAssignmentId,
             targetPhysicianId: selectedCoverage.value.physicianId,
             requestComments: reason.value.trim()
         }

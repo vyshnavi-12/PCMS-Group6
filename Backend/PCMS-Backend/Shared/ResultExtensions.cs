@@ -53,6 +53,9 @@ public static class ResultExtensions
                 new UnauthorizedObjectResult(new { message = result.Message }),
             StatusCodes.Status400BadRequest =>
             new BadRequestObjectResult(new { message = result.Message }),
+            StatusCodes.Status500InternalServerError =>
+               new ObjectResult(new { message = result.Message }) { StatusCode = StatusCodes.Status500InternalServerError },
+
 
             _ =>
                 new ObjectResult(new

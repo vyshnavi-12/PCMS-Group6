@@ -7,6 +7,8 @@ import axios from 'axios'
 const workloadData = ref<any[]>([])
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
+const weekDays = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su']
+
 // Helper → get initials from full name
 const getInitials = (name: string) => {
   return name

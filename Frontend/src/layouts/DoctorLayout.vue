@@ -8,15 +8,18 @@ import AppHeader from '../components/Common/AppHeader.vue'
 
 import { useNotificationStore } from '../stores/notificationStore'
 import { useScheduleStore } from '../stores/scheduleStore'
+import { useDoctorSwapRequestsStore } from '../stores/doctorSwapRequestsStore'
 
 import { startNotificationSignalRConnection } from '../services/notificationSignalRService'
 import { startScheduleSignalRConnection } from '../services/scheduleSignalRService'
+import doctorSwapSignalRService from '../services/doctorSwapSignalRService'
 
 const route = useRoute()
 const toast = useToast()
 
 const notificationStore = useNotificationStore()
 const scheduleStore = useScheduleStore()
+const swapRequestsStore = useDoctorSwapRequestsStore()
 
 onMounted(async () => {
   const user = localStorage.getItem('loggedInUser')
@@ -24,7 +27,6 @@ onMounted(async () => {
 
   const parsedUser = JSON.parse(user)
 
-  // Notification SignalR
   await startNotificationSignalRConnection(
     parsedUser.userId.toString(),
     (payload) => {
@@ -47,7 +49,6 @@ onMounted(async () => {
     }
   )
 
-  // Schedule SignalR
   await startScheduleSignalRConnection(
     parsedUser.userId.toString(),
     async () => {
@@ -61,6 +62,15 @@ onMounted(async () => {
       })
     }
   )
+
+  await doctorSwapSignalRService.startConnection(
+    parsedUser.userId.toString()
+  )
+
+  doctorSwapSignalRService.onRefreshDoctorRequests(async () => {
+    console.log('Doctor swap refresh received')
+    await swapRequestsStore.fetchDoctorRequests()
+  })
 })
 
 const pageTitle = computed(() => {
@@ -82,41 +92,41 @@ const pageTitle = computed(() => {
 </script>
 
 <template>
-    <div class="doctor-layout">
+  <div class="doctor-layout">
 
-        <Toast position="bottom-right" />
+    <Toast position="bottom-right" />
 
-        <Sidebar />
+    <Sidebar />
 
-        <main class="main-content">
+    <main class="main-content">
 
-            <AppHeader :pageTitle="pageTitle" />
+      <AppHeader :pageTitle="pageTitle" />
 
-            <section class="content-area">
-                <RouterView />
-            </section>
+      <section class="content-area">
+        <RouterView />
+      </section>
 
-        </main>
+    </main>
 
-    </div>
+  </div>
 </template>
 
 <style scoped>
 .doctor-layout {
-    display: flex;
-    min-height: 100vh;
-    background: #f8fafc;
+  display: flex;
+  min-height: 100vh;
+  background: #f8fafc;
 }
 
 .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .content-area {
-    flex: 1;
-    padding: 20px 20px 18px 20px;
-    overflow: hidden;
+  flex: 1;
+  padding: 20px 20px 18px 20px;
+  overflow: hidden;
 }
 </style>

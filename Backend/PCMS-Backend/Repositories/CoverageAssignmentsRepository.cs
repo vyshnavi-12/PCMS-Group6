@@ -64,16 +64,17 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
 
     public async Task<IReadOnlyList<OpenAlertsResponseDto>> GetAlertsAsync()
     {
-        var currentScheduleWeek = await _context.CoverageSchedules
-            .Where(s => s.Status == "Published")
-            .Select(s => new { startDate = s.WeekStartDate, endDate = s.WeekEndDate })
-            .FirstOrDefaultAsync();
-        if (currentScheduleWeek == null) return new List<OpenAlertsResponseDto>();
-        DateTime startDateTime = currentScheduleWeek.startDate.ToDateTime(TimeOnly.MinValue)!;
-        DateTime endDateTime = currentScheduleWeek.endDate.ToDateTime(TimeOnly.MinValue)!;
+        bool hasPublishedSchedule = await _context.CoverageSchedules
+            .AnyAsync(s => s.Status == "Published");
 
+        if (!hasPublishedSchedule)
+            return new List<OpenAlertsResponseDto>();
+
+        DateOnly currentDate = DateOnly.FromDateTime(DateTime.Now);
+
+        // Fetch all gaps from today forward
         var openAlerts = await _context.CoverageGapAlerts
-            .Where(a => startDateTime <= a.CreatedAt.Date && a.CreatedAt.Date <= endDateTime)
+            .Where(a => a.CoverageAssignment.CoverageDate >= currentDate)
             .Select(a => new OpenAlertsResponseDto
             {
                 AlertId = a.CoverageGapAlertId,
@@ -84,7 +85,9 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
                 Status = a.AlertStatus,
                 CreatedAt = a.CreatedAt
             })
+            .OrderBy(a => a.Date) // Most urgent/immediate gaps show up first!
             .ToListAsync();
+
         return openAlerts;
     }
 
@@ -117,5 +120,20 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
         await _context.SaveChangesAsync();
     }
 
+
+    public async Task<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>> GetUnavailableRequestsPerSpecialtyAsync()
+    {
+        return await _context.CoverageGapAlerts
+            .Include(cga => cga.CoverageAssignment)
+            .ThenInclude(ca => ca.Specialty)
+            .GroupBy(cga => cga.CoverageAssignment.Specialty.SpecialtyName)
+            .Select(group => new UnavailableRequestsPerSpecialtyDto
+            {
+                SpecialtyName = group.Key,
+                RequestCount = group.Count()
+            })
+            .OrderByDescending(dto => dto.RequestCount)
+            .ToListAsync();
+    }
 
 }

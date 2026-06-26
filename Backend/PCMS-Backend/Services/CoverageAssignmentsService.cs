@@ -72,7 +72,7 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         var alert = await _coverageAssignmentsRepo.GetAlertDetailsByIdAsync(alertId);
         if (alert == null)
             return Result.NotFound("Alert not found.");
-        var updateAssignment = await _coverageAssignmentsRepo.UpdateAssignmentPhysicianAsync(alert.CoverageAssignmentId, physicianId);
+        var updateAssignment = await _coverageAssignmentsRepo.UpdateAssignmentPhysicianAsync(alertId, physicianId);
         var updateAlertStatus = await _coverageAssignmentsRepo.UpdateAlertStatusToResolvedAsync(alertId);
         if(!updateAssignment || !updateAlertStatus) return Result.ServerError("Failed to update assignment or resolve alert.");
         return Result.Ok("Assignment updated with new physician and alert resolved.");
@@ -83,6 +83,13 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         var declineAlertDone = await _coverageAssignmentsRepo.UpdateAlertStatusToResolvedAsync(alertId);
         if (!declineAlertDone) return Result.ServerError("Failed to decline alert.");
         return Result.NoContent();
+    }
+
+    public async Task<Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>> GetUnavailableRequestsPerSpecialtyAsync()
+    {
+        var data =  await _coverageAssignmentsRepo.GetUnavailableRequestsPerSpecialtyAsync();
+        if (data == null) return Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>.ServerError("Failed to fetch data");
+        return Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>.Ok(data);
     }
 
 }

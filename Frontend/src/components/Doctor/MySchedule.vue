@@ -2,7 +2,10 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScheduleStore } from '../../stores/scheduleStore'
+import API from '../../api/axios'
+import { useToast } from 'primevue/usetoast'
 
+const toast = useToast()
 const router = useRouter()
 const scheduleStore = useScheduleStore()
 
@@ -18,6 +21,7 @@ interface Schedule {
 
 const showUnavailableModal = ref(false)
 const selectedScheduleDate = ref('')
+const selectedAssignmentId = ref<number | null>(null)
 const unavailableReason = ref('')
 
 const months = [
@@ -77,8 +81,9 @@ const getStatusClass = (status: string) => {
   }
 }
 
-const markUnavailable = (scheduleDate: string) => {
-  selectedScheduleDate.value = scheduleDate
+const markUnavailable = (schedule: Schedule) => {
+  selectedScheduleDate.value = schedule.date
+  selectedAssignmentId.value = schedule.coverageAssignmentId
   unavailableReason.value = ''
   showUnavailableModal.value = true
 }
@@ -87,14 +92,59 @@ const closeUnavailableModal = () => {
   showUnavailableModal.value = false
 }
 
-const submitUnavailableRequest = () => {
+const submitUnavailableRequest = async () => {
   if (!unavailableReason.value.trim()) {
-    alert('Please enter reason')
+    toast.add({
+      severity: 'warn',
+      summary: 'Warning',
+      detail: 'Please enter reason',
+      life: 3000
+    })
     return
   }
 
-  alert(`Unavailable request submitted for ${selectedScheduleDate.value}`)
-  showUnavailableModal.value = false
+  if (!selectedAssignmentId.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Invalid assignment',
+      life: 3000
+    })
+    return
+  }
+
+  try {
+    await API.patch(
+      `coverageassignments/${selectedAssignmentId.value}/unavailable`,
+      {
+        reason: unavailableReason.value
+      }
+    )
+
+    showUnavailableModal.value = false
+    unavailableReason.value = ''
+    selectedAssignmentId.value = null
+
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Unavailable request submitted successfully',
+      life: 3000
+    })
+
+    await fetchMySchedule()
+  } catch (error: any) {
+    console.error(error)
+
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail:
+        error?.response?.data?.message ||
+        'Failed to submit unavailable request',
+      life: 3000
+    })
+  }
 }
 
 const openSwapRequest = (schedule: Schedule) => {
@@ -143,7 +193,7 @@ const openSwapRequest = (schedule: Schedule) => {
                         <td class="action-cell">
                             <template v-if="schedule.status === 'ASSIGNED'">
 
-                                <button class="unavailable-btn" @click="markUnavailable(schedule.date)">
+                                <button class="unavailable-btn" @click="markUnavailable(schedule)">
                                     Unavailable
                                 </button>
 

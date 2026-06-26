@@ -279,10 +279,15 @@ public class PcmsDbContext : DbContext
                 .HasForeignKey(cga => cga.CoverageAssignmentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasMany(ca => ca.SwapRequests)
-                .WithOne(sr => sr.CoverageAssignment)
-                .HasForeignKey(sr => sr.CoverageAssignmentId)
+            entity.HasMany(ca => ca.RequestedSwapRequests)
+                .WithOne(sr => sr.RequestedPhysicianCoverageAssignment)
+                .HasForeignKey(sr => sr.RequestedPhysicianCoverageAssignmentId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasMany(ca => ca.TargetedSwapRequests)
+               .WithOne(sr => sr.TargetedPhysicianCoverageAssignment)
+               .HasForeignKey(sr => sr.TargetedPhysicianCoverageAssignmentId)
+               .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(ca => new { ca.PhysicianId, ca.CoverageDate });
         });
        

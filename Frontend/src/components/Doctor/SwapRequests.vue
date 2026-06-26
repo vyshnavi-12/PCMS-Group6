@@ -146,7 +146,8 @@ onMounted(() => {
 
                 <thead>
                     <tr>
-                        <th>Date</th>
+                        <th>Current Date</th>
+                        <th>Requested Date</th>
                         <th>Shift</th>
                         <th>Requested With</th>
                         <th>Reason</th>
@@ -157,7 +158,8 @@ onMounted(() => {
 
                 <tbody>
                     <tr v-for="request in myRequests" :key="request.swapRequestId">
-                        <td>{{ request.date }}</td>
+                        <td>{{ request.currentDate }}</td>
+                        <td>{{ request.requestedDate }}</td>
                         <td>{{ request.shift }}</td>
                         <td>{{ request.requestedWith }}</td>
                         <td>{{ request.reason }}</td>
@@ -186,7 +188,8 @@ onMounted(() => {
 
                 <thead>
                     <tr>
-                        <th>Date</th>
+                        <th>current Date</th>
+                        <th>New Date</th>
                         <th>Shift</th>
                         <th>Requested By</th>
                         <th>Reason</th>
@@ -199,7 +202,8 @@ onMounted(() => {
                 <tbody>
                     <tr v-for="request in requestsToMe" :key="request.swapRequestId">
 
-                        <td>{{ request.date }}</td>
+                        <td>{{ request.currentDate }}</td>
+                        <td>{{ request.newDate }}</td>
                         <td>{{ request.shift }}</td>
                         <td>{{ request.requestedBy }}</td>
                         <td>{{ request.reason }}</td>

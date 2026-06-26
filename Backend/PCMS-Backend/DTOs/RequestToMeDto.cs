@@ -4,7 +4,8 @@ public class RequestToMeDto
 {
     public int SwapRequestId { get; set; }
 
-    public string Date { get; set; } = default!;
+    public string CurrentDate { get; set; } = default!;
+    public string NewDate { get; set; } = default!;
 
     public string Shift { get; set; } = default!;
 

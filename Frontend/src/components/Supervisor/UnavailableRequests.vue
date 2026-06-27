@@ -5,9 +5,8 @@ import API from '../../api/axios.ts'
 
 const activeTab = ref('Open')
 const selectedRequest = ref<any | null>(null)
-    const gapAlerts = ref<any[]>([])
-const fetchUnavailableRequests =  async() =>
-{
+const gapAlerts = ref<any[]>([])
+const fetchUnavailableRequests = async () => {
     const unavailableRequest = await API.get("coverageassignments/alerts")
     gapAlerts.value = unavailableRequest.data.data
     console.log(unavailableRequest.data)
@@ -63,16 +62,16 @@ const getStatusClass = (status: string) => {
 
 const formatDateTime = (dateString: string) => {
     if (!dateString) return '';
-    
+
     const date = new Date(dateString);
-    
+
     return date.toLocaleString('en-US', {
-        month: 'short', 
-        day: 'numeric', 
+        month: 'short',
+        day: 'numeric',
         year: 'numeric',
-        hour: '2-digit', 
+        hour: '2-digit',
         minute: '2-digit',
-        hour12: true 
+        hour12: true
     });
 }
 const viewRequest = (gap: any) => {
@@ -83,8 +82,7 @@ const closeRequest = () => {
     selectedRequest.value = null
 }
 
-onMounted(() =>
-{
+onMounted(() => {
     fetchUnavailableRequests();
 })
 </script>
@@ -103,7 +101,7 @@ onMounted(() =>
 
                     <button class="tab-button" :class="{ active: activeTab === 'Resolved' }"
                         @click="activeTab = 'Resolved'">
-                        Resolved ({{resolvedCount }})
+                        Resolved ({{ resolvedCount }})
                     </button>
 
                 </div>
@@ -113,20 +111,20 @@ onMounted(() =>
                 <table>
                     <thead>
                         <tr>
-                            <th>Date</th>
+                            <th>Coverage Date</th>
                             <th>Specialty</th>
                             <th>Shift</th>
                             <th>Requestd By</th>
                             <th>Status</th>
                             <th>Created At</th>
-                            <th>Actions</th>
+                            <th v-if="activeTab === 'Open'">Actions</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         <tr v-for="gap in filteredGaps" :key="gap.id">
 
-                            <td>{{ formatDate(gap.date)}}</td>
+                            <td>{{ formatDate(gap.date) }}</td>
                             <td>{{ gap.specialty }}</td>
                             <td>{{ gap.shift }}</td>
                             <td>{{ gap.requestedBy }}</td>
@@ -139,7 +137,7 @@ onMounted(() =>
 
                             <td>{{ formatDateTime(gap.createdAt) }}</td>
 
-                            <td>
+                            <td v-if="activeTab === 'Open'">
                                 <button class="view-btn" @click="viewRequest(gap)">
                                     View
                                 </button>
@@ -148,7 +146,7 @@ onMounted(() =>
                         </tr>
 
                         <tr v-if="filteredGaps.length === 0">
-                            <td colspan="7" class="empty-state">
+                            <td :colspan="activeTab === 'Open' ? 7 : 6" class="empty-state">
                                 {{ activeTab === 'Open'
                                     ? 'No open unavailable requests'
                                     : 'No resolved unavailable requests'

@@ -68,6 +68,8 @@ const pageTitle = computed(() => {
       return 'Profile'
     case '/supervisor/coverage-schedule':
       return 'Coverage Schedule'
+    case '/supervisor/unavailable-requests':
+      return 'Unavailable Requests'
     case '/supervisor/swap-requests':
       return 'Swap Requests'
     default:

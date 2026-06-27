@@ -10,13 +10,13 @@ const router = useRouter()
 const scheduleStore = useScheduleStore()
 
 interface Schedule {
-  coverageAssignmentId: number
-  originalDate: string
-  date: string
-  shift: string
-  specialty: string
-  time: string
-  status: string
+    coverageAssignmentId: number
+    originalDate: string
+    date: string
+    shift: string
+    specialty: string
+    time: string
+    status: string
 }
 
 const showUnavailableModal = ref(false)
@@ -25,139 +25,138 @@ const selectedAssignmentId = ref<number | null>(null)
 const unavailableReason = ref('')
 
 const months = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ]
 
 const days = [
-  'Sun', 'Mon', 'Tue', 'Wed',
-  'Thu', 'Fri', 'Sat'
+    'Sun', 'Mon', 'Tue', 'Wed',
+    'Thu', 'Fri', 'Sat'
 ]
 
 const formatDate = (dateString: string) => {
-  const [year, month, day] = dateString.split('-')
+    const [year, month, day] = dateString.split('-')
 
-  const date = new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day)
-  )
+    const date = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day)
+    )
 
-  return `${days[date.getDay()]}, ${months[Number(month) - 1]} ${day}`
+    return `${days[date.getDay()]}, ${months[Number(month) - 1]} ${day}`
 }
 
 const schedules = computed<Schedule[]>(() =>
-  scheduleStore.doctorSchedules.map((schedule: any) => ({
-    coverageAssignmentId: schedule.coverageAssignmentId,
-    originalDate: schedule.date,
-    date: formatDate(schedule.date),
-    shift: schedule.shift.toUpperCase(),
-    specialty: schedule.specialty,
-    time: schedule.time,
-    status: schedule.status
-  }))
+    scheduleStore.doctorSchedules.map((schedule: any) => ({
+        coverageAssignmentId: schedule.coverageAssignmentId,
+        originalDate: schedule.date,
+        date: formatDate(schedule.date),
+        shift: schedule.shift.toUpperCase(),
+        specialty: schedule.specialty,
+        time: schedule.time,
+        status: schedule.status
+    }))
 )
 
 const fetchMySchedule = async () => {
-  try {
-    await scheduleStore.fetchDoctorSchedules()
-  } catch (error) {
-    console.error(error)
-  }
+    try {
+        await scheduleStore.fetchDoctorSchedules()
+    } catch (error) {
+        console.error(error)
+    }
 }
 
 onMounted(() => {
-  fetchMySchedule()
+    fetchMySchedule()
 })
 
 const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'ASSIGNED':
-      return 'assigned'
-    case 'OFF':
-      return 'off'
-    default:
-      return ''
-  }
+    switch (status) {
+        case 'ASSIGNED':
+            return 'assigned'
+        case 'OFF':
+            return 'off'
+        default:
+            return ''
+    }
 }
 
 const markUnavailable = (schedule: Schedule) => {
-  selectedScheduleDate.value = schedule.date
-  selectedAssignmentId.value = schedule.coverageAssignmentId
-  unavailableReason.value = ''
-  showUnavailableModal.value = true
+    selectedScheduleDate.value = schedule.date
+    selectedAssignmentId.value = schedule.coverageAssignmentId
+    unavailableReason.value = ''
+    showUnavailableModal.value = true
 }
 
 const closeUnavailableModal = () => {
-  showUnavailableModal.value = false
+    showUnavailableModal.value = false
 }
 
 const submitUnavailableRequest = async () => {
-  if (!unavailableReason.value.trim()) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Warning',
-      detail: 'Please enter reason',
-      life: 3000
-    })
-    return
-  }
+    if (!unavailableReason.value.trim()) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Warning',
+            detail: 'Please enter reason',
+            life: 3000
+        })
+        return
+    }
 
-  if (!selectedAssignmentId.value) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'Invalid assignment',
-      life: 3000
-    })
-    return
-  }
+    if (!selectedAssignmentId.value) {
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Invalid assignment',
+            life: 3000
+        })
+        return
+    }
 
-  try {
-    await API.patch(
-      `coverageassignments/${selectedAssignmentId.value}/unavailable`,
-      {
-        reason: unavailableReason.value
-      }
-    )
+    try {
+        await API.patch(
+            `coverageassignments/${selectedAssignmentId.value}/unavailable`,
+            {
+                reason: unavailableReason.value
+            }
+        )
 
-    showUnavailableModal.value = false
-    unavailableReason.value = ''
-    selectedAssignmentId.value = null
+        showUnavailableModal.value = false
+        unavailableReason.value = ''
+        selectedAssignmentId.value = null
 
-    toast.add({
-      severity: 'success',
-      summary: 'Success',
-      detail: 'Unavailable request submitted successfully',
-      life: 3000
-    })
+        toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Unavailable request submitted successfully',
+            life: 3000
+        })
 
-    await fetchMySchedule()
-  } catch (error: any) {
-    console.error(error)
+        await fetchMySchedule()
+    } catch (error: any) {
+        console.error(error)
 
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail:
-        error?.response?.data?.message ||
-        'Failed to submit unavailable request',
-      life: 3000
-    })
-  }
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail:
+                error?.response?.data?.message ||
+                'Failed to submit unavailable request',
+            life: 3000
+        })
+    }
 }
 
 const openSwapRequest = (schedule: Schedule) => {
-  router.push({
-    path: '/doctor/swap-requests',
-    query: {
-      new: 'true',
-      assignmentId: schedule.coverageAssignmentId,
-      date: schedule.originalDate,
-      shift: schedule.shift,
-      specialty: schedule.specialty
-    }
-  })
+    router.push({
+        path: '/doctor/swap-requests',
+        query: {
+            new: 'true',
+            assignmentId: schedule.coverageAssignmentId,
+            shift: schedule.shift,
+            specialty: schedule.specialty
+        }
+    })
 }
 </script>
 

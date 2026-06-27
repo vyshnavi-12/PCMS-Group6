@@ -75,6 +75,18 @@ const filteredSchedules = computed(() => {
   )
 })
 
+const publishedCount = computed(() => {
+  return store.schedules.filter(
+    (schedule: any) => schedule.status.toUpperCase() === 'PUBLISHED'
+  ).length
+})
+
+const draftCount = computed(() => {
+  return store.schedules.filter(
+    (schedule: any) => schedule.status.toUpperCase() === 'DRAFT'
+  ).length
+})
+
 const createSchedule = async () => {
   generating.value = true
   errorMessage.value = ''
@@ -120,29 +132,17 @@ const viewSchedule = (scheduleId: number) => {
 
       <div class="tabs">
 
-        <button
-          class="tab-button"
-          :class="{ active: activeTab === 'Published' }"
-          @click="activeTab = 'Published'"
-        >
-          Published
+        <button class="tab-button" :class="{ active: activeTab === 'Published' }" @click="activeTab = 'Published'">
+          Published ({{ publishedCount }})
         </button>
 
-        <button
-          class="tab-button"
-          :class="{ active: activeTab === 'Drafts' }"
-          @click="activeTab = 'Drafts'"
-        >
-          Drafts
+        <button class="tab-button" :class="{ active: activeTab === 'Drafts' }" @click="activeTab = 'Drafts'">
+          Drafts ({{ draftCount }})
         </button>
 
       </div>
 
-      <button
-        class="create-btn"
-        @click="createSchedule"
-        :disabled="generating"
-      >
+      <button class="create-btn" @click="createSchedule" :disabled="generating">
         {{ generating ? 'Generating...' : 'Generate Schedule' }}
       </button>
 
@@ -154,7 +154,7 @@ const viewSchedule = (scheduleId: number) => {
 
         <thead>
           <tr>
-            <th>Bi-Weekly Schedule</th>
+            <th>Weekly Schedule</th>
             <th>Week Start</th>
             <th>Week End</th>
             <th>Status</th>
@@ -165,10 +165,7 @@ const viewSchedule = (scheduleId: number) => {
 
         <tbody>
 
-          <tr
-            v-for="schedule in filteredSchedules"
-            :key="schedule.id"
-          >
+          <tr v-for="schedule in filteredSchedules" :key="schedule.id">
             <td>{{ schedule.scheduleName }}</td>
 
             <td>{{ schedule.weekStart }}</td>
@@ -176,10 +173,7 @@ const viewSchedule = (scheduleId: number) => {
             <td>{{ schedule.weekEnd }}</td>
 
             <td>
-              <span
-                class="status-badge"
-                :class="schedule.status.toLowerCase()"
-              >
+              <span class="status-badge" :class="schedule.status.toLowerCase()">
                 {{ schedule.status }}
               </span>
             </td>
@@ -187,10 +181,7 @@ const viewSchedule = (scheduleId: number) => {
             <td>{{ schedule.publishedAt }}</td>
 
             <td>
-              <button
-                class="view-btn"
-                @click="viewSchedule(schedule.id)"
-              >
+              <button class="view-btn" @click="viewSchedule(schedule.id)">
                 View
               </button>
             </td>
@@ -214,176 +205,176 @@ const viewSchedule = (scheduleId: number) => {
 
 <style scoped>
 .schedule-page {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .tabs {
-    display: flex;
-    gap: 24px;
+  display: flex;
+  gap: 24px;
 }
 
 .tab-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #64748b;
-    font-size: 14px;
-    font-weight: 600;
-    padding-bottom: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  padding-bottom: 8px;
 }
 
 .tab-button.active {
-    color: #232f72;
-    border-bottom: 2px solid #232f72;
+  color: #232f72;
+  border-bottom: 2px solid #232f72;
 }
 
 .create-btn {
-    background: #232f72;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 16px;
-    cursor: pointer;
-    font-weight: 600;
+  background: #232f72;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 600;
 }
 
 .create-btn:hover {
-    background: #1d285f;
+  background: #1d285f;
 }
 
 .table-card {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    overflow: hidden;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 table {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
 }
 
 thead {
-    background: #f8fafc;
+  background: #f8fafc;
 }
 
 th {
-    text-align: left;
-    padding: 14px 16px;
-    font-size: 13px;
-    color: #64748b;
-    border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 td {
-    padding: 14px 16px;
-    font-size: 14px;
-    color: #334155;
-    border-top: 1px solid #f1f5f9;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #334155;
+  border-top: 1px solid #f1f5f9;
 }
 
 .status-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .published {
-    background: #dcfce7;
-    color: #15803d;
+  background: #dcfce7;
+  color: #15803d;
 }
 
 .draft {
-    background: #fef3c7;
-    color: #b45309;
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .view-btn {
-    background: #eef4ff;
-    color: #2563eb;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 14px;
-    cursor: pointer;
-    font-weight: 600;
+  background: #eef4ff;
+  color: #2563eb;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-weight: 600;
 }
 
 .view-btn:hover {
-    background: #dbeafe;
+  background: #dbeafe;
 }
 
 .loading-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(5px);
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(5px);
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
-    z-index: 9999;
+  z-index: 9999;
 }
 
 .loader-box {
-    background: white;
-    padding: 24px 32px;
-    border-radius: 12px;
+  background: white;
+  padding: 24px 32px;
+  border-radius: 12px;
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
 }
 
 .spinner {
-    width: 50px;
-    height: 50px;
-    border: 4px solid #e2e8f0;
-    border-top: 4px solid #232f72;
-    border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #232f72;
+  border-radius: 50%;
 
-    animation: spin 0.8s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-box {
-    background: #fee2e2;
-    color: #b91c1c;
-    padding: 12px 16px;
-    border-radius: 8px;
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: 8px;
 }
 
 .empty-cell {
-    text-align: center;
-    padding: 30px;
-    color: #64748b;
+  text-align: center;
+  padding: 30px;
+  color: #64748b;
 }
 
 @media (max-width: 1024px) {
-    .table-card {
-        overflow-x: auto;
-    }
+  .table-card {
+    overflow-x: auto;
+  }
 
-    table {
-        min-width: 900px;
-    }
+  table {
+    min-width: 900px;
+  }
 }
 </style>

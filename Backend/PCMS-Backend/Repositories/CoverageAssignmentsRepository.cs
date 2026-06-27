@@ -137,6 +137,21 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
             .OrderByDescending(dto => dto.RequestCount)
             .ToListAsync();
     }
+    public async Task<List<AssignmentInfoDto>> GetActiveAssignmentsByPhysicianIdAsync(int physicianId)
+    {
+        var yesterday = DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
+
+        return await _context.CoverageAssignments
+            .Where(a => a.PhysicianId == physicianId &&
+                        a.CoverageDate >= yesterday)
+            .Select(a => new AssignmentInfoDto
+            {
+
+                Date = a.CoverageDate,
+                ShiftType = a.ShiftType
+            })
+            .ToListAsync();
+    }
 
     public async Task<int?> GetAssignmentIdByAlertIdAsync(int alertId)
     {

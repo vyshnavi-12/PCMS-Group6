@@ -35,5 +35,13 @@ public class PhysicianController : ControllerBase
          
     }
 
+    [HttpGet("unavailable-requests-count")]
+    public async Task<IActionResult> GetUnavailableRequestCount()
+    {
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Missing token");
+        var result = await _physicianService.GetUnavailableRequestCountAsync(validUserId);
+        return result.ToActionResult();
+    }
+
 }
 

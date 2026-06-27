@@ -22,6 +22,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
+  updated: [message: string]
 }>()
 
 const reason = ref('')
@@ -55,15 +56,30 @@ const toggleDropdown = () => {
   isDropdownOpen.value = !isDropdownOpen.value
 }
 
-const approveRequest = async() => {
-  if (!selectedReplacement.value) return
-  await API.patch(`coverageassignments/alerts/${props.request.alertId}/update-physician/${selectedDoctor.value?.physicianId}`)
-  alert('Request Approved')
+const approveRequest = async () => {
+  try {
+    if (!selectedReplacement.value) return
+
+    await API.patch(
+      `coverageassignments/alerts/${props.request.alertId}/update-physician/${selectedDoctor.value?.physicianId}`
+    )
+
+    emit('updated', 'Request approved successfully')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
-const declineRequest = async() => {
-  await API.patch(`coverageassignments/alerts/${props.request.alertId}/decline-request`)
-  alert('Request Declined')
+const declineRequest = async () => {
+  try {
+    await API.patch(
+      `coverageassignments/alerts/${props.request.alertId}/decline-request`
+    )
+
+    emit('updated', 'Request declined successfully')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const fetchAlertDetails = async () => {

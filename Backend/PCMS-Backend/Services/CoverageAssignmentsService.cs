@@ -3,6 +3,8 @@ using PCMS_Backend.Interfaces.Repositories;
 using PCMS_Backend.Interfaces.Services;
 using PCMS_Backend.Models;
 using PCMS_Backend.Shared;
+using Microsoft.AspNetCore.SignalR;
+using PCMS_Backend.Hubs;
 
 namespace PCMS_Backend.Services;
 
@@ -10,12 +12,17 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
 {
     private readonly ICoverageAssignmentsRepository _coverageAssignmentsRepo;
     private readonly IPhysicianService _physicianService;
+    private readonly IHubContext<UnavailableRequestHub> _hubContext;
 
 
-    public CoverageAssignmentsService(ICoverageAssignmentsRepository coverageAssignmentsRepo, IPhysicianService physicianService)
+    public CoverageAssignmentsService(
+    ICoverageAssignmentsRepository coverageAssignmentsRepo,
+    IPhysicianService physicianService,
+    IHubContext<UnavailableRequestHub> hubContext)
     {
         _coverageAssignmentsRepo = coverageAssignmentsRepo;
         _physicianService = physicianService;
+        _hubContext = hubContext;
     }
 
     public async Task<Result> MarkAssignmentUnavailableAsync(int assignmentId, string reason, int physicianId)
@@ -37,6 +44,10 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         };
         await _coverageAssignmentsRepo.ChangeAssignmentStatus(assignmentId, "Pending");
         await _coverageAssignmentsRepo.CreateAlertAsync(gapAlert, physicianId);
+
+        await _hubContext.Clients
+            .Group("User_6")
+            .SendAsync("NewUnavailableRequest");
 
         return Result.Ok("Assignment marked unavailable. Alert sent to supervisor.");
     }
@@ -67,6 +78,7 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
 
         return Result<AlertDetailsResponseDto>.Ok(response, "Alert details fetched successfully.");
     }
+
     public async Task<Result> UpdateAlertPhysicianAsync(int alertId, int physicianId)
     {
         var alert = await _coverageAssignmentsRepo.GetAlertDetailsByIdAsync(alertId);
@@ -78,17 +90,49 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         if (assignmentId is not int validAssignmentId) return Result.NotFound("Assignment not found");
         await _coverageAssignmentsRepo.ChangeAssignmentStatus(validAssignmentId, "Active");
         var updateAlertStatus = await _coverageAssignmentsRepo.UpdateAlertStatusToResolvedAsync(alertId);
-        if(!updateAssignment || !updateAlertStatus) return Result.ServerError("Failed to update assignment or resolve alert.");
+        if (!updateAssignment || !updateAlertStatus)
+            return Result.ServerError("Failed to update assignment or resolve alert.");
+
+        var userId = alert.Physician.UserId;
+
+        if (userId != null)
+        {
+            await _hubContext.Clients
+                .Group($"User_{userId}")
+                .SendAsync("UnavailableRequestUpdated");
+        }
+
         return Result.Ok("Assignment updated with new physician and alert resolved.");
     }
 
     public async Task<Result> DeclineUnavailableRequestAsync(int alertId)
     {
+        var alert = await _coverageAssignmentsRepo.GetAlertDetailsByIdAsync(alertId);
+
+        if (alert == null)
+            return Result.NotFound("Alert not found");
+
         var assignmentId = await _coverageAssignmentsRepo.GetAssignmentIdByAlertIdAsync(alertId);
-        if (assignmentId is not int validAssignmentId) return Result.NotFound("Assignment not found");
+
+        if (assignmentId is not int validAssignmentId)
+            return Result.NotFound("Assignment not found");
+
         await _coverageAssignmentsRepo.ChangeAssignmentStatus(validAssignmentId, "Active");
+
         var declineAlertDone = await _coverageAssignmentsRepo.UpdateAlertStatusToResolvedAsync(alertId);
-        if (!declineAlertDone) return Result.ServerError("Failed to decline alert.");
+
+        if (!declineAlertDone)
+            return Result.ServerError("Failed to decline alert.");
+
+        var userId = alert.Physician.UserId;
+
+        if (userId != null)
+        {
+            await _hubContext.Clients
+                .Group($"User_{userId}")
+                .SendAsync("UnavailableRequestUpdated");
+        }
+
         return Result.NoContent();
     }
 

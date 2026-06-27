@@ -46,6 +46,23 @@ const formatDate = (dateString: string) => {
     return `${days[date.getDay()]}, ${months[Number(month) - 1]} ${day}`
 }
 
+const isToday = (dateString: string) => {
+    const today = new Date()
+
+    const [year, month, day] = dateString.split('-')
+    const scheduleDate = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day)
+    )
+
+    return (
+        today.getFullYear() === scheduleDate.getFullYear() &&
+        today.getMonth() === scheduleDate.getMonth() &&
+        today.getDate() === scheduleDate.getDate()
+    )
+}
+
 const schedules = computed<Schedule[]>(() =>
     scheduleStore.doctorSchedules.map((schedule: any) => ({
         coverageAssignmentId: schedule.coverageAssignmentId,
@@ -71,11 +88,11 @@ onMounted(() => {
 })
 
 const getStatusClass = (status: string) => {
-    switch (status) {
+    switch (status?.toUpperCase()) {
         case 'ASSIGNED':
             return 'assigned'
-        case 'OFF':
-            return 'off'
+        case 'PENDING':
+            return 'pending'
         default:
             return ''
     }
@@ -196,7 +213,8 @@ const openSwapRequest = (schedule: Schedule) => {
                                     Unavailable
                                 </button>
 
-                                <button class="swap-btn" @click="openSwapRequest(schedule)">
+                                <button v-if="!isToday(schedule.originalDate)" class="swap-btn"
+                                    @click="openSwapRequest(schedule)">
                                     Request Swap
                                 </button>
 
@@ -307,9 +325,9 @@ tbody tr:hover {
     color: #15803d;
 }
 
-.off {
-    background: #e5e7eb;
-    color: #6b7280;
+.pending {
+    background: #fef3c7;
+    color: #b45309;
 }
 
 .action-cell {

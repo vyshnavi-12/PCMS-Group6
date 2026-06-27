@@ -2,7 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import UnavailableRequestCard from './UnavailableRequestCard.vue'
 import API from '../../api/axios.ts'
+import { useToast } from 'primevue/usetoast'
+import unavailableRequestSignalRService from '../../services/unavailableRequestSignalRService'
 
+const toast = useToast()
 const activeTab = ref('Open')
 const selectedRequest = ref<any | null>(null)
 const gapAlerts = ref<any[]>([])
@@ -82,8 +85,33 @@ const closeRequest = () => {
     selectedRequest.value = null
 }
 
+const handleRequestUpdated = async (message: string) => {
+    toast.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: message,
+        life: 3000
+    })
+
+    selectedRequest.value = null
+    await fetchUnavailableRequests()
+}
+
 onMounted(() => {
-    fetchUnavailableRequests();
+    fetchUnavailableRequests()
+
+    unavailableRequestSignalRService.onNewUnavailableRequest(async () => {
+        console.log('New unavailable request received')
+
+        await fetchUnavailableRequests()
+
+        toast.add({
+            severity: 'info',
+            summary: 'New Request',
+            detail: 'New unavailable request received',
+            life: 3000
+        })
+    })
 })
 </script>
 
@@ -161,7 +189,11 @@ onMounted(() => {
 
         <template v-else>
 
-            <UnavailableRequestCard :request="selectedRequest" @close="closeRequest" />
+            <UnavailableRequestCard 
+    :request="selectedRequest" 
+    @close="closeRequest"
+    @updated="handleRequestUpdated"
+/>
         </template>
 
     </div>

@@ -35,7 +35,7 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
             AlertReason = reason,
             AlertStatus = "Open"
         };
-
+        await _coverageAssignmentsRepo.ChangeAssignmentStatus(assignmentId, "Pending");
         await _coverageAssignmentsRepo.CreateAlertAsync(gapAlert, physicianId);
 
         return Result.Ok("Assignment marked unavailable. Alert sent to supervisor.");
@@ -72,7 +72,11 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         var alert = await _coverageAssignmentsRepo.GetAlertDetailsByIdAsync(alertId);
         if (alert == null)
             return Result.NotFound("Alert not found.");
+
         var updateAssignment = await _coverageAssignmentsRepo.UpdateAssignmentPhysicianAsync(alertId, physicianId);
+        var assignmentId = await _coverageAssignmentsRepo.GetAssignmentIdByAlertIdAsync(alertId);
+        if (assignmentId is not int validAssignmentId) return Result.NotFound("Assignment not found");
+        await _coverageAssignmentsRepo.ChangeAssignmentStatus(validAssignmentId, "Active");
         var updateAlertStatus = await _coverageAssignmentsRepo.UpdateAlertStatusToResolvedAsync(alertId);
         if(!updateAssignment || !updateAlertStatus) return Result.ServerError("Failed to update assignment or resolve alert.");
         return Result.Ok("Assignment updated with new physician and alert resolved.");
@@ -80,6 +84,9 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
 
     public async Task<Result> DeclineUnavailableRequestAsync(int alertId)
     {
+        var assignmentId = await _coverageAssignmentsRepo.GetAssignmentIdByAlertIdAsync(alertId);
+        if (assignmentId is not int validAssignmentId) return Result.NotFound("Assignment not found");
+        await _coverageAssignmentsRepo.ChangeAssignmentStatus(validAssignmentId, "Active");
         var declineAlertDone = await _coverageAssignmentsRepo.UpdateAlertStatusToResolvedAsync(alertId);
         if (!declineAlertDone) return Result.ServerError("Failed to decline alert.");
         return Result.NoContent();

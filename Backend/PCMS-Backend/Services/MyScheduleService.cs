@@ -40,7 +40,7 @@ public class MyScheduleService : IMyScheduleService
             Time = a.ShiftType == "Day"
                 ? "06:00 AM - 06:00 PM"
                 : "06:00 PM - 06:00 AM",
-            Status = "ASSIGNED"
+            Status = a.AssignmentStatus == "Active"?"ASSIGNED":"PENDING"
         }).ToList();
 
         return Result<IReadOnlyList<DoctorScheduleDto>>

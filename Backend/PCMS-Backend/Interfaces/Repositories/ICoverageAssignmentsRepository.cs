@@ -17,6 +17,9 @@ public interface ICoverageAssignmentsRepository
 
     Task<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>> GetUnavailableRequestsPerSpecialtyAsync();
 
+    Task<bool> ChangeAssignmentStatus(int assignmentId, string status);
+    Task<int?> GetAssignmentIdByAlertIdAsync(int alertId);
+
     Task SaveChangesAsync();
 
 

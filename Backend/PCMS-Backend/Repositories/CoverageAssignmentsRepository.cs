@@ -136,4 +136,20 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
             .ToListAsync();
     }
 
+    public async Task<int?> GetAssignmentIdByAlertIdAsync(int alertId)
+    {
+        var alert = await _context.CoverageGapAlerts.Where(cga => cga.CoverageGapAlertId == alertId).FirstOrDefaultAsync();
+        if (alert == null) return null;
+        return alert.CoverageAssignmentId;
+    }
+
+    public async Task<bool> ChangeAssignmentStatus(int assignmentId, string status)
+    {
+        var assignment = await _context.CoverageAssignments.Where(ca => ca.CoverageAssignmentId == assignmentId).FirstOrDefaultAsync();
+        if (assignment == null) return false;
+        assignment.AssignmentStatus = status;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
 }

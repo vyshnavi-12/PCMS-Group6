@@ -25,20 +25,19 @@ const formatDate = (dateString: string) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-// ✅ Use alertStatus instead of status
 const openCount = computed(() => {
-    return gapAlerts.value.filter(g => g.alertStatus?.toUpperCase() === 'OPEN').length
+    return gapAlerts.value.filter(g => g.status?.toUpperCase() === 'OPEN').length
 })
 
 const resolvedCount = computed(() => {
-    return gapAlerts.value.filter(g => g.alertStatus?.toUpperCase() === 'RESOLVED').length
+    return gapAlerts.value.filter(g => g.status?.toUpperCase() === 'RESOLVED').length
 })
 
 const filteredGaps = computed(() => {
     if (activeTab.value === 'Open') {
-        return gapAlerts.value.filter(g => g.alertStatus?.toUpperCase() === 'OPEN')
+        return gapAlerts.value.filter(g => g.status?.toUpperCase() === 'OPEN')
     }
-    return gapAlerts.value.filter(g => g.alertStatus?.toUpperCase() === 'RESOLVED')
+    return gapAlerts.value.filter(g => g.status?.toUpperCase() === 'RESOLVED')
 })
 
 const getStatusClass = (status: string) => {
@@ -132,12 +131,12 @@ onMounted(() => {
                             <th>Requestd By</th>
                             <th>Status</th>
                             <th>Created At</th>
-                            <th>Actions</th>
+                            <th v-if="activeTab === 'Open'">Actions</th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        <tr v-for="gap in filteredGaps" :key="gap.id">
+                        <tr v-for="gap in filteredGaps" :key="gap.alertId">
 
                             <td>{{ formatDate(gap.date) }}</td>
                             <td>{{ gap.specialty }}</td>
@@ -153,7 +152,7 @@ onMounted(() => {
                             <td>{{ formatDateTime(gap.createdAt) }}</td>
 
                             <td>
-                                <button class="view-btn" @click="viewRequest(gap)">
+                                <button v-if="activeTab === 'Open'" class="view-btn" @click="viewRequest(gap)">
                                     View
                                 </button>
                             </td>
@@ -161,7 +160,7 @@ onMounted(() => {
                         </tr>
 
                         <tr v-if="filteredGaps.length === 0">
-                            <td colspan="7" class="empty-state">
+                            <td :colspan="activeTab === 'Open' ? 7 : 6" class="empty-state">
                                 {{ activeTab === 'Open'
                                     ? 'No open unavailable requests'
                                     : 'No resolved unavailable requests'

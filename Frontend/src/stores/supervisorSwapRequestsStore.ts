@@ -1,4 +1,3 @@
-// stores/supervisorSwapRequestsStore.ts
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import API from "../api/axios";

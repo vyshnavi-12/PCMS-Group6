@@ -11,4 +11,6 @@ public interface IPhysicianRepository
     Task<Physician?> GetByUserIdAsync(int userId);
 
     Task<int?> GetPhysicianIdByUserIdAsync(int userId);
+
+    Task<int> GetUnavailableRequestsCountAsync(int physicianId);
 }

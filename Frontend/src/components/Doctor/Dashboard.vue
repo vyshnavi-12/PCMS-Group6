@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScheduleStore } from '../../stores/scheduleStore'
+import API from '../../api/axios'
 
 const router = useRouter()
 const scheduleStore = useScheduleStore()
@@ -123,11 +124,18 @@ const buildCurrentWeekGrid = () => {
     }
   })
 }
+const unavailableRequests = ref(0);
+const fetchUnavailableRequests = async () =>
+{
+  let res = await API.get("physician/unavailable-requests-count")
+  unavailableRequests.value = res.data.data;
 
+}
 const fetchDashboard = async () => {
   try {
     await scheduleStore.fetchDoctorSchedules()
     buildWeeks()
+    fetchUnavailableRequests();
     buildCurrentWeekGrid()
   } catch (error) {
     console.error(error)
@@ -216,7 +224,7 @@ const assignmentCount = computed(() => {
         <div>
           <div class="stat-title">Unavailable Requests</div>
 
-          <div class="stat-value">2</div>
+          <div class="stat-value">{{ unavailableRequests }}</div>
 
           <div class="stat-subtitle">Sent this week</div>
         </div>

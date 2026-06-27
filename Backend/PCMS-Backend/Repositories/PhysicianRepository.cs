@@ -52,4 +52,9 @@ public class PhysicianRepository : IPhysicianRepository
             .Select(p => p.PhysicianId)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<int> GetUnavailableRequestsCountAsync(int physicianId)
+    {
+        return await _context.CoverageGapAlerts.CountAsync(cga => cga.RequestedByPhysicianId == physicianId);
+    }
 }

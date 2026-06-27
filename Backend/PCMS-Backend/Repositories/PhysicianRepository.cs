@@ -52,4 +52,12 @@ public class PhysicianRepository : IPhysicianRepository
             .Select(p => p.PhysicianId)
             .FirstOrDefaultAsync();
     }
+    public async Task<bool> IsPhysicianOnLeaveAsync(int physicianId, DateOnly date)
+    {
+        return await _context.ExternalLeavesData
+            .AnyAsync(l =>
+                l.PhysicianId == physicianId &&
+                l.LeaveStartDate <= date &&
+                l.LeaveEndDate >= date);
+    }
 }

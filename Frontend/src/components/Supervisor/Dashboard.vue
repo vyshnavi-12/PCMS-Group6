@@ -1,90 +1,64 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import PhysicianWorkload from './PhysicianWorkload.vue'
-import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
+import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue'
+import { useSupervisorSwapRequestsStore } from '../../stores/supervisorSwapRequestsStore'
+import { useSupervisorCoverageGapAlertsStore } from '../../stores/supervisorCoverageGapAlertsStore'
+
+const swapStore = useSupervisorSwapRequestsStore()
+const alertsStore = useSupervisorCoverageGapAlertsStore()
+
+onMounted(() => {
+  swapStore.fetchTargetAcceptedCount()
+  alertsStore.fetchOpenAlertsCount()
+})
 </script>
 
 <template>
   <div class="dashboard-page">
-
     <div class="stats-grid">
-
       <!-- Swap Requests -->
       <div class="stat-card">
-        <div class="icon orange">
-          <i class="pi pi-arrow-right-arrow-left"></i>
-        </div>
-
+        <div class="icon orange"><i class="pi pi-arrow-right-arrow-left"></i></div>
         <div>
-          <div class="stat-title">
-            Swap Requests
-          </div>
-
-          <div class="stat-value">
-            4
-          </div>
-
-          <div class="stat-subtitle">
-            Pending approvals
-          </div>
+          <div class="stat-title">Swap Requests</div>
+          <div class="stat-value">{{ swapStore.targetAcceptedCount }}</div>
+          <div class="stat-subtitle">Pending approvals</div>
         </div>
       </div>
 
       <!-- Unavailable Requests -->
       <div class="stat-card">
-        <div class="icon purple">
-          <i class="pi pi-exclamation-circle"></i>
-        </div>
-
+        <div class="icon purple"><i class="pi pi-exclamation-circle"></i></div>
         <div>
-          <div class="stat-title">
-            Unavailable Requests
-          </div>
-
-          <div class="stat-value">
-            7
-          </div>
-
-          <div class="stat-subtitle">
-            Open requests
-          </div>
+          <div class="stat-title">Unavailable Requests</div>
+          <div class="stat-value">{{ alertsStore.openAlertsCount }}</div>
+          <div class="stat-subtitle">Open requests</div>
         </div>
       </div>
 
       <!-- Days Left -->
       <div class="stat-card">
-        <div class="icon blue">
-          <i class="pi pi-calendar"></i>
-        </div>
-
+        <div class="icon blue"><i class="pi pi-calendar"></i></div>
         <div>
-          <div class="stat-title">
-            Days Left
-          </div>
-
-          <div class="stat-value">
-            Jun 30
-          </div>
-
-          <div class="stat-subtitle">
-            Next schedule due
-          </div>
+          <div class="stat-title">Days Left</div>
+          <div class="stat-value">Jun 30</div>
+          <div class="stat-subtitle">Next schedule due</div>
         </div>
       </div>
-
     </div>
 
     <div class="dashboard-content">
-      <div class="left-panel">
-        <PhysicianWorkload />
-      </div>
-
-      <div class="right-panel">
-        <SpecialityRequestsLoad />
-      </div>
+      <div class="left-panel"><PhysicianWorkload /></div>
+      <div class="right-panel"><SpecialityRequestsLoad /></div>
     </div>
-
   </div>
 </template>
+
+
+
+
+
 
 <style scoped>
 .dashboard-page {

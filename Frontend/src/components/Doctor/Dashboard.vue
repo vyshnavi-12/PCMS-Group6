@@ -2,60 +2,40 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScheduleStore } from '../../stores/scheduleStore'
+import { useDoctorSwapRequestsStore } from '../../stores/doctorSwapRequestsStore'
+import { usePhysicianUnavailableRequestsStore } from '../../stores/physicianUnavailableRequestsStore'
 
 const router = useRouter()
 const scheduleStore = useScheduleStore()
+const swapStore = useDoctorSwapRequestsStore()
+const unavailableStore = usePhysicianUnavailableRequestsStore()
 
 const currentWeek = ref('')
 const currentWeekIndex = ref(0)
-
 const weekRanges = ref<any[]>([])
 const weekDates = ref<Date[]>([])
 
 const schedule = ref([
-  {
-    label: 'DAY',
-    time: '6:00 AM – 6:00 PM',
-    assignments: Array(7).fill(null)
-  },
-  {
-    label: 'NIGHT',
-    time: '6:00 PM – 6:00 AM',
-    assignments: Array(7).fill(null)
-  }
+  { label: 'DAY', time: '6:00 AM – 6:00 PM', assignments: Array(7).fill(null) },
+  { label: 'NIGHT', time: '6:00 PM – 6:00 AM', assignments: Array(7).fill(null) }
 ])
 
 const parseDateOnly = (dateString: string) => {
   const [year, month, day] = dateString.split('-')
-
-  return new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day)
-  )
+  return new Date(Number(year), Number(month) - 1, Number(day))
 }
 
-const months = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-]
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const shortDays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
-const shortDays = [
-  'Sun', 'Mon', 'Tue', 'Wed',
-  'Thu', 'Fri', 'Sat'
-]
+const formatWeekLabel = (start: Date, end: Date) =>
+  `${months[start.getMonth()]} ${String(start.getDate()).padStart(2, '0')} – ${months[end.getMonth()]} ${String(end.getDate()).padStart(2, '0')}, ${end.getFullYear()}`
 
-const formatWeekLabel = (start: Date, end: Date) => {
-  return `${months[start.getMonth()]} ${String(start.getDate()).padStart(2, '0')} – ${months[end.getMonth()]} ${String(end.getDate()).padStart(2, '0')}, ${end.getFullYear()}`
-}
-
-const formatHeaderDate = (date: Date) => {
-  return `${shortDays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`
-}
+const formatHeaderDate = (date: Date) =>
+  `${shortDays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`
 
 const buildWeeks = () => {
   const rawSchedules = scheduleStore.doctorSchedules
-
   if (rawSchedules.length === 0) return
 
   const sortedDates = rawSchedules
@@ -66,18 +46,12 @@ const buildWeeks = () => {
   const lastDate = sortedDates[sortedDates.length - 1]
 
   weekRanges.value = []
-
   let weekStart = new Date(firstDate)
 
   while (weekStart <= lastDate) {
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekStart.getDate() + 6)
-
-    weekRanges.value.push({
-      start: new Date(weekStart),
-      end: new Date(weekEnd)
-    })
-
+    weekRanges.value.push({ start: new Date(weekStart), end: new Date(weekEnd) })
     weekStart = new Date(weekEnd)
     weekStart.setDate(weekStart.getDate() + 1)
   }
@@ -88,14 +62,8 @@ const buildCurrentWeekGrid = () => {
   schedule.value[1].assignments = Array(7).fill(null)
 
   if (!weekRanges.value.length) return
-
   const selectedWeek = weekRanges.value[currentWeekIndex.value]
-
-  currentWeek.value = formatWeekLabel(
-    selectedWeek.start,
-    selectedWeek.end
-  )
-
+  currentWeek.value = formatWeekLabel(selectedWeek.start, selectedWeek.end)
   weekDates.value = []
 
   for (let i = 0; i < 7; i++) {
@@ -106,20 +74,10 @@ const buildCurrentWeekGrid = () => {
 
   scheduleStore.doctorSchedules.forEach((item: any) => {
     const assignmentDate = parseDateOnly(item.date)
-
-    const diff = Math.floor(
-      (assignmentDate.getTime() - selectedWeek.start.getTime()) /
-      (1000 * 60 * 60 * 24)
-    )
-
+    const diff = Math.floor((assignmentDate.getTime() - selectedWeek.start.getTime()) / (1000 * 60 * 60 * 24))
     if (diff >= 0 && diff < 7) {
-      if (item.shift.toUpperCase() === 'DAY') {
-        schedule.value[0].assignments[diff] = 'Assigned'
-      }
-
-      if (item.shift.toUpperCase() === 'NIGHT') {
-        schedule.value[1].assignments[diff] = 'Assigned'
-      }
+      if (item.shift.toUpperCase() === 'DAY') schedule.value[0].assignments[diff] = 'Assigned'
+      if (item.shift.toUpperCase() === 'NIGHT') schedule.value[1].assignments[diff] = 'Assigned'
     }
   })
 }
@@ -127,6 +85,9 @@ const buildCurrentWeekGrid = () => {
 const fetchDashboard = async () => {
   try {
     await scheduleStore.fetchDoctorSchedules()
+    await swapStore.fetchPendingMyRequestsCount()
+    await swapStore.fetchPendingRequestsToMeCount()
+    await unavailableStore.fetchOpenUnavailableCount(123) // replace with actual physicianId
     buildWeeks()
     buildCurrentWeekGrid()
   } catch (error) {
@@ -134,9 +95,7 @@ const fetchDashboard = async () => {
   }
 }
 
-onMounted(() => {
-  fetchDashboard()
-})
+onMounted(() => { fetchDashboard() })
 
 const previousWeek = () => {
   if (currentWeekIndex.value > 0) {
@@ -152,84 +111,68 @@ const nextWeek = () => {
   }
 }
 
-const openCalendar = () => {
-  router.push('/doctor/schedule')
-}
+const openCalendar = () => { router.push('/doctor/schedule') }
 
 const assignmentCount = computed(() => {
   if (!weekRanges.value.length) return 0
-
   const selectedWeek = weekRanges.value[currentWeekIndex.value]
-
   return scheduleStore.doctorSchedules.filter((item: any) => {
     const assignmentDate = parseDateOnly(item.date)
-
-    return (
-      assignmentDate >= selectedWeek.start &&
-      assignmentDate <= selectedWeek.end
-    )
+    return assignmentDate >= selectedWeek.start && assignmentDate <= selectedWeek.end
   }).length
 })
 </script>
 
 <template>
   <div class="dashboard-page">
-
-    <!-- SUMMARY CARDS -->
     <div class="stats-grid">
 
+      <!-- My Assignments -->
       <div class="stat-card">
-        <div class="icon blue">
-          <i class="pi pi-calendar"></i>
-        </div>
-
+        <div class="icon blue"><i class="pi pi-calendar"></i></div>
         <div>
           <div class="stat-title">My Assignments</div>
-
-          <div class="stat-value">
-            {{ assignmentCount }}
-          </div>
-
+          <div class="stat-value">{{ assignmentCount }}</div>
           <div class="stat-subtitle">This Week</div>
         </div>
       </div>
 
+      <!-- My Requests -->
       <div class="stat-card">
-        <div class="icon orange">
-          <i class="pi pi-arrow-right-arrow-left"></i>
-        </div>
-
+        <div class="icon orange"><i class="pi pi-user"></i></div>
         <div>
-          <div class="stat-title">Swap Requests</div>
-
-          <div class="stat-value">1</div>
-
+          <div class="stat-title">My Requests</div>
+          <div class="stat-value">{{ swapStore.pendingMyRequestsCount }}</div>
           <div class="stat-subtitle">Pending</div>
         </div>
       </div>
 
+      <!-- Requests To Me -->
       <div class="stat-card">
-        <div class="icon purple">
-          <i class="pi pi-ban"></i>
+        <div class="icon purple"><i class="pi pi-inbox"></i></div>
+        <div>
+          <div class="stat-title">Requests To Me</div>
+          <div class="stat-value">{{ swapStore.pendingRequestsToMeCount }}</div>
+          <div class="stat-subtitle">Awaiting response</div>
         </div>
+      </div>
 
+      <!-- NEW: Unavailable Requests -->
+      <div class="stat-card">
+        <div class="icon red"><i class="pi pi-exclamation-triangle"></i></div>
         <div>
           <div class="stat-title">Unavailable Requests</div>
-
-          <div class="stat-value">2</div>
-
-          <div class="stat-subtitle">Sent this week</div>
+          <div class="stat-value">{{ unavailableStore.openUnavailableCount }}</div>
+          <div class="stat-subtitle">Sent by me (Open)</div>
         </div>
       </div>
 
     </div>
 
-    <!-- SCHEDULE -->
+    <!-- Schedule overview -->
     <div class="schedule-card">
-
       <div class="card-header">
         <h3>My Schedule Overview (Weekly)</h3>
-
         <button class="calendar-btn" @click="openCalendar">
           <i class="pi pi-calendar"></i>
           View Schedule
@@ -237,86 +180,40 @@ const assignmentCount = computed(() => {
       </div>
 
       <div class="week-toolbar">
-
-        <button class="nav-btn" @click="previousWeek" :disabled="currentWeekIndex === 0">
-          ‹
-        </button>
-
-        <span class="week-label">
-          {{ currentWeek }}
-        </span>
-
-        <button class="nav-btn" @click="nextWeek" :disabled="currentWeekIndex === weekRanges.length - 1">
-          ›
-        </button>
-
+        <button class="nav-btn" @click="previousWeek" :disabled="currentWeekIndex === 0">‹</button>
+        <span class="week-label">{{ currentWeek }}</span>
+        <button class="nav-btn" @click="nextWeek" :disabled="currentWeekIndex === weekRanges.length - 1">›</button>
       </div>
 
       <table class="schedule-table">
-
         <thead>
           <tr>
             <th class="shift-column">Shift</th>
-
-            <th v-for="date in weekDates" :key="date.toISOString()">
-              {{ formatHeaderDate(date) }}
-            </th>
+            <th v-for="date in weekDates" :key="date.toISOString()">{{ formatHeaderDate(date) }}</th>
           </tr>
         </thead>
-
         <tbody>
-  <tr v-for="row in schedule" :key="row.label">
-
-    <!-- NEW COLUMN -->
-    <td class="shift-column">
-      <div class="shift-name">
-        {{ row.label }}
-      </div>
-    </td>
-
-    <td
-      v-for="(assignment, index) in row.assignments"
-      :key="`${row.label}-${index}`"
-    >
-      <div
-        v-if="assignment"
-        :class="[
-          row.label === 'DAY'
-            ? 'day-badge'
-            : row.label === 'NIGHT'
-              ? 'night-badge'
-              : 'off-badge'
-        ]"
-      >
-        {{ assignment }}
-      </div>
-
-      <span v-else class="empty-slot">
-        —
-      </span>
-    </td>
-
-  </tr>
-</tbody>
-
+          <tr v-for="row in schedule" :key="row.label">
+            <td class="shift-column"><div class="shift-name">{{ row.label }}</div></td>
+            <td v-for="(assignment, index) in row.assignments" :key="`${row.label}-${index}`">
+              <div v-if="assignment"
+                   :class="[row.label === 'DAY' ? 'day-badge' : row.label === 'NIGHT' ? 'night-badge' : 'off-badge']">
+                {{ assignment }}
+              </div>
+              <span v-else class="empty-slot">—</span>
+            </td>
+          </tr>
+        </tbody>
       </table>
 
       <div class="legend">
-        <span>
-          <span class="dot day"></span>
-          Day Shift (6:00 AM - 6:00 PM)
-        </span>
-
-        <span>
-          <span class="dot night"></span>
-          Night Shift (6:00 PM - 6:00 AM)
-        </span>
+        <span><span class="dot day"></span>Day Shift (6:00 AM - 6:00 PM)</span>
+        <span><span class="dot night"></span>Night Shift (6:00 PM - 6:00 AM)</span>
       </div>
-
     </div>
-
   </div>
 </template>
+
 
 <style scoped>
 .dashboard-page {

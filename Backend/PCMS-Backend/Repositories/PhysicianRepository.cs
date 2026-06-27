@@ -65,4 +65,9 @@ public class PhysicianRepository : IPhysicianRepository
     {
         return await _context.CoverageGapAlerts.CountAsync(cga => cga.RequestedByPhysicianId == physicianId);
     }
+
+    public async Task<int> GetUnavailableRequestsCountSupervisorAsync()
+    {
+        return await _context.CoverageGapAlerts.CountAsync(cga => cga.AlertStatus == "Open");
+    }
 }

@@ -14,4 +14,5 @@ public interface IPhysicianRepository
     Task<bool> IsPhysicianOnLeaveAsync(int physicianId, DateOnly date);
 
     Task<int> GetUnavailableRequestsCountAsync(int physicianId);
+    Task<int> GetUnavailableRequestsCountSupervisorAsync();
 }

@@ -222,4 +222,5 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
             .Select(cs => cs.CoverageScheduleId)
             .FirstOrDefaultAsync();
     }
+
 }

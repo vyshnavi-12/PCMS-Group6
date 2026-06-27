@@ -29,4 +29,13 @@ public class SupervisorController : ControllerBase
         return result.ToActionResult();
     }
 
+
+    [HttpGet("dashboard/details")]
+    public async Task<IActionResult> GetDashboardDetails()
+    {
+        var result = await _supervisorService.DashboardDetails();
+
+        return result.ToActionResult();
+    }
+
 }

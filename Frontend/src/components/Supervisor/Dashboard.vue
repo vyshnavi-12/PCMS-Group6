@@ -1,9 +1,40 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import API from '../../api/axios'
 import PhysicianWorkload from './PhysicianWorkload.vue'
 import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue'
 
 const router = useRouter()
+
+const dashboardDetails = ref({
+  swapRequestCount: 0,
+  unavailableRequestsCount: 0,
+  nextScheduleDate: ''
+})
+
+const fetchDashboardDetails = async () => {
+  try {
+    const response = await API.get('/supervisor/dashboard/details')
+    dashboardDetails.value = response.data.data
+  } catch (error) {
+    console.error('Failed to fetch dashboard details', error)
+  }
+}
+
+const formatDate = (date: string) => {
+  if (!date) return '-'
+
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
+onMounted(() => {
+  fetchDashboardDetails()
+})
 
 const goToSwapRequests = () => {
   router.push('/supervisor/swap-requests')
@@ -27,7 +58,9 @@ const goToUnavailableRequests = () => {
 
         <div>
           <div class="stat-title">Swap Requests</div>
-          <div class="stat-value">4</div>
+          <div class="stat-value">
+  {{ dashboardDetails.swapRequestCount }}
+</div>
           <div class="stat-subtitle">Pending approvals</div>
         </div>
 
@@ -48,8 +81,8 @@ const goToUnavailableRequests = () => {
           </div>
 
           <div class="stat-value">
-            7
-          </div>
+  {{ dashboardDetails.unavailableRequestsCount }}
+</div>
 
           <div class="stat-subtitle">
             Open requests
@@ -73,8 +106,8 @@ const goToUnavailableRequests = () => {
           </div>
 
           <div class="stat-value">
-            Jun 30
-          </div>
+  {{ formatDate(dashboardDetails.nextScheduleDate) }}
+</div>
 
           <div class="stat-subtitle">
             Next schedule due

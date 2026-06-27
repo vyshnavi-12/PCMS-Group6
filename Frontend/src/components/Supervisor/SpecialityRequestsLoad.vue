@@ -25,7 +25,7 @@ const error = ref<string | null>(null)
 onMounted(async () => {
   try {
     const response = await API.get(
-      'https://localhost:7119/api/coverageassignments/alerts/unavailable-requests-per-specialty'
+      '/coverageassignments/alerts/unavailable-requests-per-specialty'
     )
     specialtyData.value = response.data.data
   } catch (err) {

@@ -22,9 +22,40 @@ const fetchUser = async () => {
   }
 }
 
+const colors = [
+  '#BFDBFE',
+  '#DDD6FE',
+  '#FBCFE8',
+  '#BBF7D0',
+  '#FED7AA',
+  '#A5F3FC',
+  '#FDE68A'
+]
+
+const userInitials = computed(() => {
+  if (!loggedInUser.value.fullName) return ''
+
+  const names = loggedInUser.value.fullName.trim().split(' ')
+
+  const firstInitial = names[0]?.charAt(0) || ''
+  const lastInitial =
+    names.length > 1
+      ? names[names.length - 1]?.charAt(0)
+      : ''
+
+  return (firstInitial + lastInitial).toUpperCase()
+})
+
+const avatarColor = computed(() => {
+  if (!loggedInUser.value.fullName) return '#BFDBFE'
+
+  const index = loggedInUser.value.fullName.length % colors.length
+  return colors[index]
+})
+
 onMounted(() => {
   fetchUser()
-  notificationStore.fetchNotifications() 
+  notificationStore.fetchNotifications()
 })
 
 const openNotifications = () => {
@@ -52,11 +83,9 @@ const openNotifications = () => {
 
       <div class="profile-section">
 
-        <img
-          src="https://i.pravatar.cc/200?img=12"
-          alt="Profile"
-          class="avatar"
-        />
+        <div class="avatar" :style="{ backgroundColor: avatarColor }">
+          {{ userInitials }}
+        </div>
 
         <div class="profile-info">
 
@@ -135,7 +164,16 @@ const openNotifications = () => {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  object-fit: cover;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+
+  flex-shrink: 0;
 }
 
 .profile-info {

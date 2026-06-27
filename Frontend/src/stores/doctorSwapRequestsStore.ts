@@ -1,63 +1,52 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import axios from 'axios'
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import API from "../api/axios";
 
-export const useDoctorSwapRequestsStore = defineStore('doctorSwapRequests', () => {
-    const myRequests = ref<any[]>([])
-    const requestsToMe = ref<any[]>([])
+export const useDoctorSwapRequestsStore = defineStore(
+  "doctorSwapRequests",
+  () => {
+    const myRequests = ref<any[]>([]);
+    const requestsToMe = ref<any[]>([]);
 
     const fetchDoctorRequests = async () => {
-        try {
-            const [myResponse, toMeResponse] = await Promise.all([
-                axios.get(
-                    'https://localhost:7119/api/Physician/SwapRequests/my',
-                    { withCredentials: true }
-                ),
-                axios.get(
-                    'https://localhost:7119/api/Physician/SwapRequests/to-me',
-                    { withCredentials: true }
-                )
-            ])
+      try {
+        const [myResponse, toMeResponse] = await Promise.all([
+          API.get("/Physician/SwapRequests/my"),
+          API.get("/Physician/SwapRequests/to-me"),
+        ]);
 
-            myRequests.value = myResponse.data.data || []
-            requestsToMe.value = toMeResponse.data.data || []
+        myRequests.value = myResponse.data.data || [];
+        requestsToMe.value = toMeResponse.data.data || [];
 
-            console.log('My Requests:', myRequests.value)
-            console.log('Requests To Me:', requestsToMe.value)
-        } catch (error) {
-            console.error('Error fetching doctor swap requests:', error)
-        }
-    }
+        console.log("My Requests:", myRequests.value);
+        console.log("Requests To Me:", requestsToMe.value);
+      } catch (error) {
+        console.error("Error fetching doctor swap requests:", error);
+      }
+    };
 
     const acceptRequest = async (requestId: number) => {
-        try {
-            await axios.put(
-                `https://localhost:7119/api/Physician/SwapRequests/${requestId}/accept`,
-                {},
-                { withCredentials: true }
-            )
-        } catch (error) {
-            console.error(error)
-        }
-    }
+      try {
+        await API.put(`/Physician/SwapRequests/${requestId}/accept`, {},);
+      } catch (error) {
+        console.error(error);
+      }
+    };
 
     const declineRequest = async (requestId: number) => {
-        try {
-            await axios.put(
-                `https://localhost:7119/api/Physician/SwapRequests/${requestId}/decline`,
-                {},
-                { withCredentials: true }
-            )
-        } catch (error) {
-            console.error(error)
-        }
-    }
+      try {
+        await API.put(`/Physician/SwapRequests/${requestId}/decline`, {},);
+      } catch (error) {
+        console.error(error);
+      }
+    };
 
     return {
-        myRequests,
-        requestsToMe,
-        fetchDoctorRequests,
-        acceptRequest,
-        declineRequest
-    }
-})
+      myRequests,
+      requestsToMe,
+      fetchDoctorRequests,
+      acceptRequest,
+      declineRequest,
+    };
+  },
+);

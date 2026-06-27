@@ -1,5 +1,7 @@
 import * as signalR from '@microsoft/signalr'
 
+const SIGNALR_BASE_URL = import.meta.env.VITE_SIGNALR_BASE_URL
+
 let connection: signalR.HubConnection | null = null
 
 export const startNotificationSignalRConnection = async (
@@ -9,7 +11,7 @@ export const startNotificationSignalRConnection = async (
   if (connection) return
 
   connection = new signalR.HubConnectionBuilder()
-    .withUrl('https://localhost:7119/notificationHub', {
+    .withUrl(`${SIGNALR_BASE_URL}/notificationHub`, {
       withCredentials: true
     })
     .withAutomaticReconnect()

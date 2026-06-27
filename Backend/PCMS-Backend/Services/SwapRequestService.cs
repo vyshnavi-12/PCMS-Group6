@@ -180,6 +180,11 @@ public class SwapRequestService : ISwapRequestService
 
 
 
+        if (targetAssignment.CoverageDate == DateOnly.FromDateTime(DateTime.Today))
+        {
+            return Result.BadRequest("Swap request is not allowed for current date.");
+        }
+
         var request = new SwapRequest
         {
             RequestedPhysicianCoverageAssignmentId = dto.RequestedPhysicianCoverageAssignmentId,

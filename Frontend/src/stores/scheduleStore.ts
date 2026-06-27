@@ -1,86 +1,81 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import axios from 'axios'
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import API from "../api/axios";
 
-const api = axios.create({
-  baseURL: 'https://localhost:7119',
-  withCredentials: true
-})
+export const useScheduleStore = defineStore("schedule", () => {
+  const schedules = ref<any[]>([]);
+  const doctorSchedules = ref<any[]>([]);
 
-export const useScheduleStore = defineStore('schedule', () => {
-  const schedules = ref<any[]>([])
-  const doctorSchedules = ref<any[]>([])
-
-  const loading = ref(false)
-  const errorMessage = ref('')
+  const loading = ref(false);
+  const errorMessage = ref("");
 
   // ------------------------
   // Supervisor Schedules
   // ------------------------
   const fetchSchedules = async () => {
-    loading.value = true
-    errorMessage.value = ''
+    loading.value = true;
+    errorMessage.value = "";
 
     try {
-      const response = await api.get('/api/CoverageSchedules')
-      schedules.value = response.data.data || []
+      const response = await API.get("/CoverageSchedules");
+      schedules.value = response.data.data || [];
     } catch (error: any) {
       errorMessage.value =
-        error.response?.data?.message || 'Failed to load schedules'
-      console.error(error)
+        error.response?.data?.message || "Failed to load schedules";
+      console.error(error);
     } finally {
-      loading.value = false
+      loading.value = false;
     }
-  }
+  };
 
   const generateSchedule = async () => {
     try {
-      await api.post('/api/CoverageSchedules/generate')
-      await fetchSchedules()
+      await API.post("/CoverageSchedules/generate");
+      await fetchSchedules();
     } catch (error) {
-      console.error(error)
-      throw error
+      console.error(error);
+      throw error;
     }
-  }
+  };
 
   const publishSchedule = async (scheduleId: number) => {
     try {
-      await api.post(`/api/CoverageSchedules/${scheduleId}/publish`)
-      await fetchSchedules()
+      await API.post(`/CoverageSchedules/${scheduleId}/publish`);
+      await fetchSchedules();
     } catch (error) {
-      console.error(error)
-      throw error
+      console.error(error);
+      throw error;
     }
-  }
+  };
 
   const fetchScheduleById = async (scheduleId: number) => {
     try {
-      const response = await api.get(`/api/CoverageSchedules/${scheduleId}`)
-      return response.data.data
+      const response = await API.get(`/CoverageSchedules/${scheduleId}`);
+      return response.data.data;
     } catch (error) {
-      console.error(error)
-      throw error
+      console.error(error);
+      throw error;
     }
-  }
+  };
 
   // ------------------------
   // Doctor Schedule (Used by both Dashboard + MySchedule)
   // ------------------------
   const fetchDoctorSchedules = async () => {
-    loading.value = true
-    errorMessage.value = ''
+    loading.value = true;
+    errorMessage.value = "";
 
     try {
-      const response = await api.get('/api/MySchedule')
-      doctorSchedules.value = response.data.data || []
+      const response = await API.get("/MySchedule");
+      doctorSchedules.value = response.data.data || [];
     } catch (error: any) {
       errorMessage.value =
-        error.response?.data?.message || 'Failed to load doctor schedules'
-      console.error(error)
+        error.response?.data?.message || "Failed to load doctor schedules";
+      console.error(error);
     } finally {
-      loading.value = false
+      loading.value = false;
     }
-  }
+  };
 
   return {
     schedules,
@@ -93,6 +88,6 @@ export const useScheduleStore = defineStore('schedule', () => {
     publishSchedule,
     fetchScheduleById,
 
-    fetchDoctorSchedules
-  }
-})
+    fetchDoctorSchedules,
+  };
+});

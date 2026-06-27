@@ -41,7 +41,8 @@ public class SwapRequestRepository : ISwapRequestRepository
                 a.SpecialtyId == specialtyId &&
                 a.PhysicianId != excludedPhysicianId &&
                 a.ShiftType == shiftType &&
-                a.CoverageScheduleId == coverageScheduleId)
+                a.CoverageScheduleId == coverageScheduleId &&
+                a.CoverageDate >= DateOnly.FromDateTime(DateTime.Today))
             .ToListAsync();
     }
 

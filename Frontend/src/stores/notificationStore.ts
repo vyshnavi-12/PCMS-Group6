@@ -1,12 +1,7 @@
 // stores/notificationStore.ts
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: "https://localhost:7119",
-  withCredentials: true,
-});
+import API from "../api/axios";
 
 interface Notification {
   notificationId: number;
@@ -33,7 +28,7 @@ export const useNotificationStore = defineStore("notifications", () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await api.get("/api/notifications")
+      const response = await API.get("/notifications")
       notifications.value = response.data.data || []
     } catch (error) {
       throw error
@@ -43,7 +38,7 @@ export const useNotificationStore = defineStore("notifications", () => {
   const markAsRead = async (notification: Notification) => {
     if (notification.isRead) return
     try {
-      await api.post(`/api/notifications/${notification.notificationId}/mark-read`)
+      await API.post(`/notifications/${notification.notificationId}/mark-read`)
 
       const found = notifications.value.find(
         (n) => n.notificationId === notification.notificationId

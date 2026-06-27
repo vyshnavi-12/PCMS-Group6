@@ -132,6 +132,19 @@ public class SwapRequestRepository : ISwapRequestRepository
             .OrderByDescending(s => s.RequestedAt)
             .ToListAsync();
     }
+    public async Task<int> GetPendingApprovalSwapRequestCount()
+    {
+        return await _context.SwapRequests
+            .Include(s => s.RequestedByPhysician)
+                .ThenInclude(p => p.User)
+            .Include(s => s.TargetPhysician)
+                .ThenInclude(p => p.User)
+            .Include(s => s.RequestedPhysicianCoverageAssignment)
+            .Include(s => s.TargetedPhysicianCoverageAssignment)
+            .Where(s => s.RequestStatus == "TARGET_ACCEPTED" || s.ReviewedByUserId != null)
+            .OrderByDescending(s => s.RequestedAt)
+            .CountAsync();
+    }
 
     public async Task SaveChangesAsync()
     {

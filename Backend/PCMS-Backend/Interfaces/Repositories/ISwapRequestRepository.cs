@@ -29,6 +29,7 @@ public interface ISwapRequestRepository
     Task<List<SwapRequest>> GetMyRequestsAsync(int physicianId);
 
     Task<List<SwapRequest>> GetRequestsToMeAsync(int physicianId);
+    Task<int> GetPendingApprovalSwapRequestCount();
 
     Task<SwapRequest?> GetByIdAsync(int swapRequestId);
 

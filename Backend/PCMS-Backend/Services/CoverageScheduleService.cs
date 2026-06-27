@@ -109,13 +109,8 @@ public class CoverageScheduleService : ICoverageScheduleService
 
     public async Task<Result<List<TopPhysicianPerSpecialtyDto>>> GetTopPerSpecialty()
     {
-        var startDate = GetCurrStartDate(DateTime.UtcNow);
-        
-
-
-        var startDateOnly = DateOnly.FromDateTime(startDate);
-
-        int scheduleId = await _coverageScheduleRepository.GetScheduleIdByStartDate(startDateOnly);
+   
+        int scheduleId = await _coverageScheduleRepository.GetCurrentScheduleId();
 
         var topData = await _coverageScheduleRepository.GetTopPhysiciansPerSpecialtyRawAsync(scheduleId);
 

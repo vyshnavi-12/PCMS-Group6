@@ -390,4 +390,10 @@ public class SwapRequestService : ISwapRequestService
 
         return Result<List<SupervisorSwapRequestDto>>.Ok(response);
     }
+
+    public async Task<Result<int>> GetTargetAcceptedCountAsync()
+    {
+        var count = await _repository.GetTargetAcceptedCountAsync();
+        return Result<int>.Ok(count);
+    }
 }

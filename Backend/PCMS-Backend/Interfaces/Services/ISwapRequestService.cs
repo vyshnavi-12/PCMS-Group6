@@ -27,4 +27,5 @@ public interface ISwapRequestService
 
 
     Task<Result<List<SupervisorSwapRequestDto>>> GetSupervisorRequestsAsync();
+    Task<Result<int>> GetTargetAcceptedCountAsync();
 }

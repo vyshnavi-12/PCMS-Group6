@@ -198,4 +198,12 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
             .FirstOrDefaultAsync(a => a.CoverageAssignmentId == assignmentId);
     }
 
+    public async Task<int> GetCurrentScheduleId()
+    {
+        return await _context.CoverageSchedules
+            .Where(cs => cs.Status == "Published")
+            .OrderBy(cs => cs.WeekStartDate)
+            .Select(cs => cs.CoverageScheduleId)
+            .FirstOrDefaultAsync();
+    }
 }

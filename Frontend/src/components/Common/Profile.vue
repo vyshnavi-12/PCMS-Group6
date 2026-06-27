@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getMe } from '../../services/authService'
 
 
@@ -10,6 +10,39 @@ const loggedInUser = ref({
     employeeCode: '',
     email: '',
     specialtyName: ''
+})
+
+const colors = [
+    '#BFDBFE', // pastel blue
+    '#DDD6FE', // pastel purple
+    '#FBCFE8', // pastel pink
+    '#BBF7D0', // pastel green
+    '#FED7AA', // pastel orange
+    '#A5F3FC', // pastel cyan
+    '#FDE68A', // pastel yellow
+]
+
+const userInitials = computed(() => {
+    if (!loggedInUser.value.fullName) return ''
+
+    const names = loggedInUser.value.fullName.trim().split(' ')
+
+    const firstInitial = names[0]?.charAt(0) || ''
+    const lastInitial =
+        names.length > 1
+            ? names[names.length - 1]?.charAt(0)
+            : ''
+
+    return (firstInitial + lastInitial).toUpperCase()
+})
+
+const avatarColor = computed(() => {
+    if (!loggedInUser.value.fullName) return '#2563eb'
+
+    const index =
+        loggedInUser.value.fullName.length % colors.length
+
+    return colors[index]
 })
 
 const loading = ref(true)
@@ -42,7 +75,9 @@ onMounted(() => {
             <!-- Left Section -->
             <div class="profile-left">
 
-                <img src="https://i.pravatar.cc/200?img=12" alt="Profile" class="profile-avatar" />
+                <div class="profile-avatar" :style="{ backgroundColor: avatarColor }">
+                    {{ userInitials }}
+                </div>
 
                 <h2>{{ loggedInUser.fullName }}</h2>
 
@@ -127,8 +162,18 @@ onMounted(() => {
     width: 130px;
     height: 130px;
     border-radius: 50%;
-    object-fit: cover;
-    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+
+    color: #1e293b;
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: 2px;
+
+    border: 2px solid rgba(255,255,255,0.8);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
 }
 
 .profile-left h2 {

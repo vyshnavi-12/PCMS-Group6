@@ -110,6 +110,12 @@ onMounted(async () => {
         showNewRequest.value = true
     }
 
+    if (route.query.tab === 'requests-to-me') {
+        activeTab.value = 'Requests To Me'
+    } else {
+        activeTab.value = 'My Requests'
+    }
+
     await fetchSwapRequests()
 })
 </script>

@@ -5,6 +5,8 @@ import API from '../../api/axios'
 import PhysicianWorkload from './PhysicianWorkload.vue'
 import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue'
 import { useSupervisorSwapRequestsStore } from '../../stores/supervisorSwapRequestsStore'
+import unavailableRequestSignalRService from '../../services/unavailableRequestSignalRService'
+import supervisorSwapSignalRService from '../../services/supervisorSwapSignalRService'
 
 const router = useRouter()
 const swapStore = useSupervisorSwapRequestsStore()
@@ -34,8 +36,21 @@ const formatDate = (date: string) => {
   })
 }
 
-onMounted(() => {
-  fetchDashboardDetails()
+onMounted(async () => {
+  await fetchDashboardDetails()
+
+  swapStore.fetchTargetAcceptedCount()
+  swapStore.fetchSupervisorRequests()
+
+  unavailableRequestSignalRService.onNewUnavailableRequest(async () => {
+    console.log('Unavailable dashboard refresh triggered')
+    await fetchDashboardDetails()
+  })
+
+  supervisorSwapSignalRService.onRefreshSupervisorRequests(async () => {
+    console.log('Swap dashboard refresh triggered')
+    await fetchDashboardDetails()
+  })
 })
 
 const goToSwapRequests = () => {
@@ -45,11 +60,6 @@ const goToSwapRequests = () => {
 const goToUnavailableRequests = () => {
   router.push('/supervisor/unavailable-requests')
 }
-
-onMounted(() => {
-  swapStore.fetchTargetAcceptedCount()
-  swapStore.fetchSupervisorRequests()
-})
 </script>
 
 <template>
@@ -64,8 +74,8 @@ onMounted(() => {
         <div>
           <div class="stat-title">Swap Requests</div>
           <div class="stat-value">
-  {{ dashboardDetails.swapRequestCount }}
-</div>
+            {{ dashboardDetails.swapRequestCount }}
+          </div>
           <div class="stat-subtitle">Pending approvals</div>
         </div>
         <button class="view-details-btn" @click="goToSwapRequests">View Details</button>
@@ -82,8 +92,8 @@ onMounted(() => {
           </div>
 
           <div class="stat-value">
-  {{ dashboardDetails.unavailableRequestsCount }}
-</div>
+            {{ dashboardDetails.unavailableRequestsCount }}
+          </div>
 
           <div class="stat-subtitle">
             Open requests
@@ -103,8 +113,8 @@ onMounted(() => {
           </div>
 
           <div class="stat-value">
-  {{ formatDate(dashboardDetails.nextScheduleDate) }}
-</div>
+            {{ formatDate(dashboardDetails.nextScheduleDate) }}
+          </div>
 
           <div class="stat-subtitle">
             Next schedule due

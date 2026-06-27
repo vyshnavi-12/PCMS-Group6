@@ -3,12 +3,16 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScheduleStore } from '../../stores/scheduleStore'
 import API from '../../api/axios'
+import doctorSwapSignalRService from '../../services/doctorSwapSignalRService'
+import unavailableRequestSignalRService from '../../services/unavailableRequestSignalRService'
 
 const router = useRouter()
 const scheduleStore = useScheduleStore()
 
 const currentWeek = ref('')
 const currentWeekIndex = ref(0)
+const myRequestsCount = ref(0)
+const requestsToMeCount = ref(0)
 
 const weekRanges = ref<any[]>([])
 const weekDates = ref<Date[]>([])
@@ -128,26 +132,37 @@ const buildCurrentWeekGrid = () => {
   })
 }
 const unavailableRequests = ref(0);
-const fetchUnavailableRequests = async () =>
-{
+const fetchUnavailableRequests = async () => {
   let res = await API.get("physician/unavailable-requests-count")
   unavailableRequests.value = res.data.data;
 
 }
+
 const fetchDashboard = async () => {
   try {
     await scheduleStore.fetchDoctorSchedules()
+    await fetchSwapCounts()
+    await fetchUnavailableRequests()
     buildWeeks()
-    fetchUnavailableRequests();
     buildCurrentWeekGrid()
   } catch (error) {
     console.error(error)
   }
 }
 
-onMounted(() => {
-  fetchDashboard()
-})
+const fetchSwapCounts = async () => {
+  try {
+    const [myRes, toMeRes] = await Promise.all([
+      API.get('/Physician/SwapRequests/pending-my-count'),
+      API.get('/Physician/SwapRequests/pending-to-me-count')
+    ])
+
+    myRequestsCount.value = myRes.data.data
+    requestsToMeCount.value = toMeRes.data.data
+  } catch (error) {
+    console.error(error)
+  }
+}
 
 const previousWeek = () => {
   if (currentWeekIndex.value > 0) {
@@ -167,8 +182,18 @@ const openCalendar = () => {
   router.push('/doctor/schedule')
 }
 
-const goToSwapRequests = () => {
-  router.push('/doctor/swap-requests')
+const goToMyRequests = () => {
+  router.push({
+    path: '/doctor/swap-requests',
+    query: { tab: 'my-requests' }
+  })
+}
+
+const goToRequestsToMe = () => {
+  router.push({
+    path: '/doctor/swap-requests',
+    query: { tab: 'requests-to-me' }
+  })
 }
 
 const assignmentCount = computed(() => {
@@ -184,6 +209,20 @@ const assignmentCount = computed(() => {
       assignmentDate <= selectedWeek.end
     )
   }).length
+})
+
+onMounted(async () => {
+  await fetchDashboard()
+
+  doctorSwapSignalRService.onRefreshDoctorRequests(async () => {
+    console.log('Doctor dashboard swap refresh triggered')
+    await fetchSwapCounts()
+  })
+
+  unavailableRequestSignalRService.onUnavailableRequestUpdated(async () => {
+    console.log('Doctor dashboard unavailable refresh triggered')
+    await fetchUnavailableRequests()
+  })
 })
 </script>
 
@@ -215,12 +254,28 @@ const assignmentCount = computed(() => {
         </div>
 
         <div>
-          <div class="stat-title">Swap Requests</div>
-          <div class="stat-value">1</div>
+          <div class="stat-title">My Requests</div>
+          <div class="stat-value">{{ myRequestsCount }}</div>
           <div class="stat-subtitle">Pending</div>
         </div>
 
-        <button class="view-details-btn" @click="goToSwapRequests">
+        <button class="view-details-btn" @click="goToMyRequests">
+          View Details
+        </button>
+      </div>
+
+      <div class="stat-card">
+        <div class="icon orange">
+          <i class="pi pi-arrow-right-arrow-left"></i>
+        </div>
+
+        <div>
+          <div class="stat-title">Requests To Me</div>
+          <div class="stat-value">{{ requestsToMeCount }}</div>
+          <div class="stat-subtitle">Pending</div>
+        </div>
+
+        <button class="view-details-btn" @click="goToRequestsToMe">
           View Details
         </button>
       </div>
@@ -340,7 +395,7 @@ const assignmentCount = computed(() => {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 

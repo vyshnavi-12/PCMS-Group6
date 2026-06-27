@@ -159,18 +159,19 @@ public class SwapRequestRepository : ISwapRequestRepository
     public async Task<int> GetPendingMyRequestsCountAsync(int physicianId)
     {
         return await _context.SwapRequests
-            .Where(s => s.RequestedByPhysicianId == physicianId &&
-                        s.RequestStatus != "SUPERVISOR_APPROVED" &&
-                        s.RequestStatus != "REQUEST_REJECTED")
+            .Where(s =>
+                s.RequestedByPhysicianId == physicianId &&
+                (s.RequestStatus == "PENDING_TARGET" ||
+                 s.RequestStatus == "TARGET_ACCEPTED"))
             .CountAsync();
     }
 
     public async Task<int> GetPendingRequestsToMeCountAsync(int physicianId)
     {
         return await _context.SwapRequests
-            .Where(s => s.TargetPhysicianId == physicianId &&
-                        s.RequestStatus != "SUPERVISOR_APPROVED" &&
-                        s.RequestStatus != "REQUEST_REJECTED")
+            .Where(s =>
+                s.TargetPhysicianId == physicianId &&
+                s.RequestStatus == "PENDING_TARGET")
             .CountAsync();
     }
 }

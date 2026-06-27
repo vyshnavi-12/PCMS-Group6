@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSupervisorSwapRequestsStore } from '../../stores/supervisorSwapRequestsStore'
 
-const activeTab = ref('All')
+const activeTab = ref('Pending')
 
 const swapRequestsStore = useSupervisorSwapRequestsStore()
 const { supervisorRequests } = storeToRefs(swapRequestsStore)
@@ -96,12 +96,12 @@ const getStatusClass = (status: string) => {
 
             <div class="tabs">
 
-                <button class="tab-button" :class="{ active: activeTab === 'All' }" @click="activeTab = 'All'">
-                    All ({{ supervisorRequests.length }})
+                 <button class="tab-button" :class="{ active: activeTab === 'Pending' }" @click="activeTab = 'Pending'">
+                    Pending ({{ pendingCount }})
                 </button>
 
-                <button class="tab-button" :class="{ active: activeTab === 'Pending' }" @click="activeTab = 'Pending'">
-                    Pending ({{ pendingCount }})
+                <button class="tab-button" :class="{ active: activeTab === 'All' }" @click="activeTab = 'All'">
+                    All ({{ supervisorRequests.length }})
                 </button>
 
             </div>

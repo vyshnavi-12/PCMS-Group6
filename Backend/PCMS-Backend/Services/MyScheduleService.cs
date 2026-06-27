@@ -34,7 +34,13 @@ public class MyScheduleService : IMyScheduleService
         var response = assignments.Select(a => new DoctorScheduleDto
         {
             CoverageAssignmentId = a.CoverageAssignmentId,
+            CoverageScheduleId = a.CoverageScheduleId,
+
             Date = a.CoverageDate,
+
+            WeekStartDate = a.CoverageSchedule.WeekStartDate,
+            WeekEndDate = a.CoverageSchedule.WeekEndDate,
+
             Shift = a.ShiftType,
             Specialty = a.Specialty.SpecialtyName,
             Time = a.ShiftType == "Day"

@@ -1,6 +1,17 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import PhysicianWorkload from './PhysicianWorkload.vue'
-import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
+import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue'
+
+const router = useRouter()
+
+const goToSwapRequests = () => {
+  router.push('/supervisor/swap-requests')
+}
+
+const goToUnavailableRequests = () => {
+  router.push('/supervisor/unavailable-requests')
+}
 </script>
 
 <template>
@@ -15,18 +26,14 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
         </div>
 
         <div>
-          <div class="stat-title">
-            Swap Requests
-          </div>
-
-          <div class="stat-value">
-            4
-          </div>
-
-          <div class="stat-subtitle">
-            Pending approvals
-          </div>
+          <div class="stat-title">Swap Requests</div>
+          <div class="stat-value">4</div>
+          <div class="stat-subtitle">Pending approvals</div>
         </div>
+
+        <button class="view-details-btn" @click="goToSwapRequests">
+          View Details
+        </button>
       </div>
 
       <!-- Unavailable Requests -->
@@ -48,6 +55,10 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
             Open requests
           </div>
         </div>
+
+        <button class="view-details-btn" @click="goToUnavailableRequests">
+          View Details
+        </button>
       </div>
 
       <!-- Days Left -->
@@ -121,8 +132,21 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
   display: flex;
   align-items: center;
   gap: 16px;
+  position: relative;
+  min-height: 140px;
+}
 
-  min-height: 100px;
+.view-details-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .icon {

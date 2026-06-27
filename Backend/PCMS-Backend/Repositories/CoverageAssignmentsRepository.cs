@@ -94,8 +94,10 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
     public async Task<CoverageGapAlert?> GetAlertDetailsByIdAsync(int alertId)
     {
         return await _context.CoverageGapAlerts
+            .Include(a => a.Physician)
             .FirstOrDefaultAsync(a => a.CoverageGapAlertId == alertId);
     }
+
     public async Task<bool> UpdateAlertStatusToResolvedAsync(int alertId)
     {
         var alert = await _context.CoverageGapAlerts.FindAsync(alertId);

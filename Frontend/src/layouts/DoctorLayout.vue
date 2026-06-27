@@ -13,6 +13,7 @@ import { useDoctorSwapRequestsStore } from '../stores/doctorSwapRequestsStore'
 import { startNotificationSignalRConnection } from '../services/notificationSignalRService'
 import { startScheduleSignalRConnection } from '../services/scheduleSignalRService'
 import doctorSwapSignalRService from '../services/doctorSwapSignalRService'
+import unavailableRequestSignalRService from '../services/unavailableRequestSignalRService'
 
 const route = useRoute()
 const toast = useToast()
@@ -70,6 +71,16 @@ onMounted(async () => {
   doctorSwapSignalRService.onRefreshDoctorRequests(async () => {
     console.log('Doctor swap refresh received')
     await swapRequestsStore.fetchDoctorRequests()
+  })
+
+  await unavailableRequestSignalRService.startConnection(
+    parsedUser.userId.toString()
+  )
+  unavailableRequestSignalRService.onUnavailableRequestUpdated(async () => {
+    console.log('Unavailable request updated')
+
+    await scheduleStore.fetchDoctorSchedules()
+
   })
 })
 

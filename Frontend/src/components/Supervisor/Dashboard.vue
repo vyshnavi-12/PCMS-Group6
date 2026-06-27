@@ -1,17 +1,6 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import PhysicianWorkload from './PhysicianWorkload.vue'
-import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue'
-import { useSupervisorSwapRequestsStore } from '../../stores/supervisorSwapRequestsStore'
-import { useSupervisorCoverageGapAlertsStore } from '../../stores/supervisorCoverageGapAlertsStore'
-
-const swapStore = useSupervisorSwapRequestsStore()
-const alertsStore = useSupervisorCoverageGapAlertsStore()
-
-onMounted(() => {
-  swapStore.fetchTargetAcceptedCount()
-  alertsStore.fetchOpenAlertsCount()
-})
+import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
 </script>
 
 <template>
@@ -21,10 +10,22 @@ onMounted(() => {
       <div class="stat-card">
         <div class="icon orange"><i class="pi pi-arrow-right-arrow-left"></i></div>
         <div>
-          <div class="stat-title">Swap Requests</div>
-          <div class="stat-value">{{ swapStore.targetAcceptedCount }}</div>
-          <div class="stat-subtitle">Pending approvals</div>
+          <div class="stat-title">
+            Swap Requests
+          </div>
+
+          <div class="stat-value">
+            4
+          </div>
+
+          <div class="stat-subtitle">
+            Pending approvals
+          </div>
         </div>
+
+        <button class="view-details-btn" @click="goToSwapRequests">
+          View Details
+        </button>
       </div>
 
       <!-- Unavailable Requests -->
@@ -35,6 +36,10 @@ onMounted(() => {
           <div class="stat-value">{{ alertsStore.openAlertsCount }}</div>
           <div class="stat-subtitle">Open requests</div>
         </div>
+
+        <button class="view-details-btn" @click="goToUnavailableRequests">
+          View Details
+        </button>
       </div>
 
       <!-- Days Left -->
@@ -67,6 +72,8 @@ onMounted(() => {
   overflow: hidden;
 }
 
+
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -95,8 +102,21 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 16px;
+  position: relative;
+  min-height: 140px;
+}
 
-  min-height: 100px;
+.view-details-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .icon {

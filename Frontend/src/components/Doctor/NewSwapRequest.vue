@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
+import API from '../../api/axios'
 import { useToast } from 'primevue/usetoast'
 import DatePicker from 'primevue/datepicker'
 
@@ -48,21 +48,14 @@ const fetchSchedule = async () => {
             return
         }
 
-        const response = await axios.get(
-            `https://localhost:7119/api/Physician/SwapRequests/available-targets/${assignmentId}`,
-            {
-                withCredentials: true
-            }
+        const response = await API.get(
+            `/Physician/SwapRequests/available-targets/${assignmentId}`
         )
 
         weeklySchedule.value = response.data.data.map((schedule: any) => ({
             ...schedule,
             shift: schedule.shift.toUpperCase()
         }))
-
-        if (route.query.date) {
-            selectedDate.value = parseDate(route.query.date.toString())
-        }
 
         if (route.query.shift) {
             selectedShift.value = route.query.shift.toString()
@@ -80,9 +73,8 @@ onMounted(() => {
 })
 
 const availableDates = computed(() => {
-    return [...new Set(
-        weeklySchedule.value.map(item => item.date)
-    )]
+    return [...new Set(weeklySchedule.value.map(item => item.date))]
+        .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
 })
 
 const minDate = computed<Date | undefined>(() => {
@@ -169,18 +161,15 @@ const submitRequest = async () => {
 
     try {
         const payload = {
-            requestedPhysicianCoverageAssignmentId:route.query.assignmentId,
+            requestedPhysicianCoverageAssignmentId: route.query.assignmentId,
             targetedPhysicianCoverageAssignmentId: selectedCoverage.value.coverageAssignmentId,
             targetPhysicianId: selectedCoverage.value.physicianId,
             requestComments: reason.value.trim()
         }
 
-        await axios.post(
-            'https://localhost:7119/api/Physician/SwapRequests',
-            payload,
-            {
-                withCredentials: true
-            }
+        await API.post(
+            '/Physician/SwapRequests',
+            payload
         )
 
         toast.add({
@@ -229,7 +218,11 @@ const submitRequest = async () => {
                             </label>
 
                             <DatePicker v-model="selectedDate" :manualInput="false" :disabledDates="disabledDates"
-                                :minDate="minDate" :maxDate="maxDate" dateFormat="yy-mm-dd" showIcon />
+                                :minDate="minDate" :maxDate="maxDate" dateFormat="yy-mm-dd" showIcon :pt="{
+                                    day: ({ context }) => ({
+                                        class: !context.disabled ? 'bg-blue-100 font-bold rounded-md' : ''
+                                    })
+                                }" />
                         </div>
 
                         <div class="field">

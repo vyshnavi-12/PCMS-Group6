@@ -94,8 +94,10 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
     public async Task<CoverageGapAlert?> GetAlertDetailsByIdAsync(int alertId)
     {
         return await _context.CoverageGapAlerts
+            .Include(a => a.Physician)
             .FirstOrDefaultAsync(a => a.CoverageGapAlertId == alertId);
     }
+
     public async Task<bool> UpdateAlertStatusToResolvedAsync(int alertId)
     {
         var alert = await _context.CoverageGapAlerts.FindAsync(alertId);
@@ -134,6 +136,37 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
             })
             .OrderByDescending(dto => dto.RequestCount)
             .ToListAsync();
+    }
+    public async Task<List<AssignmentInfoDto>> GetActiveAssignmentsByPhysicianIdAsync(int physicianId)
+    {
+        var yesterday = DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
+
+        return await _context.CoverageAssignments
+            .Where(a => a.PhysicianId == physicianId &&
+                        a.CoverageDate >= yesterday)
+            .Select(a => new AssignmentInfoDto
+            {
+
+                Date = a.CoverageDate,
+                ShiftType = a.ShiftType
+            })
+            .ToListAsync();
+    }
+
+    public async Task<int?> GetAssignmentIdByAlertIdAsync(int alertId)
+    {
+        var alert = await _context.CoverageGapAlerts.Where(cga => cga.CoverageGapAlertId == alertId).FirstOrDefaultAsync();
+        if (alert == null) return null;
+        return alert.CoverageAssignmentId;
+    }
+
+    public async Task<bool> ChangeAssignmentStatus(int assignmentId, string status)
+    {
+        var assignment = await _context.CoverageAssignments.Where(ca => ca.CoverageAssignmentId == assignmentId).FirstOrDefaultAsync();
+        if (assignment == null) return false;
+        assignment.AssignmentStatus = status;
+        await _context.SaveChangesAsync();
+        return true;
     }
 
 }

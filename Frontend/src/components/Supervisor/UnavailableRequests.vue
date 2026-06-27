@@ -2,15 +2,18 @@
 import { ref, computed, onMounted } from 'vue'
 import UnavailableRequestCard from './UnavailableRequestCard.vue'
 import API from '../../api/axios.ts'
+import { useToast } from 'primevue/usetoast'
+import unavailableRequestSignalRService from '../../services/unavailableRequestSignalRService'
 
+const toast = useToast()
 const activeTab = ref('Open')
 const selectedRequest = ref<any | null>(null)
-const gapAlerts = ref<any[]>([])
-
-const fetchUnavailableRequests = async () => {
-  const unavailableRequest = await API.get("coverageassignments/alerts")
-  gapAlerts.value = unavailableRequest.data.data
-  console.log(unavailableRequest.data)
+    const gapAlerts = ref<any[]>([])
+const fetchUnavailableRequests =  async() =>
+{
+    const unavailableRequest = await API.get("coverageassignments/alerts")
+    gapAlerts.value = unavailableRequest.data.data
+    console.log(unavailableRequest.data)
 }
 
 const formatDate = (dateString: string) => {
@@ -48,75 +51,107 @@ const getStatusClass = (status: string) => {
 }
 
 const formatDateTime = (dateString: string) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', hour12: true
-  })
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    
+    return date.toLocaleString('en-US', {
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+    });
 }
 
 const viewRequest = (gap: any) => { selectedRequest.value = gap }
 const closeRequest = () => { selectedRequest.value = null }
 
-onMounted(() => { fetchUnavailableRequests() })
+onMounted(() =>
+{
+    fetchUnavailableRequests();
+})
 </script>
 
 <template>
-  <div class="coverage-gap-page">
-    <template v-if="!selectedRequest">
-      <div class="toolbar">
-        <div class="tabs">
-          <button class="tab-button" :class="{ active: activeTab === 'Open' }" @click="activeTab = 'Open'">
-            Open ({{ openCount }})
-          </button>
-          <button class="tab-button" :class="{ active: activeTab === 'Resolved' }" @click="activeTab = 'Resolved'">
-            Resolved ({{ resolvedCount }})
-          </button>
-        </div>
-      </div>
+    <div class="coverage-gap-page">
 
-      <div class="table-card">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Specialty</th>
-              <th>Shift</th>
-              <th>Requested By</th>
-              <th>Status</th>
-              <th>Created At</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="gap in filteredGaps" :key="gap.alertId">
-              <td>{{ formatDate(gap.date) }}</td>
-              <td>{{ gap.specialty }}</td>
-              <td>{{ gap.shift }}</td>
-              <td>{{ gap.requestedBy }}</td>
-              <td>
-                <span class="status-badge" :class="getStatusClass(gap.alertStatus)">
-                  {{ gap.alertStatus }}
-                </span>
-              </td>
-              <td>{{ formatDateTime(gap.createdAt) }}</td>
-              <td><button class="view-btn" @click="viewRequest(gap)">View</button></td>
-            </tr>
-            <tr v-if="filteredGaps.length === 0">
-              <td colspan="7" class="empty-state">
-                {{ activeTab === 'Open' ? 'No open unavailable requests' : 'No resolved unavailable requests' }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </template>
+        <template v-if="!selectedRequest">
 
-    <template v-else>
-      <UnavailableRequestCard :request="selectedRequest" @close="closeRequest" />
-    </template>
-  </div>
+            <div class="toolbar">
+                <div class="tabs">
+
+                    <button class="tab-button" :class="{ active: activeTab === 'Open' }" @click="activeTab = 'Open'">
+                        Open ({{ openCount }})
+                    </button>
+
+                    <button class="tab-button" :class="{ active: activeTab === 'Resolved' }"
+                        @click="activeTab = 'Resolved'">
+                        Resolved ({{resolvedCount }})
+                    </button>
+
+                </div>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Specialty</th>
+                            <th>Shift</th>
+                            <th>Requestd By</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr v-for="gap in filteredGaps" :key="gap.id">
+
+                            <td>{{ formatDate(gap.date)}}</td>
+                            <td>{{ gap.specialty }}</td>
+                            <td>{{ gap.shift }}</td>
+                            <td>{{ gap.requestedBy }}</td>
+
+                            <td>
+                                <span class="status-badge" :class="getStatusClass(gap.status)">
+                                    {{ gap.status }}
+                                </span>
+                            </td>
+
+                            <td>{{ formatDateTime(gap.createdAt) }}</td>
+
+                            <td>
+                                <button class="view-btn" @click="viewRequest(gap)">
+                                    View
+                                </button>
+                            </td>
+
+                        </tr>
+
+                        <tr v-if="filteredGaps.length === 0">
+                            <td colspan="7" class="empty-state">
+                                {{ activeTab === 'Open'
+                                    ? 'No open unavailable requests'
+                                    : 'No resolved unavailable requests'
+                                }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </template>
+
+        <template v-else>
+
+            <UnavailableRequestCard :request="selectedRequest" @close="closeRequest" />
+        </template>
+
+    </div>
 </template>
 
 

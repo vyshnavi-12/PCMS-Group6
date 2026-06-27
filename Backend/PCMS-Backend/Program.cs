@@ -128,5 +128,6 @@ app.MapControllers();
 app.MapHub<NotificationHub>("/notificationHub");
 app.MapHub<ScheduleHub>("/scheduleHub");
 app.MapHub<SwapRequestHub>("/swapRequests");
+app.MapHub<UnavailableRequestHub>("/unavailableRequestHub");
 
 app.Run();

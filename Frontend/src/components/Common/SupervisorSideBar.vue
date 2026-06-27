@@ -77,7 +77,7 @@ const handleLogout = async () => {
         </span>
       </RouterLink>
 
-      <RouterLink to="/supervisor/coverage-gaps" class="nav-item"
+      <RouterLink to="/supervisor/unavailable-requests" class="nav-item"
         :class="{ active: route.path === '/supervisor/coverage-gaps' }">
         <i class="pi pi-exclamation-triangle"></i>
 

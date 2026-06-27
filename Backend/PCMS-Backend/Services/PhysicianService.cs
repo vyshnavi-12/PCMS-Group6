@@ -191,6 +191,14 @@ public class PhysicianService : IPhysicianService
         }
     }
 
+    public async Task<Result<int>> GetUnavailableRequestCountAsync(int userId)
+    {
+        var physicianId = await _physicianRepo.GetPhysicianIdByUserIdAsync(userId);
+        if (physicianId is not int validPhysicianId) return Result<int>.Unauthorized("Not valid physician");
+        var count = await _physicianRepo.GetUnavailableRequestsCountAsync(validPhysicianId);
+        return Result<int>.Ok(count);
+    }
+
     private void BlockDoctor(int doc, int slot, Dictionary<int, HashSet<int>> blocked)
     {
         if (!blocked.ContainsKey(doc))

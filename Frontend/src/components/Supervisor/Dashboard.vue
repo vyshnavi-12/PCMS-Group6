@@ -1,69 +1,83 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import PhysicianWorkload from './PhysicianWorkload.vue'
-import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
+import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue'
+import { useSupervisorSwapRequestsStore } from '../../stores/supervisorSwapRequestsStore'
+
+const router = useRouter()
+const swapStore = useSupervisorSwapRequestsStore()
+
+const goToSwapRequests = () => {
+  router.push('/supervisor/swap-requests')
+}
+
+const goToUnavailableRequests = () => {
+  router.push('/supervisor/unavailable-requests')
+}
+
+onMounted(() => {
+  swapStore.fetchTargetAcceptedCount()
+  swapStore.fetchSupervisorRequests()
+})
 </script>
 
 <template>
   <div class="dashboard-page">
     <div class="stats-grid">
+
       <!-- Swap Requests -->
       <div class="stat-card">
-        <div class="icon orange"><i class="pi pi-arrow-right-arrow-left"></i></div>
-        <div>
-          <div class="stat-title">
-            Swap Requests
-          </div>
-
-          <div class="stat-value">
-            4
-          </div>
-
-          <div class="stat-subtitle">
-            Pending approvals
-          </div>
+        <div class="icon orange">
+          <i class="pi pi-arrow-right-arrow-left"></i>
         </div>
-
-        <button class="view-details-btn" @click="goToSwapRequests">
-          View Details
-        </button>
+        <div>
+          <div class="stat-title">Swap Requests</div>
+          <!-- dynamic count -->
+          <div class="stat-value">{{ swapStore.targetAcceptedCount }}</div>
+          <div class="stat-subtitle">Pending approvals</div>
+        </div>
+        <button class="view-details-btn" @click="goToSwapRequests">View Details</button>
       </div>
 
       <!-- Unavailable Requests -->
       <div class="stat-card">
-        <div class="icon purple"><i class="pi pi-exclamation-circle"></i></div>
+        <div class="icon purple">
+          <i class="pi pi-exclamation-circle"></i>
+        </div>
         <div>
           <div class="stat-title">Unavailable Requests</div>
-          <div class="stat-value">{{ alertsStore.openAlertsCount }}</div>
+          <!-- keep static for now until backend endpoint is ready -->
+          <div class="stat-value">7</div>
           <div class="stat-subtitle">Open requests</div>
         </div>
-
-        <button class="view-details-btn" @click="goToUnavailableRequests">
-          View Details
-        </button>
+        <button class="view-details-btn" @click="goToUnavailableRequests">View Details</button>
       </div>
 
       <!-- Days Left -->
       <div class="stat-card">
-        <div class="icon blue"><i class="pi pi-calendar"></i></div>
+        <div class="icon blue">
+          <i class="pi pi-calendar"></i>
+        </div>
         <div>
           <div class="stat-title">Days Left</div>
           <div class="stat-value">Jun 30</div>
           <div class="stat-subtitle">Next schedule due</div>
         </div>
       </div>
+
     </div>
 
     <div class="dashboard-content">
-      <div class="left-panel"><PhysicianWorkload /></div>
-      <div class="right-panel"><SpecialityRequestsLoad /></div>
+      <div class="left-panel">
+        <PhysicianWorkload />
+      </div>
+      <div class="right-panel">
+        <SpecialityRequestsLoad />
+      </div>
     </div>
   </div>
 </template>
-
-
-
-
-
 
 <style scoped>
 .dashboard-page {
@@ -71,8 +85,6 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
   height: 100%;
   overflow: hidden;
 }
-
-
 
 .stats-grid {
   display: grid;

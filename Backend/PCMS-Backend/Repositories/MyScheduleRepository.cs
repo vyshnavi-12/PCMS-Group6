@@ -16,12 +16,16 @@ public class MyScheduleRepository : IMyScheduleRepository
 
     public async Task<IReadOnlyList<CoverageAssignment>> GetPhysicianAssignmentsAsync(int physicianId)
     {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
         return await _context.CoverageAssignments
             .AsNoTracking()
             .Include(c => c.Specialty)
+            .Include(c => c.CoverageSchedule)
             .Where(c =>
                 c.PhysicianId == physicianId &&
-                c.CoverageSchedule.Status == "PUBLISHED")
+                c.CoverageSchedule.Status == "PUBLISHED" &&
+                c.CoverageDate >= today)
             .OrderBy(c => c.CoverageDate)
             .ToListAsync();
     }

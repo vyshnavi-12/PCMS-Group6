@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useScheduleStore } from '../../stores/scheduleStore'
+import API from '../../api/axios'
 
 const router = useRouter()
 const scheduleStore = useScheduleStore()
@@ -56,31 +57,34 @@ const formatHeaderDate = (date: Date) => {
 const buildWeeks = () => {
   const rawSchedules = scheduleStore.doctorSchedules
 
-  if (rawSchedules.length === 0) return
-
-  const sortedDates = rawSchedules
-    .map((item: any) => parseDateOnly(item.date))
-    .sort((a: Date, b: Date) => a.getTime() - b.getTime())
-
-  const firstDate = sortedDates[0]
-  const lastDate = sortedDates[sortedDates.length - 1]
+  if (!rawSchedules.length) return
 
   weekRanges.value = []
 
-  let weekStart = new Date(firstDate)
+  const uniqueWeeks = new Map()
 
-  while (weekStart <= lastDate) {
-    const weekEnd = new Date(weekStart)
-    weekEnd.setDate(weekStart.getDate() + 6)
+  rawSchedules.forEach((item: any) => {
+    const key = `${item.weekStartDate}-${item.weekEndDate}`
 
-    weekRanges.value.push({
-      start: new Date(weekStart),
-      end: new Date(weekEnd)
-    })
+    if (!uniqueWeeks.has(key)) {
+      uniqueWeeks.set(key, {
+        start: parseDateOnly(item.weekStartDate),
+        end: parseDateOnly(item.weekEndDate)
+      })
+    }
+  })
 
-    weekStart = new Date(weekEnd)
-    weekStart.setDate(weekStart.getDate() + 1)
-  }
+  weekRanges.value = Array.from(uniqueWeeks.values()).sort(
+    (a: any, b: any) => a.start.getTime() - b.start.getTime()
+  )
+
+  const today = new Date()
+
+  const index = weekRanges.value.findIndex(
+    week => today >= week.start && today <= week.end
+  )
+
+  currentWeekIndex.value = index !== -1 ? index : 0
 }
 
 const buildCurrentWeekGrid = () => {
@@ -123,11 +127,18 @@ const buildCurrentWeekGrid = () => {
     }
   })
 }
+const unavailableRequests = ref(0);
+const fetchUnavailableRequests = async () =>
+{
+  let res = await API.get("physician/unavailable-requests-count")
+  unavailableRequests.value = res.data.data;
 
+}
 const fetchDashboard = async () => {
   try {
     await scheduleStore.fetchDoctorSchedules()
     buildWeeks()
+    fetchUnavailableRequests();
     buildCurrentWeekGrid()
   } catch (error) {
     console.error(error)
@@ -154,6 +165,10 @@ const nextWeek = () => {
 
 const openCalendar = () => {
   router.push('/doctor/schedule')
+}
+
+const goToSwapRequests = () => {
+  router.push('/doctor/swap-requests')
 }
 
 const assignmentCount = computed(() => {
@@ -201,11 +216,13 @@ const assignmentCount = computed(() => {
 
         <div>
           <div class="stat-title">Swap Requests</div>
-
           <div class="stat-value">1</div>
-
           <div class="stat-subtitle">Pending</div>
         </div>
+
+        <button class="view-details-btn" @click="goToSwapRequests">
+          View Details
+        </button>
       </div>
 
       <div class="stat-card">
@@ -216,7 +233,7 @@ const assignmentCount = computed(() => {
         <div>
           <div class="stat-title">Unavailable Requests</div>
 
-          <div class="stat-value">2</div>
+          <div class="stat-value">{{ unavailableRequests }}</div>
 
           <div class="stat-subtitle">Sent this week</div>
         </div>
@@ -265,39 +282,33 @@ const assignmentCount = computed(() => {
         </thead>
 
         <tbody>
-  <tr v-for="row in schedule" :key="row.label">
+          <tr v-for="row in schedule" :key="row.label">
 
-    <!-- NEW COLUMN -->
-    <td class="shift-column">
-      <div class="shift-name">
-        {{ row.label }}
-      </div>
-    </td>
+            <!-- NEW COLUMN -->
+            <td class="shift-column">
+              <div class="shift-name">
+                {{ row.label }}
+              </div>
+            </td>
 
-    <td
-      v-for="(assignment, index) in row.assignments"
-      :key="`${row.label}-${index}`"
-    >
-      <div
-        v-if="assignment"
-        :class="[
-          row.label === 'DAY'
-            ? 'day-badge'
-            : row.label === 'NIGHT'
-              ? 'night-badge'
-              : 'off-badge'
-        ]"
-      >
-        {{ assignment }}
-      </div>
+            <td v-for="(assignment, index) in row.assignments" :key="`${row.label}-${index}`">
+              <div v-if="assignment" :class="[
+                row.label === 'DAY'
+                  ? 'day-badge'
+                  : row.label === 'NIGHT'
+                    ? 'night-badge'
+                    : 'off-badge'
+              ]">
+                {{ assignment }}
+              </div>
 
-      <span v-else class="empty-slot">
-        —
-      </span>
-    </td>
+              <span v-else class="empty-slot">
+                —
+              </span>
+            </td>
 
-  </tr>
-</tbody>
+          </tr>
+        </tbody>
 
       </table>
 
@@ -336,14 +347,27 @@ const assignmentCount = computed(() => {
 .stat-card {
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 18px;
 
   display: flex;
   align-items: center;
   gap: 16px;
+  position: relative;
+  min-height: 140px;
+}
 
-  min-height: 100px;
+.view-details-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .icon {

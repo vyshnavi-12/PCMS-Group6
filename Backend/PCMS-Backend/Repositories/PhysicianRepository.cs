@@ -60,4 +60,9 @@ public class PhysicianRepository : IPhysicianRepository
                 l.LeaveStartDate <= date &&
                 l.LeaveEndDate >= date);
     }
+
+    public async Task<int> GetUnavailableRequestsCountAsync(int physicianId)
+    {
+        return await _context.CoverageGapAlerts.CountAsync(cga => cga.RequestedByPhysicianId == physicianId);
+    }
 }

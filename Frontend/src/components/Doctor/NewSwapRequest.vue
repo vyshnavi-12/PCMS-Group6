@@ -60,10 +60,6 @@ const fetchSchedule = async () => {
             shift: schedule.shift.toUpperCase()
         }))
 
-        if (route.query.date) {
-            selectedDate.value = parseDate(route.query.date.toString())
-        }
-
         if (route.query.shift) {
             selectedShift.value = route.query.shift.toString()
         }

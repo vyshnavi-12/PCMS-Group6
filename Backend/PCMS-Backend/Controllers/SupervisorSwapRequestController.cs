@@ -58,5 +58,11 @@ public class SupervisorSwapRequestsController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
+    [HttpGet("target-accepted-count")]
+    public async Task<IActionResult> GetTargetAcceptedCount()
+    {
+        var result = await _service.GetTargetAcceptedCountAsync();
+        return StatusCode(result.StatusCode, result);
+    }
 
 }

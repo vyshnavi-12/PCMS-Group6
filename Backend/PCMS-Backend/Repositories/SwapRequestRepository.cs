@@ -29,7 +29,8 @@ public class SwapRequestRepository : ISwapRequestRepository
     public async Task<List<CoverageAssignment>> GetAvailableTargetsAsync(
     int specialtyId,
     int excludedPhysicianId,
-    string shiftType
+    string shiftType,
+    int coverageScheduleId
 )
     {
         return await _context.CoverageAssignments
@@ -39,8 +40,33 @@ public class SwapRequestRepository : ISwapRequestRepository
             .Where(a =>
                 a.SpecialtyId == specialtyId &&
                 a.PhysicianId != excludedPhysicianId &&
-                a.ShiftType == shiftType)
+                a.ShiftType == shiftType &&
+                a.CoverageScheduleId == coverageScheduleId)
             .ToListAsync();
+    }
+
+    public async Task<bool> HasAssignmentOnDateAsync(
+    int physicianId,
+    DateOnly date
+)
+    {
+        return await _context.CoverageAssignments
+            .AnyAsync(a =>
+                a.PhysicianId == physicianId &&
+                a.CoverageDate == date);
+    }
+
+    public async Task<bool> HasOtherAssignmentOnDateAsync(
+    int physicianId,
+    DateOnly date,
+    int excludedAssignmentId
+)
+    {
+        return await _context.CoverageAssignments
+            .AnyAsync(a =>
+                a.PhysicianId == physicianId &&
+                a.CoverageDate == date &&
+                a.CoverageAssignmentId != excludedAssignmentId);
     }
 
     public async Task CreateAsync(SwapRequest request)
@@ -116,5 +142,11 @@ public class SwapRequestRepository : ISwapRequestRepository
         return await _context.SwapRequests
             .Where(s=>(s.RequestedByPhysicianId == physicianId || s.TargetPhysicianId==physicianId) )
             .CountAsync();
+    }
+
+    public async Task<int> GetTargetAcceptedCountAsync()
+    {
+        return await _context.SwapRequests
+            .CountAsync(s => s.RequestStatus == "TARGET_ACCEPTED");
     }
 }

@@ -30,4 +30,6 @@ public interface ICoverageScheduleRepository
     Task<CoverageAssignment?> GetAssignmentByIdAsync(int assignmentId);
     
 
+    Task<int> GetCurrentScheduleId();
+
 }

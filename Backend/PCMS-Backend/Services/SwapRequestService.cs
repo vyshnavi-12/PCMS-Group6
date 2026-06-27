@@ -91,10 +91,32 @@ public class SwapRequestService : ISwapRequestService
         var targets = await _repository.GetAvailableTargetsAsync(
             selectedAssignment.SpecialtyId,
             selectedAssignment.PhysicianId,
-            selectedAssignment.ShiftType
+            selectedAssignment.ShiftType,
+            selectedAssignment.CoverageScheduleId
         );
 
-        var response = targets.Select(a => new AvailableSwapTargetDto
+        var validTargets = new List<CoverageAssignment>();
+
+        foreach (var target in targets)
+        {
+            var requesterConflict = await _repository.HasOtherAssignmentOnDateAsync(
+                selectedAssignment.PhysicianId,
+                target.CoverageDate,
+                selectedAssignment.CoverageAssignmentId
+            );
+
+            var targetConflict = await _repository.HasAssignmentOnDateAsync(
+                target.PhysicianId,
+                selectedAssignment.CoverageDate
+            );
+
+            if (!requesterConflict && !targetConflict)
+            {
+                validTargets.Add(target);
+            }
+        }
+
+        var response = validTargets.Select(a => new AvailableSwapTargetDto
         {
             CoverageAssignmentId = a.CoverageAssignmentId,
             Date = a.CoverageDate.ToString("yyyy-MM-dd"),
@@ -452,5 +474,11 @@ public class SwapRequestService : ISwapRequestService
         }).ToList();
 
         return Result<List<SupervisorSwapRequestDto>>.Ok(response);
+    }
+
+    public async Task<Result<int>> GetTargetAcceptedCountAsync()
+    {
+        var count = await _repository.GetTargetAcceptedCountAsync();
+        return Result<int>.Ok(count);
     }
 }

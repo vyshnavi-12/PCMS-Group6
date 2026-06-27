@@ -15,6 +15,7 @@ import SupervisorSwapRequests from "../src/components/Supervisor/SwapRequests.vu
 import SupervisorSchedules from "../src/components/Supervisor/Schedules.vue";
 import CoverageSchedule from "../src/components/Supervisor/CoverageSchedule.vue";
 import UnavailableRequests from "../src/components/Supervisor/UnavailableRequests.vue";
+import AuditLogs from "../src/components/Supervisor/AuditLogs.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -113,6 +114,10 @@ const router = createRouter({
           path: "unavailable-requests",
           component: UnavailableRequests,
         },
+        {
+          path: "audit-logs",
+          component: AuditLogs,
+        }
       ],
     },
 

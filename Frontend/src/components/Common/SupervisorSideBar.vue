@@ -104,6 +104,15 @@ const handleLogout = async () => {
         </span>
       </RouterLink>
 
+      <RouterLink to="/supervisor/audit-logs" class="nav-item"
+        :class="{ active: route.path === '/supervisor/audit-logs' }">
+        <i class="pi pi-history"></i>
+
+        <span v-if="!isSidebarCollapsed">
+          Audit Logs
+        </span>
+      </RouterLink>
+
       <RouterLink to="/supervisor/profile" class="nav-item" :class="{ active: route.path === '/supervisor/profile' }">
         <i class="pi pi-user"></i>
 

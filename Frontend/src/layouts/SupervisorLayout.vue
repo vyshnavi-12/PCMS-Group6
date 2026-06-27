@@ -77,6 +77,8 @@ const pageTitle = computed(() => {
       return 'Unavailable Requests'
     case '/supervisor/swap-requests':
       return 'Swap Requests'
+    case '/supervisor/audit-logs':
+      return 'Audit Logs'
     default:
       return 'Dashboard'
   }

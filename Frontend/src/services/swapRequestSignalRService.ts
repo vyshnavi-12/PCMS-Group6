@@ -1,5 +1,7 @@
 import * as signalR from '@microsoft/signalr'
 
+const SIGNALR_BASE_URL = import.meta.env.VITE_SIGNALR_BASE_URL;
+
 class SwapRequestSignalRService {
   private connection: signalR.HubConnection | null = null
 
@@ -12,7 +14,7 @@ class SwapRequestSignalRService {
     console.log('Starting Swap SignalR for:', userId)
 
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl('https://localhost:7119/swapRequests', {
+      .withUrl(`${SIGNALR_BASE_URL}/swapRequests`, {
         withCredentials: true
       })
       .withAutomaticReconnect()

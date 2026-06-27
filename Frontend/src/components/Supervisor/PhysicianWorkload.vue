@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import API from '../../api/axios'
 
 const workloadData = ref<any[]>([])
 const weekDays = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su']
@@ -32,9 +32,8 @@ const buildShifts = (assignments: any[], weekStart: Date) => {
 
 const fetchData = async () => {
   try {
-    const res = await axios.get(
-      'https://localhost:7119/api/supervisor/dashboard/top-per-specialty',
-      { withCredentials: true }
+    const res = await API.get(
+      '/supervisor/dashboard/top-per-specialty'
     )
 
     const apiData = res.data.data
@@ -42,12 +41,12 @@ const fetchData = async () => {
     // 1. Find the earliest date in the dataset to anchor our weekly grid
     let weekStart = new Date()
     const allAssignments = apiData.flatMap((d: any) => d.assignments)
-    
+
     if (allAssignments.length > 0) {
       // Find the absolute minimum date in the payload
       const dates = allAssignments.map((a: any) => new Date(a.date + 'T00:00:00').getTime())
       const minDate = new Date(Math.min(...dates))
-      
+
       // Calculate the Monday of that week
       const day = minDate.getDay()
       const normalizedDay = day === 0 ? 7 : day // convert Sunday (0) to 7

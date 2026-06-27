@@ -1,5 +1,7 @@
 import * as signalR from '@microsoft/signalr'
 
+const SIGNALR_BASE_URL = import.meta.env.VITE_SIGNALR_BASE_URL;
+
 let connection: signalR.HubConnection | null = null
 
 const unavailableRequestSignalRService = {
@@ -7,7 +9,7 @@ const unavailableRequestSignalRService = {
     if (connection) return
 
     connection = new signalR.HubConnectionBuilder()
-      .withUrl('https://localhost:7119/unavailableRequestHub', {
+      .withUrl(`${SIGNALR_BASE_URL}/unavailableRequestHub`, {
         withCredentials: true
       })
       .withAutomaticReconnect()

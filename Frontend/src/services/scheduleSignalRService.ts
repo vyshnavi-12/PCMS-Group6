@@ -1,37 +1,39 @@
-import * as signalR from '@microsoft/signalr'
+import * as signalR from "@microsoft/signalr";
 
-let connection: signalR.HubConnection | null = null
+const SIGNALR_BASE_URL = import.meta.env.VITE_SIGNALR_BASE_URL;
+
+let connection: signalR.HubConnection | null = null;
 
 export const startScheduleSignalRConnection = async (
   userId: string,
-  onSchedulePublished: (payload: any) => void
+  onSchedulePublished: (payload: any) => void,
 ) => {
-  if (connection) return
+  if (connection) return;
 
   connection = new signalR.HubConnectionBuilder()
-    .withUrl('https://localhost:7119/scheduleHub', {
-      withCredentials: true
+    .withUrl(`${SIGNALR_BASE_URL}/scheduleHub`, {
+      withCredentials: true,
     })
     .withAutomaticReconnect()
-    .build()
+    .build();
 
-  connection.on('SchedulePublished', payload => {
-    onSchedulePublished(payload)
-  })
+  connection.on("SchedulePublished", (payload) => {
+    onSchedulePublished(payload);
+  });
 
   try {
-    await connection.start()
-    console.log('Schedule SignalR Connected')
+    await connection.start();
+    console.log("Schedule SignalR Connected");
 
-    await connection.invoke('JoinUserGroup', userId)
+    await connection.invoke("JoinUserGroup", userId);
   } catch (error) {
-    console.error('Schedule SignalR connection error:', error)
+    console.error("Schedule SignalR connection error:", error);
   }
-}
+};
 
 export const stopScheduleSignalRConnection = async () => {
   if (connection) {
-    await connection.stop()
-    connection = null
+    await connection.stop();
+    connection = null;
   }
-}
+};

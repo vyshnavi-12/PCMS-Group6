@@ -117,4 +117,10 @@ public class SwapRequestRepository : ISwapRequestRepository
             .Where(s=>(s.RequestedByPhysicianId == physicianId || s.TargetPhysicianId==physicianId) )
             .CountAsync();
     }
+
+    public async Task<int> GetTargetAcceptedCountAsync()
+    {
+        return await _context.SwapRequests
+            .CountAsync(s => s.RequestStatus == "TARGET_ACCEPTED");
+    }
 }

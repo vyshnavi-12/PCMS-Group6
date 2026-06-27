@@ -1,9 +1,5 @@
 <script setup lang="ts">
-<<<<<<< HEAD
-import { onMounted } from 'vue'
-=======
 import { ref, onMounted } from 'vue'
->>>>>>> cd3b2eeb58cc08af4b3430940f712a45dbca1660
 import { useRouter } from 'vue-router'
 import API from '../../api/axios'
 import PhysicianWorkload from './PhysicianWorkload.vue'
@@ -67,14 +63,9 @@ onMounted(() => {
         </div>
         <div>
           <div class="stat-title">Swap Requests</div>
-<<<<<<< HEAD
-          <!-- dynamic count -->
-          <div class="stat-value">{{ swapStore.targetAcceptedCount }}</div>
-=======
           <div class="stat-value">
   {{ dashboardDetails.swapRequestCount }}
 </div>
->>>>>>> cd3b2eeb58cc08af4b3430940f712a45dbca1660
           <div class="stat-subtitle">Pending approvals</div>
         </div>
         <button class="view-details-btn" @click="goToSwapRequests">View Details</button>
@@ -86,12 +77,6 @@ onMounted(() => {
           <i class="pi pi-exclamation-circle"></i>
         </div>
         <div>
-<<<<<<< HEAD
-          <div class="stat-title">Unavailable Requests</div>
-          <!-- keep static for now until backend endpoint is ready -->
-          <div class="stat-value">7</div>
-          <div class="stat-subtitle">Open requests</div>
-=======
           <div class="stat-title">
             Unavailable Requests
           </div>
@@ -103,7 +88,6 @@ onMounted(() => {
           <div class="stat-subtitle">
             Open requests
           </div>
->>>>>>> cd3b2eeb58cc08af4b3430940f712a45dbca1660
         </div>
         <button class="view-details-btn" @click="goToUnavailableRequests">View Details</button>
       </div>
@@ -114,11 +98,6 @@ onMounted(() => {
           <i class="pi pi-calendar"></i>
         </div>
         <div>
-<<<<<<< HEAD
-          <div class="stat-title">Days Left</div>
-          <div class="stat-value">Jun 30</div>
-          <div class="stat-subtitle">Next schedule due</div>
-=======
           <div class="stat-title">
             Days Left
           </div>
@@ -130,7 +109,6 @@ onMounted(() => {
           <div class="stat-subtitle">
             Next schedule due
           </div>
->>>>>>> cd3b2eeb58cc08af4b3430940f712a45dbca1660
         </div>
       </div>
 

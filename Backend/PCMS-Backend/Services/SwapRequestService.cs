@@ -486,4 +486,24 @@ public class SwapRequestService : ISwapRequestService
         var count = await _repository.GetTargetAcceptedCountAsync();
         return Result<int>.Ok(count);
     }
+    public async Task<Result<int>> GetPendingMyRequestsCountAsync(int userId)
+    {
+        var physician = await _physicianRepository.GetByUserIdAsync(userId);
+        if (physician == null)
+            return Result<int>.NotFound("Physician not found");
+
+        var count = await _repository.GetPendingMyRequestsCountAsync(physician.PhysicianId);
+        return Result<int>.Ok(count);
+    }
+
+    public async Task<Result<int>> GetPendingRequestsToMeCountAsync(int userId)
+    {
+        var physician = await _physicianRepository.GetByUserIdAsync(userId);
+        if (physician == null)
+            return Result<int>.NotFound("Physician not found");
+
+        var count = await _repository.GetPendingRequestsToMeCountAsync(physician.PhysicianId);
+        return Result<int>.Ok(count);
+    }
+
 }

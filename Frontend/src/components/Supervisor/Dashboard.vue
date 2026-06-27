@@ -1,11 +1,17 @@
 <script setup lang="ts">
+<<<<<<< HEAD
+import { onMounted } from 'vue'
+=======
 import { ref, onMounted } from 'vue'
+>>>>>>> cd3b2eeb58cc08af4b3430940f712a45dbca1660
 import { useRouter } from 'vue-router'
 import API from '../../api/axios'
 import PhysicianWorkload from './PhysicianWorkload.vue'
 import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue'
+import { useSupervisorSwapRequestsStore } from '../../stores/supervisorSwapRequestsStore'
 
 const router = useRouter()
+const swapStore = useSupervisorSwapRequestsStore()
 
 const dashboardDetails = ref({
   swapRequestCount: 0,
@@ -43,11 +49,15 @@ const goToSwapRequests = () => {
 const goToUnavailableRequests = () => {
   router.push('/supervisor/unavailable-requests')
 }
+
+onMounted(() => {
+  swapStore.fetchTargetAcceptedCount()
+  swapStore.fetchSupervisorRequests()
+})
 </script>
 
 <template>
   <div class="dashboard-page">
-
     <div class="stats-grid">
 
       <!-- Swap Requests -->
@@ -55,18 +65,19 @@ const goToUnavailableRequests = () => {
         <div class="icon orange">
           <i class="pi pi-arrow-right-arrow-left"></i>
         </div>
-
         <div>
           <div class="stat-title">Swap Requests</div>
+<<<<<<< HEAD
+          <!-- dynamic count -->
+          <div class="stat-value">{{ swapStore.targetAcceptedCount }}</div>
+=======
           <div class="stat-value">
   {{ dashboardDetails.swapRequestCount }}
 </div>
+>>>>>>> cd3b2eeb58cc08af4b3430940f712a45dbca1660
           <div class="stat-subtitle">Pending approvals</div>
         </div>
-
-        <button class="view-details-btn" @click="goToSwapRequests">
-          View Details
-        </button>
+        <button class="view-details-btn" @click="goToSwapRequests">View Details</button>
       </div>
 
       <!-- Unavailable Requests -->
@@ -74,8 +85,13 @@ const goToUnavailableRequests = () => {
         <div class="icon purple">
           <i class="pi pi-exclamation-circle"></i>
         </div>
-
         <div>
+<<<<<<< HEAD
+          <div class="stat-title">Unavailable Requests</div>
+          <!-- keep static for now until backend endpoint is ready -->
+          <div class="stat-value">7</div>
+          <div class="stat-subtitle">Open requests</div>
+=======
           <div class="stat-title">
             Unavailable Requests
           </div>
@@ -87,11 +103,9 @@ const goToUnavailableRequests = () => {
           <div class="stat-subtitle">
             Open requests
           </div>
+>>>>>>> cd3b2eeb58cc08af4b3430940f712a45dbca1660
         </div>
-
-        <button class="view-details-btn" @click="goToUnavailableRequests">
-          View Details
-        </button>
+        <button class="view-details-btn" @click="goToUnavailableRequests">View Details</button>
       </div>
 
       <!-- Days Left -->
@@ -99,8 +113,12 @@ const goToUnavailableRequests = () => {
         <div class="icon blue">
           <i class="pi pi-calendar"></i>
         </div>
-
         <div>
+<<<<<<< HEAD
+          <div class="stat-title">Days Left</div>
+          <div class="stat-value">Jun 30</div>
+          <div class="stat-subtitle">Next schedule due</div>
+=======
           <div class="stat-title">
             Days Left
           </div>
@@ -112,6 +130,7 @@ const goToUnavailableRequests = () => {
           <div class="stat-subtitle">
             Next schedule due
           </div>
+>>>>>>> cd3b2eeb58cc08af4b3430940f712a45dbca1660
         </div>
       </div>
 
@@ -121,12 +140,10 @@ const goToUnavailableRequests = () => {
       <div class="left-panel">
         <PhysicianWorkload />
       </div>
-
       <div class="right-panel">
         <SpecialityRequestsLoad />
       </div>
     </div>
-
   </div>
 </template>
 

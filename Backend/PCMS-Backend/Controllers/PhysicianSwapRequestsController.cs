@@ -103,7 +103,28 @@ public class PhysicianSwapRequestsController : ControllerBase
         return StatusCode(result.StatusCode ?? 500, result);
     }
 
-    
+    [HttpGet("pending-my-count")]
+    public async Task<IActionResult> GetPendingMyRequestsCount()
+    {
+        var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(claimValue, out int userId))
+            return Unauthorized();
+
+        var result = await _service.GetPendingMyRequestsCountAsync(userId);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpGet("pending-to-me-count")]
+    public async Task<IActionResult> GetPendingRequestsToMeCount()
+    {
+        var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(claimValue, out int userId))
+            return Unauthorized();
+
+        var result = await _service.GetPendingRequestsToMeCountAsync(userId);
+        return StatusCode(result.StatusCode, result);
+    }
+
 
 
 }

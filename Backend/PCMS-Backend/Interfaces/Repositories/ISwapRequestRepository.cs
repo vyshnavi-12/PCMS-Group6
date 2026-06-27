@@ -37,4 +37,7 @@ public interface ISwapRequestRepository
 
     Task SaveChangesAsync();
     Task<int> GetTargetAcceptedCountAsync();
+
+    Task<int> GetPendingMyRequestsCountAsync(int physicianId);
+    Task<int> GetPendingRequestsToMeCountAsync(int physicianId);
 }

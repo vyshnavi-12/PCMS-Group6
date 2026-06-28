@@ -5,6 +5,7 @@ import { createPinia } from 'pinia'
 import VueApexCharts from "vue3-apexcharts"
 import ToastService from 'primevue/toastservice'
 import Toast from 'primevue/toast'
+import OverlayPanel from 'primevue/overlaypanel'
 
 import App from './App.vue'
 import router from '../router'
@@ -21,6 +22,7 @@ app.use(router)
 app.use(VueApexCharts)
 app.use(ToastService)
 app.component('Toast', Toast)
+app.component('OverlayPanel', OverlayPanel)
 
 app.use(PrimeVue, {
   theme: {

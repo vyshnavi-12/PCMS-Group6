@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import API from '../../api/axios'
 import PhysicianWorkload from './PhysicianWorkload.vue'
@@ -60,6 +60,22 @@ const goToSwapRequests = () => {
 const goToUnavailableRequests = () => {
   router.push('/supervisor/unavailable-requests')
 }
+
+const daysLeft = computed(() => {
+  if (!dashboardDetails.value.nextScheduleDate) return '-'
+
+  const today = new Date()
+  const nextDate = new Date(dashboardDetails.value.nextScheduleDate)
+
+  // remove time part to avoid partial day issues
+  today.setHours(0, 0, 0, 0)
+  nextDate.setHours(0, 0, 0, 0)
+
+  const diffTime = nextDate.getTime() - today.getTime()
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  return diffDays >= 0 ? diffDays : 0
+})
 </script>
 
 <template>
@@ -109,7 +125,7 @@ const goToUnavailableRequests = () => {
         </div>
         <div>
           <div class="stat-title">
-            Days Left
+            {{daysLeft}} Days Left
           </div>
 
           <div class="stat-value">

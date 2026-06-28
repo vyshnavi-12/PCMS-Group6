@@ -77,7 +77,7 @@ const handleLogout = async () => {
         </span>
       </RouterLink>
 
-      <RouterLink to="/supervisor/coverage-gaps" class="nav-item"
+      <RouterLink to="/supervisor/unavailable-requests" class="nav-item"
         :class="{ active: route.path === '/supervisor/coverage-gaps' }">
         <i class="pi pi-exclamation-triangle"></i>
 
@@ -101,6 +101,15 @@ const handleLogout = async () => {
 
         <span v-if="!isSidebarCollapsed">
           Notifications
+        </span>
+      </RouterLink>
+
+      <RouterLink to="/supervisor/audit-logs" class="nav-item"
+        :class="{ active: route.path === '/supervisor/audit-logs' }">
+        <i class="pi pi-history"></i>
+
+        <span v-if="!isSidebarCollapsed">
+          Audit Logs
         </span>
       </RouterLink>
 

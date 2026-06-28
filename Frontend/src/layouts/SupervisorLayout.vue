@@ -11,6 +11,7 @@ import { useSupervisorSwapRequestsStore } from '../stores/supervisorSwapRequests
 
 import { startNotificationSignalRConnection } from '../services/notificationSignalRService'
 import supervisorSwapSignalRService from '../services/supervisorSwapSignalRService'
+import unavailableRequestSignalRService from '../services/unavailableRequestSignalRService'
 
 const route = useRoute()
 const toast = useToast()
@@ -54,6 +55,10 @@ onMounted(async () => {
     console.log('Supervisor swap refresh received')
     await swapRequestsStore.fetchSupervisorRequests()
   })
+
+  await unavailableRequestSignalRService.startConnection(
+    parsedUser.userId.toString()
+  )
 })
 
 const pageTitle = computed(() => {
@@ -68,8 +73,12 @@ const pageTitle = computed(() => {
       return 'Profile'
     case '/supervisor/coverage-schedule':
       return 'Coverage Schedule'
+    case '/supervisor/unavailable-requests':
+      return 'Unavailable Requests'
     case '/supervisor/swap-requests':
       return 'Swap Requests'
+    case '/supervisor/audit-logs':
+      return 'Audit Logs'
     default:
       return 'Dashboard'
   }

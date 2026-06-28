@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSupervisorSwapRequestsStore } from '../../stores/supervisorSwapRequestsStore'
 
-const activeTab = ref('All')
+const activeTab = ref('Pending')
 
 const swapRequestsStore = useSupervisorSwapRequestsStore()
 const { supervisorRequests } = storeToRefs(swapRequestsStore)
@@ -48,6 +48,28 @@ const declineRequest = async (requestId: number) => {
     }
 }
 
+const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+]
+
+const days = [
+    'Sun', 'Mon', 'Tue', 'Wed',
+    'Thu', 'Fri', 'Sat'
+]
+
+const formatDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-')
+
+    const date = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day)
+    )
+
+    return `${days[date.getDay()]}, ${months[Number(month) - 1]} ${day}`
+}
+
 const getStatusClass = (status: string) => {
     switch (status) {
         case 'SUPERVISOR_APPROVED':
@@ -74,12 +96,12 @@ const getStatusClass = (status: string) => {
 
             <div class="tabs">
 
-                <button class="tab-button" :class="{ active: activeTab === 'All' }" @click="activeTab = 'All'">
-                    All ({{ supervisorRequests.length }})
+                 <button class="tab-button" :class="{ active: activeTab === 'Pending' }" @click="activeTab = 'Pending'">
+                    Pending ({{ pendingCount }})
                 </button>
 
-                <button class="tab-button" :class="{ active: activeTab === 'Pending' }" @click="activeTab = 'Pending'">
-                    Pending ({{ pendingCount }})
+                <button class="tab-button" :class="{ active: activeTab === 'All' }" @click="activeTab = 'All'">
+                    All ({{ supervisorRequests.length }})
                 </button>
 
             </div>
@@ -92,7 +114,8 @@ const getStatusClass = (status: string) => {
 
                 <thead>
                     <tr>
-                        <th>Coverage Date</th>
+                        <th>Requester Coverage Date</th>
+                        <th>Target Coverage Date</th>
                         <th>Shift</th>
                         <th>Requested By</th>
                         <th>Requested With</th>
@@ -101,49 +124,33 @@ const getStatusClass = (status: string) => {
                     </tr>
                 </thead>
 
-                <tbody>
+                <tr v-for="request in filteredRequests" :key="request.swapRequestId">
+                    <td>{{ formatDate(request.requestedPhysicianDate)}}</td>
+                    <td>{{ formatDate(request.targetedPhysicianDate)}}</td>
+                    <td>{{ request.shift }}</td>
+                    <td>{{ request.requestedBy }}</td>
+                    <td>{{ request.targetPhysician }}</td>
 
-                    <tr v-for="request in filteredRequests" :key="request.swapRequestId">
-                        <td>{{ request.date }}</td>
-                        <td>{{ request.shift }}</td>
-                        <td>{{ request.requestedBy }}</td>
-                        <td>{{ request.targetPhysician }}</td>
+                    <td>
+                        <span class="status-badge" :class="getStatusClass(request.status)">
+                            {{ request.status }}
+                        </span>
+                    </td>
 
-                        <td>
-                            <span class="status-badge" :class="getStatusClass(request.status)">
-                                {{ request.status }}
-                            </span>
-                        </td>
+                    <td>
+                        <template v-if="request.status === 'TARGET_ACCEPTED'">
+                            <button class="approve-btn" @click="approveRequest(request.swapRequestId)">
+                                Approve
+                            </button>
 
-                        <td>
+                            <button class="decline-btn" @click="declineRequest(request.swapRequestId)">
+                                Decline
+                            </button>
+                        </template>
 
-                            <template v-if="request.status === 'TARGET_ACCEPTED'">
-                                <button class="approve-btn" @click="approveRequest(request.swapRequestId)">
-                                    Approve
-                                </button>
-
-                                <button class="decline-btn" @click="declineRequest(request.swapRequestId)">
-                                    Decline
-                                </button>
-                            </template>
-
-                            <span v-else>
-                                -
-                            </span>
-
-                        </td>
-                    </tr>
-
-                    <tr v-if="filteredRequests.length === 0">
-                        <td colspan="6" class="empty-state">
-                            {{ activeTab === 'Pending'
-                                ? 'No pending requests'
-                                : 'No swap requests found'
-                            }}
-                        </td>
-                    </tr>
-
-                </tbody>
+                        <span v-else>-</span>
+                    </td>
+                </tr>
 
             </table>
 

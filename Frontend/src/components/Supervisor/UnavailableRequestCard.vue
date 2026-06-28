@@ -22,6 +22,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
+  updated: [message: string]
 }>()
 
 const reason = ref('')
@@ -55,15 +56,30 @@ const toggleDropdown = () => {
   isDropdownOpen.value = !isDropdownOpen.value
 }
 
-const approveRequest = async() => {
-  if (!selectedReplacement.value) return
-  await API.patch(`coverageassignments/alerts/${props.request.alertId}/update-physician/${selectedDoctor.value?.physicianId}`)
-  alert('Request Approved')
+const approveRequest = async () => {
+  try {
+    if (!selectedReplacement.value) return
+
+    await API.patch(
+      `coverageassignments/alerts/${props.request.alertId}/update-physician/${selectedDoctor.value?.physicianId}`
+    )
+
+    emit('updated', 'Request approved successfully')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
-const declineRequest = async() => {
-  await API.patch(`coverageassignments/alerts/${props.request.alertId}/decline-request`)
-  alert('Request Declined')
+const declineRequest = async () => {
+  try {
+    await API.patch(
+      `coverageassignments/alerts/${props.request.alertId}/decline-request`
+    )
+
+    emit('updated', 'Request declined successfully')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const fetchAlertDetails = async () => {
@@ -279,7 +295,7 @@ onBeforeUnmount(() => {
   /* Dynamic height wrt viewport */
   height: calc(100vh - 140px);
   max-height: calc(100vh - 140px);
-  min-height: 500px;
+  min-height: 480px;
 
   overflow: hidden;
 }
@@ -417,7 +433,7 @@ h2 {
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
-  max-height: 160px;
+  max-height: 130px;
   overflow-y: auto;
 }
 
@@ -459,7 +475,7 @@ h2 {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 100px;
+  margin-top: 80px;
 }
 
 .decline-btn,

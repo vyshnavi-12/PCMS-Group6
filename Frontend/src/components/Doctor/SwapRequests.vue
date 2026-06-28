@@ -68,9 +68,52 @@ const handleRequestCreated = async () => {
     await fetchSwapRequests()
 }
 
+const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+]
+
+const days = [
+    'Sun', 'Mon', 'Tue', 'Wed',
+    'Thu', 'Fri', 'Sat'
+]
+
+const formatDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-')
+
+    const date = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day)
+    )
+
+    return `${days[date.getDay()]}, ${months[Number(month) - 1]} ${day}`
+}
+
+const formatDateTime = (dateString: string) => {
+    if (!dateString) return '-'
+
+    const date = new Date(dateString.replace(' ', 'T'))
+
+    return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    })
+}
+
 onMounted(async () => {
     if (route.query.new === 'true') {
         showNewRequest.value = true
+    }
+
+    if (route.query.tab === 'requests-to-me') {
+        activeTab.value = 'Requests To Me'
+    } else {
+        activeTab.value = 'My Requests'
     }
 
     await fetchSwapRequests()
@@ -117,8 +160,8 @@ onMounted(async () => {
 
                 <thead>
                     <tr>
-                        <th>Current Date</th>
-                        <th>Requested Date</th>
+                        <th>My Coverage Date</th>
+                        <th>Requested Swap Date</th>
                         <th>Shift</th>
                         <th>Requested With</th>
                         <th>Reason</th>
@@ -129,12 +172,12 @@ onMounted(async () => {
 
                 <tbody>
                     <tr v-for="request in myRequests" :key="request.swapRequestId">
-                        <td>{{ request.currentDate }}</td>
-                        <td>{{ request.requestedDate }}</td>
+                        <td>{{ formatDate(request.currentDate) }}</td>
+                        <td>{{ formatDate(request.requestedDate) }}</td>
                         <td>{{ request.shift }}</td>
                         <td>{{ request.requestedWith }}</td>
                         <td>{{ request.reason }}</td>
-                        <td>{{ request.requestedOn }}</td>
+                        <td>{{ formatDateTime(request.requestedOn) }}</td>
                         <td>
                             <span class="status-badge" :class="getStatusClass(request.status)">
                                 {{ request.status }}
@@ -159,8 +202,8 @@ onMounted(async () => {
 
                 <thead>
                     <tr>
-                        <th>current Date</th>
-                        <th>New Date</th>
+                        <th>Requester Coverage Date</th>
+                        <th>My Coverage Date</th>
                         <th>Shift</th>
                         <th>Requested By</th>
                         <th>Reason</th>
@@ -173,12 +216,12 @@ onMounted(async () => {
                 <tbody>
                     <tr v-for="request in requestsToMe" :key="request.swapRequestId">
 
-                        <td>{{ request.currentDate }}</td>
-                        <td>{{ request.newDate }}</td>
+                        <td>{{ formatDate(request.currentDate) }}</td>
+                        <td>{{ formatDate(request.newDate) }}</td>
                         <td>{{ request.shift }}</td>
                         <td>{{ request.requestedBy }}</td>
                         <td>{{ request.reason }}</td>
-                        <td>{{ request.requestedOn }}</td>
+                        <td>{{ formatDateTime(request.requestedOn) }}</td>
 
                         <td>
                             <span class="status-badge" :class="getStatusClass(request.status)">

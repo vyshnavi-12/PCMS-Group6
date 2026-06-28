@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useScheduleStore } from '../../stores/scheduleStore'
+import OverlayPanel from 'primevue/overlaypanel'
 
 const route = useRoute()
 const toast = useToast()
@@ -23,6 +24,14 @@ const activeCell = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
 const coverageSchedule = ref<any[]>([])
+
+const op = ref()
+const selectedDoctor = ref({
+  name: '',
+  employeeCode: '',
+  phone: '',
+  email: ''
+})
 
 const months = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -162,10 +171,6 @@ const fetchScheduleDetails = async () => {
   }
 }
 
-onMounted(() => {
-  fetchAllSchedules()
-})
-
 const previousWeek = async () => {
   if (currentWeekIndex.value > 0) {
     currentWeekIndex.value--
@@ -226,6 +231,23 @@ const publishSchedule = async () => {
     })
   }
 }
+
+const showDoctorCard = (event: Event, doctorName: string) => {
+  // Dummy data for now
+  // Later replace with API response
+  selectedDoctor.value = {
+    name: doctorName,
+    employeeCode: 'EMP1023',
+    phone: '9876543210',
+    email: 'doctor@hospital.com'
+  }
+
+  op.value.toggle(event)
+}
+
+onMounted(() => {
+  fetchAllSchedules()
+})
 </script>
 
 <template>
@@ -289,12 +311,21 @@ const publishSchedule = async () => {
                   </option>
                 </select>
 
-                <span v-else class="doctor-name" :class="{ editable: isEditing }"
-                  @click="isEditing && openCellEditor(day.date, shift.type, specialty)">
+                <span v-else class="doctor-name" :class="{ editable: isEditing, hoverable: !isEditing }" @click="
+                  isEditing
+                    ? openCellEditor(day.date, shift.type, specialty)
+                    : showDoctorCard($event, shift.assignments[specialty])
+                  ">
                   {{ shift.assignments[specialty] || '-' }}
 
+                  <!-- Edit icon -->
                   <span v-if="isEditing" class="edit-icon">
                     <i class="pi pi-pencil"></i>
+                  </span>
+
+                  <!-- Contact icon -->
+                  <span v-if="!isEditing" class="contact-icon">
+                    <i class="pi pi-id-card"></i>
                   </span>
                 </span>
               </td>
@@ -314,6 +345,27 @@ const publishSchedule = async () => {
       </button>
     </div>
   </div>
+
+  <OverlayPanel ref="op">
+    <div class="doctor-card">
+      <h4>Physician Details</h4>
+
+      <div class="doctor-detail">
+        <label>Employee Code</label>
+        <p>{{ selectedDoctor.employeeCode }}</p>
+      </div>
+
+      <div class="doctor-detail">
+        <label>Phone Number</label>
+        <p>{{ selectedDoctor.phone }}</p>
+      </div>
+
+      <div class="doctor-detail">
+        <label>Email</label>
+        <p>{{ selectedDoctor.email }}</p>
+      </div>
+    </div>
+  </OverlayPanel>
 </template>
 
 <style scoped>
@@ -569,6 +621,74 @@ tbody tr:hover .date-cell {
   border-radius: 6px;
 
   font-size: 13px;
+}
+
+.doctor-name {
+  position: relative;
+  display: block;
+  padding: 14px 28px 14px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.hoverable:hover {
+  background: #f4f7ff;
+  cursor: pointer;
+}
+
+.contact-icon {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  opacity: 0;
+  font-size: 12px;
+  color: #4f46e5;
+  transition: opacity 0.2s ease;
+}
+
+.hoverable:hover .contact-icon {
+  opacity: 1;
+}
+
+.doctor-card {
+  min-width: 220px;
+  padding: 4px;
+}
+
+.doctor-card h4 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  color: #1e3a8a;
+}
+
+.doctor-detail {
+  margin-bottom: 10px;
+}
+
+.doctor-detail:last-child {
+  margin-bottom: 0;
+}
+
+.doctor-detail label {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+.doctor-detail p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+:deep(.p-overlaypanel .p-overlaypanel-content) {
+  padding: 10px 12px !important;
+}
+
+:deep(.p-overlaypanel) {
+  max-width: 250px;
 }
 
 /* =========================

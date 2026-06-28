@@ -185,6 +185,22 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
             .ToListAsync();
     }
 
+    public async Task<List<AssignmentInfoDto>> GetActiveAssignmentsByPhysicianIdAsync(int physicianId)
+    {
+        var yesterday = DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
+
+        return await _context.CoverageAssignments
+            .Where(a => a.PhysicianId == physicianId &&
+                        a.CoverageDate >= yesterday)
+            .Select(a => new AssignmentInfoDto
+            {
+               
+                Date = a.CoverageDate,
+                ShiftType = a.ShiftType
+            })
+            .ToListAsync();
+    }
+
 
 
     public async Task SaveChangesAsync()
@@ -196,6 +212,15 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
     {
         return await _context.CoverageAssignments
             .FirstOrDefaultAsync(a => a.CoverageAssignmentId == assignmentId);
+    }
+
+    public async Task<int> GetCurrentScheduleId()
+    {
+        return await _context.CoverageSchedules
+            .Where(cs => cs.Status == "Published")
+            .OrderBy(cs => cs.WeekStartDate)
+            .Select(cs => cs.CoverageScheduleId)
+            .FirstOrDefaultAsync();
     }
 
 }

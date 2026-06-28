@@ -17,7 +17,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//DI
+// DI
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<AuthService>();
@@ -30,20 +30,14 @@ builder.Services.AddScoped<ISupervisorService, SupervisorService>();
 builder.Services.AddScoped<ICoverageAssignmentsService, CoverageAssignmentsService>();
 builder.Services.AddScoped<ICoverageAssignmentsRepository, CoverageAssignmentsRepo>();
 
-
-
 // Controllers
 builder.Services.AddControllers();
-
 
 builder.Services.AddDbContext<PcmsDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
-
-
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<ISpecialtyRepository, SpecialtyRepository>();
@@ -58,12 +52,11 @@ builder.Services.AddScoped<ICoverageScheduleRepository, CoverageScheduleReposito
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<AuthService>();
-
 builder.Services.AddScoped<INotificationService, NotificationService>();
-
 builder.Services.AddScoped<ICoverageScheduleService, CoverageScheduleService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+
 
 
 // ===========================
@@ -91,6 +84,7 @@ builder.Services.AddScoped<IEligibilityRule, RestGapEligibilityRule>();
 builder.Services.AddScoped<IEligibilityRule, WeeklyLimitEligibilityRule>();
 
 builder.Services.AddScoped<IEligibilityRule, ExternalShiftEligibilityRule>();
+
 
 builder.Services.AddSignalR();
 
@@ -144,9 +138,7 @@ builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
 var app = builder.Build();
-
 
 if (app.Environment.IsDevelopment())
 {
@@ -159,7 +151,6 @@ app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapControllers();
@@ -167,6 +158,6 @@ app.MapControllers();
 app.MapHub<NotificationHub>("/notificationHub");
 app.MapHub<ScheduleHub>("/scheduleHub");
 app.MapHub<SwapRequestHub>("/swapRequests");
-
+app.MapHub<UnavailableRequestHub>("/unavailableRequestHub");
 
 app.Run();

@@ -6,4 +6,5 @@ namespace PCMS_Backend.Interfaces.Services;
 public interface ISupervisorService
 {
     //Task<Result<List<OpenGapAlertDto>>> GetOpenGapAlertsAsync();
+    Task<Result<SupervisorDashboardDetailsDto>> DashboardDetails();
 }

@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import API from '../../api/axios'
 
 const workloadData = ref<any[]>([])
-
 const weekDays = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su']
 
 // Helper → get initials from full name
@@ -15,25 +14,13 @@ const getInitials = (name: string) => {
     .toUpperCase()
 }
 
-// Helper → build 7-day shift array
-const buildShifts = (assignments: any[]) => {
+// Helper → build 7-day shift array based on the passed weekStart date
+const buildShifts = (assignments: any[], weekStart: Date) => {
   const shifts: (string | null)[] = new Array(7).fill(null)
-
-  // get current week (Mon → Sun)
-
- const today = new Date()
-const day = today.getDay()
-
-// convert Sunday (0) → 7
-const normalizedDay = day === 0 ? 7 : day
-
-const start = new Date(today)
-start.setDate(today.getDate() - normalizedDay + 1)
-start.setHours(0, 0, 0, 0)
 
   assignments.forEach(a => {
     const date = new Date(a.date + 'T00:00:00')
-    const diff = Math.floor((date.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+    const diff = Math.floor((date.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24))
 
     if (diff >= 0 && diff < 7) {
       shifts[diff] = a.shiftType === 'Day' ? 'D' : 'N'
@@ -45,14 +32,38 @@ start.setHours(0, 0, 0, 0)
 
 const fetchData = async () => {
   try {
-    const res = await axios.get(
-      'https://localhost:7119/api/supervisor/dashboard/top-per-specialty',
-      {withCredentials:true}
+    const res = await API.get(
+      '/supervisor/dashboard/top-per-specialty'
     )
 
     const apiData = res.data.data
 
-    // Transform API → UI structure
+    // 1. Find the earliest date in the dataset to anchor our weekly grid
+    let weekStart = new Date()
+    const allAssignments = apiData.flatMap((d: any) => d.assignments)
+
+    if (allAssignments.length > 0) {
+      // Find the absolute minimum date in the payload
+      const dates = allAssignments.map((a: any) => new Date(a.date + 'T00:00:00').getTime())
+      const minDate = new Date(Math.min(...dates))
+
+      // Calculate the Monday of that week
+      const day = minDate.getDay()
+      const normalizedDay = day === 0 ? 7 : day // convert Sunday (0) to 7
+      weekStart = new Date(minDate)
+      weekStart.setDate(minDate.getDate() - normalizedDay + 1)
+      weekStart.setHours(0, 0, 0, 0)
+    } else {
+      // Fallback to system current week if API returns no assignments
+      const today = new Date()
+      const day = today.getDay()
+      const normalizedDay = day === 0 ? 7 : day
+      weekStart = new Date(today)
+      weekStart.setDate(today.getDate() - normalizedDay + 1)
+      weekStart.setHours(0, 0, 0, 0)
+    }
+
+    // 2. Transform API → UI structure
     const grouped: any = {}
 
     apiData.forEach((item: any) => {
@@ -66,7 +77,7 @@ const fetchData = async () => {
       grouped[item.specialtyName].physicians.push({
         initials: getInitials(item.physicianName),
         name: item.physicianName,
-        shifts: buildShifts(item.assignments)
+        shifts: buildShifts(item.assignments, weekStart) // Pass the calculated week start
       })
     })
 
@@ -78,6 +89,7 @@ const fetchData = async () => {
 
 onMounted(fetchData)
 </script>
+
 <template>
   <div class="workload-card">
     <div class="card-header">

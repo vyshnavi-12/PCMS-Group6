@@ -55,6 +55,14 @@ const filteredNotifications = computed(() => {
   return store.notifications
 })
 
+const unreadCount = computed(() => {
+  return store.notifications.filter(n => !n.isRead).length
+})
+
+const allCount = computed(() => {
+  return store.notifications.length
+})
+
 const markAllNotificationsRead = async () => {
   await store.markAllAsRead()
 
@@ -74,11 +82,11 @@ const markAllNotificationsRead = async () => {
     <div class="notifications-toolbar">
       <div class="tabs">
         <span :class="{ active: activeTab === 'Unread' }" @click="activeTab = 'Unread'">
-          Unread
+          Unread ({{ unreadCount }})
         </span>
 
         <span :class="{ active: activeTab === 'All' }" @click="activeTab = 'All'">
-          All
+          All ({{ allCount }})
         </span>
       </div>
 

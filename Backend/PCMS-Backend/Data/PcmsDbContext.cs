@@ -23,6 +23,7 @@ public class PcmsDbContext : DbContext
     public DbSet<SwapRequest> SwapRequests { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
+    public object UnavailableRequests { get; internal set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

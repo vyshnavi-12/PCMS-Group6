@@ -1,11 +1,85 @@
 <script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import API from '../../api/axios'
 import PhysicianWorkload from './PhysicianWorkload.vue'
-import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
+import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue'
+import { useSupervisorSwapRequestsStore } from '../../stores/supervisorSwapRequestsStore'
+import unavailableRequestSignalRService from '../../services/unavailableRequestSignalRService'
+import supervisorSwapSignalRService from '../../services/supervisorSwapSignalRService'
+
+const router = useRouter()
+const swapStore = useSupervisorSwapRequestsStore()
+
+const dashboardDetails = ref({
+  swapRequestCount: 0,
+  unavailableRequestsCount: 0,
+  nextScheduleDate: ''
+})
+
+const fetchDashboardDetails = async () => {
+  try {
+    const response = await API.get('/supervisor/dashboard/details')
+    dashboardDetails.value = response.data.data
+  } catch (error) {
+    console.error('Failed to fetch dashboard details', error)
+  }
+}
+
+const formatDate = (date: string) => {
+  if (!date) return '-'
+
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
+onMounted(async () => {
+  await fetchDashboardDetails()
+
+  swapStore.fetchTargetAcceptedCount()
+  swapStore.fetchSupervisorRequests()
+
+  unavailableRequestSignalRService.onNewUnavailableRequest(async () => {
+    console.log('Unavailable dashboard refresh triggered')
+    await fetchDashboardDetails()
+  })
+
+  supervisorSwapSignalRService.onRefreshSupervisorRequests(async () => {
+    console.log('Swap dashboard refresh triggered')
+    await fetchDashboardDetails()
+  })
+})
+
+const goToSwapRequests = () => {
+  router.push('/supervisor/swap-requests')
+}
+
+const goToUnavailableRequests = () => {
+  router.push('/supervisor/unavailable-requests')
+}
+
+const daysLeft = computed(() => {
+  if (!dashboardDetails.value.nextScheduleDate) return '-'
+
+  const today = new Date()
+  const nextDate = new Date(dashboardDetails.value.nextScheduleDate)
+
+  // remove time part to avoid partial day issues
+  today.setHours(0, 0, 0, 0)
+  nextDate.setHours(0, 0, 0, 0)
+
+  const diffTime = nextDate.getTime() - today.getTime()
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  return diffDays >= 0 ? diffDays : 0
+})
 </script>
 
 <template>
   <div class="dashboard-page">
-
     <div class="stats-grid">
 
       <!-- Swap Requests -->
@@ -13,20 +87,14 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
         <div class="icon orange">
           <i class="pi pi-arrow-right-arrow-left"></i>
         </div>
-
         <div>
-          <div class="stat-title">
-            Swap Requests
-          </div>
-
+          <div class="stat-title">Swap Requests</div>
           <div class="stat-value">
-            4
+            {{ dashboardDetails.swapRequestCount }}
           </div>
-
-          <div class="stat-subtitle">
-            Pending approvals
-          </div>
+          <div class="stat-subtitle">Pending approvals</div>
         </div>
+        <button class="view-details-btn" @click="goToSwapRequests">View Details</button>
       </div>
 
       <!-- Unavailable Requests -->
@@ -34,20 +102,20 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
         <div class="icon purple">
           <i class="pi pi-exclamation-circle"></i>
         </div>
-
         <div>
           <div class="stat-title">
             Unavailable Requests
           </div>
 
           <div class="stat-value">
-            7
+            {{ dashboardDetails.unavailableRequestsCount }}
           </div>
 
           <div class="stat-subtitle">
             Open requests
           </div>
         </div>
+        <button class="view-details-btn" @click="goToUnavailableRequests">View Details</button>
       </div>
 
       <!-- Days Left -->
@@ -55,14 +123,13 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
         <div class="icon blue">
           <i class="pi pi-calendar"></i>
         </div>
-
         <div>
           <div class="stat-title">
-            Days Left
+            {{daysLeft}} Days Left
           </div>
 
           <div class="stat-value">
-            Jun 30
+            {{ formatDate(dashboardDetails.nextScheduleDate) }}
           </div>
 
           <div class="stat-subtitle">
@@ -77,12 +144,10 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
       <div class="left-panel">
         <PhysicianWorkload />
       </div>
-
       <div class="right-panel">
         <SpecialityRequestsLoad />
       </div>
     </div>
-
   </div>
 </template>
 
@@ -121,8 +186,21 @@ import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
   display: flex;
   align-items: center;
   gap: 16px;
+  position: relative;
+  min-height: 140px;
+}
 
-  min-height: 100px;
+.view-details-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .icon {

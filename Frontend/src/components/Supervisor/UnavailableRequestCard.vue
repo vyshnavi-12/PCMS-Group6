@@ -295,9 +295,9 @@ onBeforeUnmount(() => {
   /* Dynamic height wrt viewport */
   height: calc(100vh - 140px);
   max-height: calc(100vh - 140px);
-  min-height: 480px;
+  min-height: 400px;
 
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .card-header {

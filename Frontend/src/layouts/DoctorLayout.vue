@@ -70,7 +70,11 @@ onMounted(async () => {
 
   doctorSwapSignalRService.onRefreshDoctorRequests(async () => {
     console.log('Doctor swap refresh received')
-    await swapRequestsStore.fetchDoctorRequests()
+
+    await Promise.all([
+      swapRequestsStore.fetchDoctorRequests(),
+      scheduleStore.fetchDoctorSchedules()
+    ])
   })
 
   await unavailableRequestSignalRService.startConnection(

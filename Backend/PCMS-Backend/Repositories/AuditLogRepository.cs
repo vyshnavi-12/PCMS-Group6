@@ -27,7 +27,7 @@ namespace PCMS_Backend.Repositories
                     EntityName = l.EntityName,
                     EntityRecordId = l.EntityRecordId,
                     PerformedByUserId = l.PerformedByUserId,
-                    CreatedAt = l.CreatedAt
+                    CreatedAt = l.CreatedAt.AddMinutes(330)
                 })
                 .ToListAsync();
         }

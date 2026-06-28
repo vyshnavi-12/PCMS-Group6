@@ -26,10 +26,11 @@ public class CoverageAssignmentsController : ControllerBase
     [Authorize(Roles = "Physician")]
     public async Task<IActionResult> MarkUnavailable(int assignmentId, [FromBody] UnavailableRequestDto req)
     {
-        if(User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token."); 
+        if(User.GetCurrentUserId() is not int validUserId || User.GetCurrentUserName() is not string validUserName) return Unauthorized("Invalid session token.");
+        
         var physicianId = await _physicianService.GetPhysicianIdByUserIdAsync();
         if (physicianId is not int validPhysicianId) return Unauthorized("Not authorized");
-        var result = await _coverageService.MarkAssignmentUnavailableAsync(assignmentId, req.Reason, validPhysicianId);
+        var result = await _coverageService.MarkAssignmentUnavailableAsync(assignmentId, req.Reason, validPhysicianId, validUserName);
         return result.ToActionResult();
     }
 

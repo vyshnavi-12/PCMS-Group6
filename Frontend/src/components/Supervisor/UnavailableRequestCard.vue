@@ -475,7 +475,7 @@ h2 {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 80px;
+  margin-top: 30px;
 }
 
 .decline-btn,

@@ -20,6 +20,7 @@ public class AuthService
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+            new Claim(ClaimTypes.Name, user.FullName),
             new Claim(ClaimTypes.Email, user.EmailAddress),
             new Claim(ClaimTypes.Role, roleName), 
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())

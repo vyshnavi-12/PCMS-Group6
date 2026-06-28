@@ -191,6 +191,12 @@ public class PhysicianService : IPhysicianService
         }
     }
 
+    
+    public async Task<Result<PhysicianDetailsResponseDto>> GetPhysicianDetailsByIdAsync(int physicianId)
+    {
+        var res = await _physicianRepo.GetPhysicianDetailsByIdAsync(physicianId);
+        return Result<PhysicianDetailsResponseDto>.Ok(res);
+    }
     public async Task<Result<int>> GetUnavailableRequestCountAsync(int userId)
     {
         var physicianId = await _physicianRepo.GetPhysicianIdByUserIdAsync(userId);

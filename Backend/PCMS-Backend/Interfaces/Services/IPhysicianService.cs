@@ -10,4 +10,6 @@ public interface IPhysicianService
     Task<Result<IReadOnlyList<ReplacementPhysicianDto>>> GetSuggestedReplacementsAsync(int assignmentId);
 
     Task<Result<int>> GetUnavailableRequestCountAsync(int userId);
+
+    Task<Result<PhysicianDetailsResponseDto>> GetPhysicianDetailsByIdAsync(int physicianId);
 }

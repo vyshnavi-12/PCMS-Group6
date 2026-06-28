@@ -1,4 +1,6 @@
-﻿using PCMS_Backend.Models;
+﻿using PCMS_Backend.DTOs;
+using PCMS_Backend.Models;
+using PCMS_Backend.Shared;
 
 namespace PCMS_Backend.Interfaces.Repositories;
 
@@ -15,4 +17,6 @@ public interface IPhysicianRepository
 
     Task<int> GetUnavailableRequestsCountAsync(int physicianId);
     Task<int> GetUnavailableRequestsCountSupervisorAsync();
+
+    Task<PhysicianDetailsResponseDto?> GetPhysicianDetailsByIdAsync(int physicianId);
 }

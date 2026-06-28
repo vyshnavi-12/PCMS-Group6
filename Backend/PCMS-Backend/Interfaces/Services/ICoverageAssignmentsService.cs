@@ -5,7 +5,7 @@ using PCMS_Backend.Shared;
 namespace PCMS_Backend.Interfaces.Services;
 public interface ICoverageAssignmentsService
 {    
-    Task<Result> MarkAssignmentUnavailableAsync(int assignmentId, string reason, int physicianId);
+    Task<Result> MarkAssignmentUnavailableAsync(int assignmentId, string reason, int physicianId, string physicianName);
     Task<Result<IReadOnlyList<OpenAlertsResponseDto>>> GetAlertsAsync();
     Task<Result<AlertDetailsResponseDto>> GetAlertDetailsAsync(int alertId);
     Task<Result> UpdateAlertPhysicianAsync(int alertId, int physicianId);

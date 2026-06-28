@@ -21,18 +21,10 @@ namespace PCMS_Backend.Services
         {
             var logs = await _repository.GetAllAsync();
 
-            var dtos = logs.Select(l => new AuditLogDto
-            {
-                AuditLogId = l.AuditLogId,
-                ActionType = l.ActionType,
-                EntityName = l.EntityName,
-                EntityRecordId = l.EntityRecordId,
-                PerformedByUserId = l.PerformedByUserId,
-                // ✅ Keep CreatedAt in UTC
-                CreatedAt = l.CreatedAt
-            }).ToList();
-
-            return Result<IReadOnlyList<AuditLogDto>>.Ok(dtos, "Audit logs retrieved successfully");
+            return Result<IReadOnlyList<AuditLogDto>>.Ok(
+                logs,
+                "Audit logs retrieved successfully"
+            );
         }
 
         public async Task<Result> LogActionAsync(string actionType, string entityName, int entityRecordId, int performedByUserId)

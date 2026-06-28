@@ -1,336 +1,181 @@
 <script setup lang="ts">
-import CoverageOverview from './CoverageOverview.vue'
-import SpecialityCoverageStatus from './ScheduleStatus.vue';
+import PhysicianWorkload from './PhysicianWorkload.vue'
+import SpecialityRequestsLoad from './SpecialityRequestsLoad.vue';
 </script>
 
 <template>
-
   <div class="dashboard-page">
 
     <div class="stats-grid">
 
-      <!-- Active Schedules -->
-
-      <div class="stat-card">
-
-        <div class="stat-header">
-
-          <div class="icon blue">
-            <i class="pi pi-calendar"></i>
-          </div>
-
-          <div>
-
-            <div class="stat-title">
-              Active Schedules
-            </div>
-
-            <div class="stat-value">
-              2
-            </div>
-
-          </div>
-
-        </div>
-
-        <div class="stat-footer">
-          May 19 – May 25, 2025
-        </div>
-
-      </div>
-
-      <!-- Coverage Filled -->
-
-      <div class="stat-card">
-
-        <div class="stat-header">
-
-          <div class="icon green">
-            <i class="pi pi-check-circle"></i>
-          </div>
-
-          <div>
-
-            <div class="stat-title">
-              Coverage Filled
-            </div>
-
-            <div class="stat-value">
-              86%
-            </div>
-
-          </div>
-
-        </div>
-
-        <div class="coverage-text">
-          142 / 165 Assignments
-        </div>
-
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: 86%;"></div>
-        </div>
-
-      </div>
-
-      <!-- Coverage Gaps -->
-
-      <div class="stat-card">
-
-        <div class="stat-header">
-
-          <div class="icon orange">
-            <i class="pi pi-exclamation-triangle"></i>
-          </div>
-
-          <div>
-
-            <div class="stat-title">
-              Coverage Gaps
-            </div>
-
-            <div class="stat-value orange-text">
-              3
-            </div>
-
-          </div>
-
-        </div>
-
-        <div class="stat-footer">
-          Open Gaps
-        </div>
-
-        <button class="link-btn">
-          View Details
-          <i class="pi pi-arrow-right"></i>
-        </button>
-
-      </div>
-
       <!-- Swap Requests -->
-
       <div class="stat-card">
-
-        <div class="stat-header">
-
-          <div class="icon purple">
-            <i class="pi pi-arrow-right-arrow-left"></i>
-          </div>
-
-          <div>
-
-            <div class="stat-title">
-              Swap Requests
-            </div>
-
-            <div class="stat-value purple-text">
-              4
-            </div>
-
-          </div>
-
+        <div class="icon orange">
+          <i class="pi pi-arrow-right-arrow-left"></i>
         </div>
 
-        <div class="stat-footer">
-          Pending
+        <div>
+          <div class="stat-title">
+            Swap Requests
+          </div>
+
+          <div class="stat-value">
+            4
+          </div>
+
+          <div class="stat-subtitle">
+            Pending approvals
+          </div>
+        </div>
+      </div>
+
+      <!-- Unavailable Requests -->
+      <div class="stat-card">
+        <div class="icon purple">
+          <i class="pi pi-exclamation-circle"></i>
         </div>
 
-        <button class="link-btn">
-          View Requests
-          <i class="pi pi-arrow-right"></i>
-        </button>
+        <div>
+          <div class="stat-title">
+            Unavailable Requests
+          </div>
 
+          <div class="stat-value">
+            7
+          </div>
+
+          <div class="stat-subtitle">
+            Open requests
+          </div>
+        </div>
+      </div>
+
+      <!-- Days Left -->
+      <div class="stat-card">
+        <div class="icon blue">
+          <i class="pi pi-calendar"></i>
+        </div>
+
+        <div>
+          <div class="stat-title">
+            Days Left
+          </div>
+
+          <div class="stat-value">
+            Jun 30
+          </div>
+
+          <div class="stat-subtitle">
+            Next schedule due
+          </div>
+        </div>
       </div>
 
     </div>
 
     <div class="dashboard-content">
-
       <div class="left-panel">
-        <CoverageOverview />
+        <PhysicianWorkload />
       </div>
 
       <div class="right-panel">
-        <SpecialityCoverageStatus />
+        <SpecialityRequestsLoad />
       </div>
-
     </div>
 
   </div>
-
 </template>
 
 <style scoped>
 .dashboard-page {
   width: 100%;
   height: 100%;
-
   overflow: hidden;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
 .dashboard-content {
   margin-top: 20px;
-
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 0.8fr 1fr;
   gap: 20px;
 }
 
 .left-panel,
 .right-panel {
   min-width: 0;
-}
-
-.placeholder-card {
-  background: white;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-
-  padding: 20px;
-
-  min-height: 420px;
+  height: 100%;
 }
 
 .stat-card {
   background: white;
-
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-
-  padding: 20px;
-
-  min-height: 150px;
+  border-radius: 14px;
+  padding: 18px;
 
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
 
-  box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.04);
-}
-
-.stat-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  min-height: 100px;
 }
 
 .icon {
-  width: 52px;
-  height: 52px;
-
+  width: 54px;
+  height: 54px;
   border-radius: 14px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  font-size: 22px;
+  font-size: 24px;
+  flex-shrink: 0;
 }
 
+
+/* Days Left */
 .blue {
-  background: #eef4ff;
+  background: #dbeafe;
   color: #2563eb;
 }
 
-.green {
-  background: #eaf8ee;
-  color: #16a34a;
-}
-
+/* Swap Requests */
 .orange {
-  background: #fff3e7;
-  color: #f97316;
+  background: #fef3c7;
+  color: #d97706;
 }
 
+/* Unavailable Requests */
 .purple {
-  background: #f5ecff;
-  color: #9333ea;
+  background: #ede9fe;
+  color: #7c3aed;
 }
 
 .stat-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #475569;
-
-  margin-bottom: 4px;
 }
 
 .stat-value {
-  font-size: 36px;
+  font-size: 30px;
   font-weight: 700;
-  color: #0f172a;
-  line-height: 1;
+  color: #16204d;
+  margin: 4px 0;
 }
 
-.orange-text {
-  color: #f97316;
-}
-
-.purple-text {
-  color: #9333ea;
-}
-
-.stat-footer {
+.stat-subtitle {
   font-size: 13px;
   color: #64748b;
 }
 
-.coverage-text {
-  font-size: 13px;
-  color: #475569;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 6px;
-
-  background: #e2e8f0;
-  border-radius: 999px;
-
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: #2563eb;
-  border-radius: 999px;
-}
-
-.link-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  padding: 0;
-
-  border: none;
-  background: transparent;
-
-  color: #2563eb;
-
-  font-size: 13px;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  width: fit-content;
-}
-
-.link-btn:hover {
-  color: #1d4ed8;
-}
-
 @media (max-width: 1200px) {
-
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -338,6 +183,5 @@ import SpecialityCoverageStatus from './ScheduleStatus.vue';
   .dashboard-content {
     grid-template-columns: 1fr;
   }
-
 }
 </style>

@@ -1,25 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { useScheduleStore } from '../../stores/scheduleStore'
 
 const router = useRouter()
+const store = useScheduleStore()
 
 const activeTab = ref('Published')
-const loading = ref(false)
 const generating = ref(false)
 const errorMessage = ref('')
-
-interface Schedule {
-  id: number
-  scheduleName: string
-  weekStart: string
-  weekEnd: string
-  status: string
-  publishedAt: string
-}
-
-const schedules = ref<Schedule[]>([])
 
 const months = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -53,48 +42,35 @@ const formatPublishedAt = (dateString: string | null) => {
   })
 }
 
-const fetchSchedules = async () => {
-  loading.value = true
-  errorMessage.value = ''
-
+onMounted(async () => {
   try {
-    const response = await axios.get(
-      'https://localhost:7119/api/CoverageSchedules',
-      { withCredentials: true }
-    )
-
-    schedules.value = response.data.data.map((schedule: any) => ({
-      id: schedule.coverageScheduleId,
-      scheduleName: formatScheduleName(
-        schedule.weekStartDate,
-        schedule.weekEndDate
-      ),
-      weekStart: formatDate(schedule.weekStartDate),
-      weekEnd: formatDate(schedule.weekEndDate),
-      status: schedule.status.toUpperCase(),
-      publishedAt: formatPublishedAt(schedule.publishedAt)
-    }))
+    await store.fetchSchedules()
   } catch (error: any) {
     errorMessage.value =
       error.response?.data?.message || 'Failed to load schedules'
-    console.error(error)
-  } finally {
-    loading.value = false
   }
-}
-
-onMounted(() => {
-  fetchSchedules()
 })
 
 const filteredSchedules = computed(() => {
+  const formattedSchedules = store.schedules.map((schedule: any) => ({
+    id: schedule.coverageScheduleId,
+    scheduleName: formatScheduleName(
+      schedule.weekStartDate,
+      schedule.weekEndDate
+    ),
+    weekStart: formatDate(schedule.weekStartDate),
+    weekEnd: formatDate(schedule.weekEndDate),
+    status: schedule.status.toUpperCase(),
+    publishedAt: formatPublishedAt(schedule.publishedAt)
+  }))
+
   if (activeTab.value === 'Published') {
-    return schedules.value.filter(
+    return formattedSchedules.filter(
       schedule => schedule.status === 'PUBLISHED'
     )
   }
 
-  return schedules.value.filter(
+  return formattedSchedules.filter(
     schedule => schedule.status === 'DRAFT'
   )
 })
@@ -104,24 +80,11 @@ const createSchedule = async () => {
   errorMessage.value = ''
 
   try {
-    await axios.post(
-      'https://localhost:7119/api/CoverageSchedules/generate',
-      {},
-      {
-        withCredentials: true
-      }
-    )
-
-    // Switch to drafts tab after generation
+    await store.generateSchedule()
     activeTab.value = 'Drafts'
-
-    // Refresh schedule list
-    await fetchSchedules()
-
   } catch (error: any) {
     errorMessage.value =
       error.response?.data?.message || 'Failed to generate schedule'
-    console.error(error)
   } finally {
     generating.value = false
   }
@@ -234,7 +197,7 @@ const viewSchedule = (scheduleId: number) => {
           </tr>
 
           <!-- Empty State -->
-          <tr v-if="!loading && filteredSchedules.length === 0">
+          <tr v-if="!store.loading && filteredSchedules.length === 0">
             <td colspan="6" class="empty-cell">
               No schedules available
             </td>

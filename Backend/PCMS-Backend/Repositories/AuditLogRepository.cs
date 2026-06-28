@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PCMS_Backend.Data;
+using PCMS_Backend.DTOs;
 using PCMS_Backend.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PCMS_Backend.Repositories
 {
@@ -15,13 +16,22 @@ namespace PCMS_Backend.Repositories
             _context = context;
         }
 
-        public async Task<IReadOnlyList<AuditLog>> GetAllAsync()
+        public async Task<IReadOnlyList<AuditLogDto>> GetAllAsync()
         {
             return await _context.AuditLogs
-                .Include(l => l.PerformedByUser)
                 .OrderByDescending(l => l.CreatedAt)
+                .Select(l => new AuditLogDto
+                {
+                    AuditLogId = l.AuditLogId,
+                    ActionType = l.ActionType,
+                    EntityName = l.EntityName,
+                    EntityRecordId = l.EntityRecordId,
+                    PerformedByUserId = l.PerformedByUserId,
+                    CreatedAt = l.CreatedAt
+                })
                 .ToListAsync();
         }
+
 
         public async Task AddAsync(AuditLog log)
         {

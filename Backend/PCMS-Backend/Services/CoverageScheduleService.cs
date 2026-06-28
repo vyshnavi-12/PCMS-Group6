@@ -1,9 +1,12 @@
-﻿using PCMS_Backend.DTOs;
-using PCMS_Backend.Interfaces.Services;
+﻿using Microsoft.AspNetCore.SignalR;
+using PCMS_Backend.DTOs;
+using PCMS_Backend.Hubs;
 using PCMS_Backend.Interfaces.Repositories;
+using PCMS_Backend.Interfaces.Services;
 using PCMS_Backend.Models;
-using PCMS_Backend.Shared;
 using PCMS_Backend.Models.Scheduling;
+using PCMS_Backend.Repositories;
+using PCMS_Backend.Shared;
 
 namespace PCMS_Backend.Services;
 
@@ -11,14 +14,24 @@ public class CoverageScheduleService : ICoverageScheduleService
 {
     private readonly ICoverageScheduleRepository _coverageScheduleRepository;
     private readonly INotificationService _notificationService;
+    private readonly IHubContext<ScheduleHub> _scheduleHubContext;
+    private readonly IAuditLogService _auditLogService;
+
+
 
 
     public CoverageScheduleService(
-        ICoverageScheduleRepository coverageScheduleRepository, INotificationService notificationService)
+       ICoverageScheduleRepository coverageScheduleRepository,
+       INotificationService notificationService,
+       IAuditLogService auditLogService,
+       IHubContext<ScheduleHub> scheduleHubContext)
     {
         _coverageScheduleRepository = coverageScheduleRepository;
         _notificationService = notificationService;
+        _auditLogService = auditLogService;   // ✅ assign
+        _scheduleHubContext = scheduleHubContext;
     }
+
     private List<Slot> GenerateSlots(DateTime startDate)
     {
         var slots = new List<Slot>();
@@ -60,6 +73,16 @@ public class CoverageScheduleService : ICoverageScheduleService
         return today.AddDays(daysToAdd).Date;
     }
 
+    private DateTime GetCurrStartDate(DateTime today)
+    {
+        int daysToAdd = ((int)DayOfWeek.Monday - (int)today.DayOfWeek ) ;
+
+       
+
+
+        return today.AddDays(daysToAdd).Date;
+    }
+
     // =========================================
     // ✅ EXISTING METHODS (UNCHANGED)
     // =========================================
@@ -81,6 +104,53 @@ public class CoverageScheduleService : ICoverageScheduleService
     .ToList();
 
         return Result<IReadOnlyList<CoverageScheduleDto>>.Ok(response);
+    }
+
+
+    public async Task<Result<List<TopPhysicianPerSpecialtyDto>>> GetTopPerSpecialty()
+    {
+        var startDate = GetCurrStartDate(DateTime.UtcNow);
+        
+
+
+        var startDateOnly = DateOnly.FromDateTime(startDate);
+
+        int scheduleId = await _coverageScheduleRepository.GetScheduleIdByStartDate(startDateOnly);
+
+        var topData = await _coverageScheduleRepository.GetTopPhysiciansPerSpecialtyRawAsync(scheduleId);
+
+        var physicianIds = topData
+            .Select(x => x.PhysicianId)
+            .ToList();
+
+       
+        var assignments = await _coverageScheduleRepository.GetAssignmentsByPhysiciansAsync(scheduleId, physicianIds);
+
+        
+        var result = topData.Select(x => new TopPhysicianPerSpecialtyDto
+        {
+            PhysicianId = x.PhysicianId,
+            PhysicianName = x.PhysicianName,
+
+            SpecialtyId = x.SpecialtyId,
+            SpecialtyName = x.SpecialtyName,
+
+            TotalAssignments = x.TotalAssignments,
+
+            Assignments = assignments
+                .Where(a => a.PhysicianId == x.PhysicianId &&
+                            a.SpecialtyId == x.SpecialtyId)
+                .Select(a => new AssignmentInfoDto
+                {
+                    Date = a.Date,
+                    ShiftType = a.ShiftType
+                })
+                .ToList()
+
+        }).ToList();
+
+        return Result<List<TopPhysicianPerSpecialtyDto>>
+            .Ok(result, "Top physicians per specialty fetched successfully");
     }
 
     public async Task<Result<CoverageScheduleDetailDto>> GetScheduleByIdAsync(int scheduleId)
@@ -113,13 +183,8 @@ public class CoverageScheduleService : ICoverageScheduleService
                 .ToList()
         };
 
-
         return Result<CoverageScheduleDetailDto>
             .Ok(response);
-
-
-        
-
     }
 
     // =========================================
@@ -309,6 +374,9 @@ public class CoverageScheduleService : ICoverageScheduleService
 
         await _coverageScheduleRepository.SaveAssignmentsAsync(assignments);
 
+        
+
+
 
         foreach (var slot in slots)
         {
@@ -348,21 +416,11 @@ public class CoverageScheduleService : ICoverageScheduleService
         var schedule = await _coverageScheduleRepository
             .GetScheduleWithAssignmentsAsync(scheduleId);
 
-        // ✅ NOT FOUND
         if (schedule is null)
-        {
             return Result<bool>.NotFound("Schedule not found.");
-        }
 
-        // ✅ ALREADY PUBLISHED CHECK
         if (schedule.Status == "Published")
-        {
             return Result<bool>.BadRequest("Schedule is already published.");
-        }
-
-        // ======================================
-        // ✅ PUBLISH
-        // ======================================
 
         schedule.Status = "Published";
         schedule.PublishedAt = DateTime.UtcNow;
@@ -373,9 +431,33 @@ public class CoverageScheduleService : ICoverageScheduleService
             a.AssignmentStatus = "Active";
         }
 
+        await _coverageScheduleRepository.SaveChangesAsync();
+
+        var assignedUserIds = schedule.CoverageAssignments
+            .Select(a => a.Physician.UserId)
+            .Distinct()
+            .ToList();
+
+        foreach (var assignedUserId in assignedUserIds)
+        {
+            await _scheduleHubContext.Clients
+                .Group($"User_{assignedUserId}")
+                .SendAsync("SchedulePublished", new
+                {
+                    scheduleId = schedule.CoverageScheduleId,
+                    message = "Schedule Published"
+                });
+        }
+
         await _notificationService.CreateSchedulePublishedNotificationsAsync(schedule);
 
-        await _coverageScheduleRepository.SaveChangesAsync();
+        // ✅ Audit log entry
+        await _auditLogService.LogActionAsync(
+            "PublishSchedule",
+            "CoverageSchedule",
+            schedule.CoverageScheduleId,
+            userId
+        );
 
         return Result<bool>.Ok(true);
     }
@@ -427,7 +509,7 @@ public class CoverageScheduleService : ICoverageScheduleService
                 int currnight = currNightWorkload.GetValueOrDefault(d, 0);
                 var load = 2 * pastMorning + 3 * pastNight + 4 * currMorning + 6 * currnight;
 
-                if ((currnight > currWeekNightLimit || (currnight + currMorning) > currWeekTotalLimit))
+                if ((currnight >= currWeekNightLimit || (currnight + currMorning) >= currWeekTotalLimit))
                 {
                     if (load < skippedMinload)
                     {

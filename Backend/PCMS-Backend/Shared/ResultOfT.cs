@@ -21,4 +21,7 @@ public class Result<T>
     public static Result<T> BadRequest(string message) =>
             new() { Success = false, Message = message, StatusCode = StatusCodes.Status400BadRequest };
 
+    public static Result<T> ServerError(string message = "Internal server error") =>
+          new() { Success = false, Message = message, StatusCode = StatusCodes.Status500InternalServerError };
+
 }

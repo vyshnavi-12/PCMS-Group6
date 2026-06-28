@@ -1,112 +1,80 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import UnavailableRequestCard from './UnavailableRequestCard.vue'
+import API from '../../api/axios.ts'
 
 const activeTab = ref('Open')
 const selectedRequest = ref<any | null>(null)
+    const gapAlerts = ref<any[]>([])
+const fetchUnavailableRequests =  async() =>
+{
+    const unavailableRequest = await API.get("coverageassignments/alerts")
+    gapAlerts.value = unavailableRequest.data.data
+    console.log(unavailableRequest.data)
+}
 
-const gapAlerts = ref([
-    {
-        id: 'ALT-0008',
-        date: 'May 23, 2025',
-        specialty: 'Neurology',
-        shift: 'NIGHT',
-        from: 'Dr. Johnson',
-        status: 'OPEN',
-        createdAt: 'May 18, 2025 08:45 AM'
-    },
-    {
-        id: 'ALT-0007',
-        date: 'May 23, 2025',
-        specialty: 'Pediatrics',
-        shift: 'DAY',
-        from: 'Dr. Brown',
-        status: 'OPEN',
-        createdAt: 'May 18, 2025 08:40 AM'
-    },
-    {
-        id: 'ALT-0006',
-        date: 'May 21, 2025',
-        specialty: 'Orthopedics',
-        shift: 'NIGHT',
-        from: 'Dr. Miller',
-        status: 'OPEN',
-        createdAt: 'May 17, 2025 04:30 PM'
-    },
-    {
-        id: 'ALT-0005',
-        date: 'May 20, 2025',
-        specialty: 'Emergency',
-        shift: 'DAY',
-        from: 'Dr. Davis',
-        status: 'OPEN',
-        createdAt: 'May 17, 2025 02:40 PM'
-    },
-    {
-        id: 'ALT-0004',
-        date: 'May 19, 2025',
-        specialty: 'Cardiology',
-        shift: 'NIGHT',
-        from: 'Dr. Wilson',
-        status: 'OPEN',
-        createdAt: 'May 16, 2025 01:15 PM'
-    },
-    {
-        id: 'ALT-0003',
-        date: 'May 24, 2025',
-        specialty: 'Pediatrics',
-        shift: 'NIGHT',
-        from: 'Dr. Anderson',
-        status: 'UNRESOLVED',
-        createdAt: 'May 15, 2025 11:00 AM'
-    },
-    {
-        id: 'ALT-0002',
-        date: 'May 25, 2025',
-        specialty: 'General Surgery',
-        shift: 'DAY',
-        from: 'Dr. Thomas',
-        status: 'UNRESOLVED',
-        createdAt: 'May 14, 2025 10:15 AM'
-    },
-    {
-        id: 'ALT-0001',
-        date: 'May 26, 2025',
-        specialty: 'Emergency',
-        shift: 'NIGHT',
-        from: 'Dr. Taylor',
-        status: 'RESOLVED',
-        createdAt: 'May 13, 2025 09:20 AM'
-    }
-])
+const formatDate = (dateString: string) => {
+    if (!dateString) return ''
 
+    const parts = dateString.split('-')
+    const year = Number(parts[0])
+    const month = Number(parts[1]) - 1
+    const day = Number(parts[2])
+
+    const date = new Date(year, month, day)
+
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    })
+}
+
+const openCount = computed(() => {
+    return gapAlerts.value.filter(g => g.status === 'Open').length;
+});
+
+const resolvedCount = computed(() => {
+    return gapAlerts.value.filter(g => g.status === 'Resolved').length;
+});
 const filteredGaps = computed(() => {
     if (activeTab.value === 'Open') {
         return gapAlerts.value.filter(
-            gap => gap.status === 'OPEN' || gap.status === 'UNRESOLVED'
+            gap => gap.status === 'Open'
         )
     }
 
     return gapAlerts.value.filter(
-        gap => gap.status === 'RESOLVED'
+        gap => gap.status === 'Resolved'
     )
 })
 
+
 const getStatusClass = (status: string) => {
     switch (status) {
-        case 'OPEN':
+        case 'Open':
             return 'open'
-        case 'UNRESOLVED':
-            return 'unresolved'
-        case 'ESCALATED':
-            return 'escalated'
-        case 'RESOLVED':
+        case 'Resolved':
             return 'resolved'
         default:
             return ''
     }
 }
 
+const formatDateTime = (dateString: string) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    
+    return date.toLocaleString('en-US', {
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric',
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+    });
+}
 const viewRequest = (gap: any) => {
     selectedRequest.value = gap
 }
@@ -114,6 +82,11 @@ const viewRequest = (gap: any) => {
 const closeRequest = () => {
     selectedRequest.value = null
 }
+
+onMounted(() =>
+{
+    fetchUnavailableRequests();
+})
 </script>
 
 <template>
@@ -125,12 +98,12 @@ const closeRequest = () => {
                 <div class="tabs">
 
                     <button class="tab-button" :class="{ active: activeTab === 'Open' }" @click="activeTab = 'Open'">
-                        Open (5)
+                        Open ({{ openCount }})
                     </button>
 
                     <button class="tab-button" :class="{ active: activeTab === 'Resolved' }"
                         @click="activeTab = 'Resolved'">
-                        Resolved (1)
+                        Resolved ({{resolvedCount }})
                     </button>
 
                 </div>
@@ -153,10 +126,10 @@ const closeRequest = () => {
                     <tbody>
                         <tr v-for="gap in filteredGaps" :key="gap.id">
 
-                            <td>{{ gap.date }}</td>
+                            <td>{{ formatDate(gap.date)}}</td>
                             <td>{{ gap.specialty }}</td>
                             <td>{{ gap.shift }}</td>
-                            <td>{{ gap.from }}</td>
+                            <td>{{ gap.requestedBy }}</td>
 
                             <td>
                                 <span class="status-badge" :class="getStatusClass(gap.status)">
@@ -164,7 +137,7 @@ const closeRequest = () => {
                                 </span>
                             </td>
 
-                            <td>{{ gap.createdAt }}</td>
+                            <td>{{ formatDateTime(gap.createdAt) }}</td>
 
                             <td>
                                 <button class="view-btn" @click="viewRequest(gap)">
@@ -172,6 +145,15 @@ const closeRequest = () => {
                                 </button>
                             </td>
 
+                        </tr>
+
+                        <tr v-if="filteredGaps.length === 0">
+                            <td colspan="7" class="empty-state">
+                                {{ activeTab === 'Open'
+                                    ? 'No open unavailable requests'
+                                    : 'No resolved unavailable requests'
+                                }}
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -282,7 +264,7 @@ td {
 }
 
 .open {
-    background: #fee2e2;
+    background: #fcfee2;
     color: #dc2626;
 }
 
@@ -317,5 +299,11 @@ td {
 
 tbody tr:hover {
     background: #fafbfc;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 30px;
+    color: #64748b;
 }
 </style>

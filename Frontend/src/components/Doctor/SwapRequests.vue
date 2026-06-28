@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
 import NewSwapRequest from './NewSwapRequest.vue'
 
+import { useDoctorSwapRequestsStore } from '../../stores/doctorSwapRequestsStore'
+
 const route = useRoute()
 
-onMounted(() => {
-  if (route.query.new === 'true') {
-    showNewRequest.value = true
-  }
-})
+const swapRequestsStore = useDoctorSwapRequestsStore()
 
 const showNewRequest = ref(false)
-
 const activeTab = ref('My Requests')
+
+const { myRequests, requestsToMe } = storeToRefs(swapRequestsStore)
 
 const openNewRequest = () => {
     showNewRequest.value = true
@@ -23,120 +23,58 @@ const goBackToList = () => {
     showNewRequest.value = false
 }
 
-/* =========================
-   MY REQUESTS
-========================= */
+const fetchSwapRequests = async () => {
+    await swapRequestsStore.fetchDoctorRequests()
+}
 
-const myRequests = ref([
-    {
-        id: 'SWP-0012',
-        date: 'May 23, 2025',
-        shift: 'NIGHT',
-        requestedWith: 'Dr. Michael Brown',
-        status: 'PENDING',
-        requestedOn: 'May 18, 2025 10:30 AM'
-    },
-    {
-        id: 'SWP-0011',
-        date: 'May 20, 2025',
-        shift: 'NIGHT',
-        requestedWith: 'Dr. Sarah Davis',
-        status: 'APPROVED',
-        requestedOn: 'May 15, 2025 09:15 AM'
-    },
-    {
-        id: 'SWP-0010',
-        date: 'May 16, 2025',
-        shift: 'DAY',
-        requestedWith: 'Dr. James Wilson',
-        status: 'DECLINED',
-        requestedOn: 'May 10, 2025 02:20 PM'
-    },
-    {
-        id: 'SWP-0009',
-        date: 'May 13, 2025',
-        shift: 'NIGHT',
-        requestedWith: 'Dr. Emily Clark',
-        status: 'CANCELLED',
-        requestedOn: 'May 09, 2025 11:45 AM'
-    }
-])
-
-/* =========================
-   REQUESTS TO ME
-========================= */
-
-const requestsToMe = ref([
-    {
-        id: 'SWP-0021',
-        date: 'May 25, 2025',
-        shift: 'DAY',
-        requestedBy: 'Dr. James Wilson',
-        reason: 'Family emergency',
-        requestedOn: 'May 20, 2025 11:00 AM',
-        status: 'PENDING'
-    },
-    {
-        id: 'SWP-0022',
-        date: 'May 27, 2025',
-        shift: 'NIGHT',
-        requestedBy: 'Dr. Emily Clark',
-        reason: 'Medical appointment',
-        requestedOn: 'May 22, 2025 02:30 PM',
-        status: 'PENDING'
-    }
-])
-
-/* =========================
-   ACCEPT REQUEST
-========================= */
-
-const acceptRequest = (requestId: string) => {
-    const request = requestsToMe.value.find(
-        request => request.id === requestId
-    )
-
-    if (request) {
-        request.status = 'APPROVED'
+const acceptRequest = async (requestId: number) => {
+    try {
+        await swapRequestsStore.acceptRequest(requestId)
+    } catch (error) {
+        console.error(error)
     }
 }
 
-/* =========================
-   DECLINE REQUEST
-========================= */
-
-const declineRequest = (requestId: string) => {
-    const request = requestsToMe.value.find(
-        request => request.id === requestId
-    )
-
-    if (request) {
-        request.status = 'DECLINED'
+const declineRequest = async (requestId: number) => {
+    try {
+        await swapRequestsStore.declineRequest(requestId)
+    } catch (error) {
+        console.error(error)
     }
 }
-
-/* =========================
-   STATUS BADGES
-========================= */
 
 const getStatusClass = (status: string) => {
     switch (status) {
-        case 'APPROVED':
+        case 'TARGET_ACCEPTED':
+        case 'SUPERVISOR_APPROVED':
             return 'approved'
 
-        case 'DECLINED':
+        case 'TARGET_DECLINED':
+        case 'SUPERVISOR_DECLINED':
             return 'declined'
 
-        case 'PENDING':
+        case 'PENDING_TARGET':
             return 'pending'
-
-        case 'CANCELLED':
-            return 'cancelled'
 
         default:
             return ''
     }
 }
+
+const handleRequestCreated = async () => {
+    showNewRequest.value = false
+    activeTab.value = 'My Requests'
+
+    await fetchSwapRequests()
+}
+
+onMounted(async () => {
+    if (route.query.new === 'true') {
+        showNewRequest.value = true
+    }
+
+    await fetchSwapRequests()
+})
 </script>
 
 <template>
@@ -149,12 +87,12 @@ const getStatusClass = (status: string) => {
 
                 <button class="tab-button" :class="{ active: activeTab === 'My Requests' }"
                     @click="activeTab = 'My Requests'">
-                    My Requests
+                    My Requests ({{ myRequests.length }})
                 </button>
 
                 <button class="tab-button" :class="{ active: activeTab === 'Requests To Me' }"
                     @click="activeTab = 'Requests To Me'">
-                    Requests To Me
+                    Requests To Me ({{ requestsToMe.length }})
                 </button>
 
             </div>
@@ -179,43 +117,36 @@ const getStatusClass = (status: string) => {
 
                 <thead>
                     <tr>
-                        <th>Request ID</th>
-                        <th>Date</th>
+                        <th>Current Date</th>
+                        <th>Requested Date</th>
                         <th>Shift</th>
                         <th>Requested With</th>
-                        <th>Status</th>
+                        <th>Reason</th>
                         <th>Requested On</th>
-                        <th>Actions</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
 
                 <tbody>
-
-                    <tr v-for="request in myRequests" :key="request.id">
-                        <td>{{ request.id }}</td>
-
-                        <td>{{ request.date }}</td>
-
+                    <tr v-for="request in myRequests" :key="request.swapRequestId">
+                        <td>{{ request.currentDate }}</td>
+                        <td>{{ request.requestedDate }}</td>
                         <td>{{ request.shift }}</td>
-
                         <td>{{ request.requestedWith }}</td>
-
+                        <td>{{ request.reason }}</td>
+                        <td>{{ request.requestedOn }}</td>
                         <td>
                             <span class="status-badge" :class="getStatusClass(request.status)">
                                 {{ request.status }}
                             </span>
                         </td>
-
-                        <td>{{ request.requestedOn }}</td>
-
-                        <td>
-                            <button class="view-btn">
-                                View
-                            </button>
-                        </td>
-
                     </tr>
 
+                    <tr v-if="myRequests.length === 0">
+                        <td colspan="6" class="empty-state">
+                            No swap requests found
+                        </td>
+                    </tr>
                 </tbody>
 
             </table>
@@ -228,46 +159,58 @@ const getStatusClass = (status: string) => {
 
                 <thead>
                     <tr>
-                        <th>Request ID</th>
-                        <th>Date</th>
+                        <th>current Date</th>
+                        <th>New Date</th>
                         <th>Shift</th>
                         <th>Requested By</th>
                         <th>Reason</th>
                         <th>Requested On</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
+                    <tr v-for="request in requestsToMe" :key="request.swapRequestId">
 
-                    <tr v-for="request in requestsToMe" :key="request.id">
-                        <td>{{ request.id }}</td>
-
-                        <td>{{ request.date }}</td>
-
+                        <td>{{ request.currentDate }}</td>
+                        <td>{{ request.newDate }}</td>
                         <td>{{ request.shift }}</td>
-
                         <td>{{ request.requestedBy }}</td>
-
                         <td>{{ request.reason }}</td>
-
                         <td>{{ request.requestedOn }}</td>
 
+                        <td>
+                            <span class="status-badge" :class="getStatusClass(request.status)">
+                                {{ request.status }}
+                            </span>
+                        </td>
 
                         <td class="action-cell">
 
-                            <button class="approve-btn" @click="acceptRequest(request.id)">
-                                ✓ Accept
-                            </button>
+                            <template v-if="request.status === 'PENDING_TARGET'">
+                                <button class="approve-btn" @click="acceptRequest(request.swapRequestId)">
+                                    ✓ Accept
+                                </button>
 
-                            <button class="decline-btn" @click="declineRequest(request.id)">
-                                ✕ Decline
-                            </button>
+                                <button class="decline-btn" @click="declineRequest(request.swapRequestId)">
+                                    ✕ Decline
+                                </button>
+                            </template>
+
+                            <span v-else>
+                                -
+                            </span>
 
                         </td>
 
                     </tr>
 
+                    <tr v-if="requestsToMe.length === 0">
+                        <td colspan="7" class="empty-state">
+                            No requests available
+                        </td>
+                    </tr>
                 </tbody>
 
             </table>
@@ -276,7 +219,7 @@ const getStatusClass = (status: string) => {
 
     </div>
 
-    <NewSwapRequest v-else @back="goBackToList" />
+    <NewSwapRequest v-else @back="goBackToList" @requestCreated="handleRequestCreated" />
 
 </template>
 
@@ -429,6 +372,13 @@ td {
 
 .action-cell {
     white-space: nowrap;
+}
+
+.empty-state {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+    padding: 28px;
 }
 
 @media (max-width: 1024px) {

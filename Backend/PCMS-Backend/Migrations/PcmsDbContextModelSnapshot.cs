@@ -131,6 +131,9 @@ namespace PCMS_Backend.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<int>("RequestedByPhysicianId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("datetime2");
 
@@ -139,6 +142,8 @@ namespace PCMS_Backend.Migrations
                     b.HasIndex("AlertStatus");
 
                     b.HasIndex("CoverageAssignmentId");
+
+                    b.HasIndex("RequestedByPhysicianId");
 
                     b.ToTable("CoverageGapAlerts");
                 });
@@ -313,7 +318,7 @@ namespace PCMS_Backend.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("PhysicianId");
@@ -325,7 +330,8 @@ namespace PCMS_Backend.Migrations
                         .IsUnique();
 
                     b.HasIndex("UserId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("Physicians");
                 });
@@ -485,9 +491,6 @@ namespace PCMS_Backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SwapRequestId"));
 
-                    b.Property<int>("CoverageAssignmentId")
-                        .HasColumnType("int");
-
                     b.Property<string>("RequestComments")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -506,6 +509,9 @@ namespace PCMS_Backend.Migrations
                     b.Property<int>("RequestedByPhysicianId")
                         .HasColumnType("int");
 
+                    b.Property<int>("RequestedPhysicianCoverageAssignmentId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("RespondedAt")
                         .HasColumnType("datetime2");
 
@@ -518,15 +524,20 @@ namespace PCMS_Backend.Migrations
                     b.Property<int>("TargetPhysicianId")
                         .HasColumnType("int");
 
+                    b.Property<int>("TargetedPhysicianCoverageAssignmentId")
+                        .HasColumnType("int");
+
                     b.HasKey("SwapRequestId");
 
-                    b.HasIndex("CoverageAssignmentId");
-
                     b.HasIndex("RequestedByPhysicianId");
+
+                    b.HasIndex("RequestedPhysicianCoverageAssignmentId");
 
                     b.HasIndex("ReviewedByUserId");
 
                     b.HasIndex("TargetPhysicianId");
+
+                    b.HasIndex("TargetedPhysicianCoverageAssignmentId");
 
                     b.ToTable("SwapRequests");
                 });
@@ -635,7 +646,15 @@ namespace PCMS_Backend.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PCMS_Backend.Models.Physician", "Physician")
+                        .WithMany("CoverageGapAlert")
+                        .HasForeignKey("RequestedByPhysicianId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("CoverageAssignment");
+
+                    b.Navigation("Physician");
                 });
 
             modelBuilder.Entity("PCMS_Backend.Models.CoverageSchedule", b =>
@@ -687,8 +706,7 @@ namespace PCMS_Backend.Migrations
                     b.HasOne("PCMS_Backend.Models.User", "User")
                         .WithOne("Physician")
                         .HasForeignKey("PCMS_Backend.Models.Physician", "UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("User");
                 });
@@ -714,15 +732,15 @@ namespace PCMS_Backend.Migrations
 
             modelBuilder.Entity("PCMS_Backend.Models.SwapRequest", b =>
                 {
-                    b.HasOne("PCMS_Backend.Models.CoverageAssignment", "CoverageAssignment")
-                        .WithMany("SwapRequests")
-                        .HasForeignKey("CoverageAssignmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("PCMS_Backend.Models.Physician", "RequestedByPhysician")
                         .WithMany("RequestedSwapRequests")
                         .HasForeignKey("RequestedByPhysicianId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PCMS_Backend.Models.CoverageAssignment", "RequestedPhysicianCoverageAssignment")
+                        .WithMany("RequestedSwapRequests")
+                        .HasForeignKey("RequestedPhysicianCoverageAssignmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -737,13 +755,21 @@ namespace PCMS_Backend.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("CoverageAssignment");
+                    b.HasOne("PCMS_Backend.Models.CoverageAssignment", "TargetedPhysicianCoverageAssignment")
+                        .WithMany("TargetedSwapRequests")
+                        .HasForeignKey("TargetedPhysicianCoverageAssignmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("RequestedByPhysician");
+
+                    b.Navigation("RequestedPhysicianCoverageAssignment");
 
                     b.Navigation("ReviewedByUser");
 
                     b.Navigation("TargetPhysician");
+
+                    b.Navigation("TargetedPhysicianCoverageAssignment");
                 });
 
             modelBuilder.Entity("PCMS_Backend.Models.User", b =>
@@ -761,7 +787,9 @@ namespace PCMS_Backend.Migrations
                 {
                     b.Navigation("CoverageGapAlerts");
 
-                    b.Navigation("SwapRequests");
+                    b.Navigation("RequestedSwapRequests");
+
+                    b.Navigation("TargetedSwapRequests");
                 });
 
             modelBuilder.Entity("PCMS_Backend.Models.CoverageSchedule", b =>
@@ -772,6 +800,8 @@ namespace PCMS_Backend.Migrations
             modelBuilder.Entity("PCMS_Backend.Models.Physician", b =>
                 {
                     b.Navigation("CoverageAssignments");
+
+                    b.Navigation("CoverageGapAlert");
 
                     b.Navigation("ExternalLeavesData");
 

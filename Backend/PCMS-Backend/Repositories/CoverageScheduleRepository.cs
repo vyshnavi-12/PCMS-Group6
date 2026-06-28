@@ -38,7 +38,7 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
 
 
     public async Task<List<Physician>> GetPhysiciansAsync()
-            => await _context.Physicians.Include(p => p.PhysicianSpecialtyMaps).ToListAsync();
+            => await _context.Physicians.Include(p => p.PhysicianSpecialtyMaps).Include(p => p.User).ToListAsync();
 
     public async Task<List<int>> GetSpecialtiesAsync()
         => await _context.Specialties.Select(s => s.SpecialtyId).ToListAsync();
@@ -107,6 +107,14 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
             .Include(s => s.CoverageAssignments)
             .FirstOrDefaultAsync(s => s.WeekStartDate == startDate);
     }
+
+    public async Task<int> GetScheduleIdByStartDate(DateOnly startDate)
+    {
+        return await _context.CoverageSchedules
+            .Where(c => c.WeekStartDate == startDate)
+            .Select(c => c.CoverageScheduleId)
+            .FirstOrDefaultAsync();
+    }
     public async Task<List<PhysicianWorkloadDto>> GetPhysicianWorkloadLast60DaysAsync(DateTime fromDate)
     {
         return await _context.Physicians
@@ -130,10 +138,64 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
             .ToListAsync();
     }
 
+    public async Task<List<TopPhysicianRawDto>> GetTopPhysiciansPerSpecialtyRawAsync(int scheduleId)
+    {
+        var workloadData = await _context.CoverageAssignments
+            .Where(a => a.CoverageScheduleId == scheduleId)
+            .GroupBy(a => new
+            {
+                a.SpecialtyId,
+                SpecialtyName = a.Specialty.SpecialtyName,
+                a.PhysicianId,
+                PhysicianName = a.Physician.User.FullName
+            })
+            .Select(g => new TopPhysicianRawDto
+            {
+                SpecialtyId = g.Key.SpecialtyId,
+                SpecialtyName = g.Key.SpecialtyName,
+                PhysicianId = g.Key.PhysicianId,
+                PhysicianName = g.Key.PhysicianName,
+                TotalAssignments = g.Count()
+            })
+            .ToListAsync();
+
+        var result = workloadData
+            .GroupBy(x => new { x.SpecialtyId, x.SpecialtyName })
+            .Select(g => g
+                .OrderByDescending(x => x.TotalAssignments)
+                .First()
+            )
+            .ToList();
+
+        return result;
+    }
+
+    public async Task<List<AssignmentRawDto>> GetAssignmentsByPhysiciansAsync(int scheduleId, List<int> physicianIds)
+    {
+        return await _context.CoverageAssignments
+            .Where(a => a.CoverageScheduleId == scheduleId &&
+                        physicianIds.Contains(a.PhysicianId))
+            .Select(a => new AssignmentRawDto
+            {
+                PhysicianId = a.PhysicianId,
+                SpecialtyId = a.SpecialtyId,
+                Date = a.CoverageDate,
+                ShiftType = a.ShiftType
+            })
+            .ToListAsync();
+    }
+
+
 
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<CoverageAssignment?> GetAssignmentByIdAsync(int assignmentId)
+    {
+        return await _context.CoverageAssignments
+            .FirstOrDefaultAsync(a => a.CoverageAssignmentId == assignmentId);
     }
 
 }

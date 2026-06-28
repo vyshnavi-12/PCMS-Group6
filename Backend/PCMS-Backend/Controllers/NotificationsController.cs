@@ -19,15 +19,15 @@ public class NotificationsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetNotifications()
     {
-        var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
 
-        if (int.TryParse(claimValue, out int userId))
-        {
+        
+        
 // ✅ Pass both logged-in userId and requested userId (same in this case)
-            var result = await _service.GetUserNotificationsAsync(userId);
+            var result = await _service.GetUserNotificationsAsync(validUserId);
         return result.ToActionResult();
-        }
-        return Unauthorized("Invalid or missing session token.");
+        
+      
 
     }
 
@@ -35,14 +35,13 @@ public class NotificationsController : ControllerBase
     [HttpPost("{id}/mark-read")]
     public async Task<IActionResult> MarkNotificationAsRead(int id)
     {
-        var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (int.TryParse(claimValue, out int userId))
-        { 
+        if (User.GetCurrentUserId() is not int validUserId) return Unauthorized("Invalid session token.");
+
+       
          // ✅ Pass both logged-in userId and requested userId (same in this case)
-            var result = await _service.MarkAsReadAsync(id, userId);
+            var result = await _service.MarkAsReadAsync(id, validUserId);
             return result.ToActionResult();
-        }
-        return Unauthorized("Invalid or missing session token.");
+        
     }
 
 

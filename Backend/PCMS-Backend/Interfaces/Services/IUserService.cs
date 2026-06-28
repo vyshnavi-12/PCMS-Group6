@@ -8,4 +8,6 @@ public interface IUserService
     Task<Result> RegisterAsync(RegisterRequestDto req);
     Task<Result<LoginResponseDto>> LoginAsync(LoginRequestDto req);
     Task<Result<MeResponseDto>> GetMeAsync(int userId);
+
+    Task<Result<int>> GetPhysicianIdByUserIdAsync(int userId);
 }

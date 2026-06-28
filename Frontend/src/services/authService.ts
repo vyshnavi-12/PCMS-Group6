@@ -1,9 +1,4 @@
-import axios from "axios";
-
-const API = axios.create({
-  baseURL: "https://localhost:7119/api",
-  withCredentials: true
-});
+import API from "../api/axios.ts"
 
 export const loginUser = async (email: string, password: string) => {
   const response = await API.post("/user/login", {

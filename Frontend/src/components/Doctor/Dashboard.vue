@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
+import { useRouter } from 'vue-router'
+import { useScheduleStore } from '../../stores/scheduleStore'
+
+const router = useRouter()
+const scheduleStore = useScheduleStore()
 
 const currentWeek = ref('')
 const currentWeekIndex = ref(0)
 
-const rawSchedules = ref<any[]>([])
 const weekRanges = ref<any[]>([])
 const weekDates = ref<Date[]>([])
 
@@ -37,16 +40,27 @@ const months = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ]
 
+const shortDays = [
+  'Sun', 'Mon', 'Tue', 'Wed',
+  'Thu', 'Fri', 'Sat'
+]
+
 const formatWeekLabel = (start: Date, end: Date) => {
   return `${months[start.getMonth()]} ${String(start.getDate()).padStart(2, '0')} – ${months[end.getMonth()]} ${String(end.getDate()).padStart(2, '0')}, ${end.getFullYear()}`
 }
 
-const buildWeeks = () => {
-  if (rawSchedules.value.length === 0) return
+const formatHeaderDate = (date: Date) => {
+  return `${shortDays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`
+}
 
-  const sortedDates = rawSchedules.value
-    .map(item => parseDateOnly(item.date))
-    .sort((a, b) => a.getTime() - b.getTime())
+const buildWeeks = () => {
+  const rawSchedules = scheduleStore.doctorSchedules
+
+  if (rawSchedules.length === 0) return
+
+  const sortedDates = rawSchedules
+    .map((item: any) => parseDateOnly(item.date))
+    .sort((a: Date, b: Date) => a.getTime() - b.getTime())
 
   const firstDate = sortedDates[0]
   const lastDate = sortedDates[sortedDates.length - 1]
@@ -90,7 +104,7 @@ const buildCurrentWeekGrid = () => {
     weekDates.value.push(day)
   }
 
-  rawSchedules.value.forEach(item => {
+  scheduleStore.doctorSchedules.forEach((item: any) => {
     const assignmentDate = parseDateOnly(item.date)
 
     const diff = Math.floor(
@@ -110,17 +124,9 @@ const buildCurrentWeekGrid = () => {
   })
 }
 
-const fetchMySchedule = async () => {
+const fetchDashboard = async () => {
   try {
-    const response = await axios.get(
-      'https://localhost:7119/api/MySchedule',
-      {
-        withCredentials: true
-      }
-    )
-
-    rawSchedules.value = response.data.data
-
+    await scheduleStore.fetchDoctorSchedules()
     buildWeeks()
     buildCurrentWeekGrid()
   } catch (error) {
@@ -129,7 +135,7 @@ const fetchMySchedule = async () => {
 }
 
 onMounted(() => {
-  fetchMySchedule()
+  fetchDashboard()
 })
 
 const previousWeek = () => {
@@ -147,7 +153,7 @@ const nextWeek = () => {
 }
 
 const openCalendar = () => {
-  console.log('Open Calendar')
+  router.push('/doctor/schedule')
 }
 
 const assignmentCount = computed(() => {
@@ -155,7 +161,7 @@ const assignmentCount = computed(() => {
 
   const selectedWeek = weekRanges.value[currentWeekIndex.value]
 
-  return rawSchedules.value.filter(item => {
+  return scheduleStore.doctorSchedules.filter((item: any) => {
     const assignmentDate = parseDateOnly(item.date)
 
     return (
@@ -178,17 +184,13 @@ const assignmentCount = computed(() => {
         </div>
 
         <div>
-          <div class="stat-title">
-            My Assignments
-          </div>
-
-          <div class="stat-subtitle">
-            This Week
-          </div>
+          <div class="stat-title">My Assignments</div>
 
           <div class="stat-value">
             {{ assignmentCount }}
           </div>
+
+          <div class="stat-subtitle">This Week</div>
         </div>
       </div>
 
@@ -198,37 +200,25 @@ const assignmentCount = computed(() => {
         </div>
 
         <div>
-          <div class="stat-title">
-            Swap Requests
-          </div>
+          <div class="stat-title">Swap Requests</div>
 
-          <div class="stat-subtitle">
-            Pending
-          </div>
+          <div class="stat-value">1</div>
 
-          <div class="stat-value">
-            1
-          </div>
+          <div class="stat-subtitle">Pending</div>
         </div>
       </div>
 
       <div class="stat-card">
-        <div class="icon red">
-          <i class="pi pi-bell"></i>
+        <div class="icon purple">
+          <i class="pi pi-ban"></i>
         </div>
 
         <div>
-          <div class="stat-title">
-            Notifications
-          </div>
+          <div class="stat-title">Unavailable Requests</div>
 
-          <div class="stat-subtitle">
-            Unread
-          </div>
+          <div class="stat-value">2</div>
 
-          <div class="stat-value">
-            3
-          </div>
+          <div class="stat-subtitle">Sent this week</div>
         </div>
       </div>
 
@@ -238,9 +228,7 @@ const assignmentCount = computed(() => {
     <div class="schedule-card">
 
       <div class="card-header">
-        <h3>
-          My Schedule Overview (Weekly)
-        </h3>
+        <h3>My Schedule Overview (Weekly)</h3>
 
         <button class="calendar-btn" @click="openCalendar">
           <i class="pi pi-calendar"></i>
@@ -250,11 +238,7 @@ const assignmentCount = computed(() => {
 
       <div class="week-toolbar">
 
-        <button
-          class="nav-btn"
-          @click="previousWeek"
-          :disabled="currentWeekIndex === 0"
-        >
+        <button class="nav-btn" @click="previousWeek" :disabled="currentWeekIndex === 0">
           ‹
         </button>
 
@@ -262,11 +246,7 @@ const assignmentCount = computed(() => {
           {{ currentWeek }}
         </span>
 
-        <button
-          class="nav-btn"
-          @click="nextWeek"
-          :disabled="currentWeekIndex === weekRanges.length - 1"
-        >
+        <button class="nav-btn" @click="nextWeek" :disabled="currentWeekIndex === weekRanges.length - 1">
           ›
         </button>
 
@@ -276,71 +256,60 @@ const assignmentCount = computed(() => {
 
         <thead>
           <tr>
-            <th></th>
+            <th class="shift-column">Shift</th>
 
-            <th
-              v-for="(date, index) in weekDates"
-              :key="index"
-            >
-              {{ ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index] }}
-              {{ date.getDate() }}
+            <th v-for="date in weekDates" :key="date.toISOString()">
+              {{ formatHeaderDate(date) }}
             </th>
           </tr>
         </thead>
 
         <tbody>
+  <tr v-for="row in schedule" :key="row.label">
 
-          <tr
-            v-for="row in schedule"
-            :key="row.label"
-          >
-            <td class="shift-column">
-              <div class="shift-name">
-                {{ row.label }}
-              </div>
+    <!-- NEW COLUMN -->
+    <td class="shift-column">
+      <div class="shift-name">
+        {{ row.label }}
+      </div>
+    </td>
 
-              <div class="shift-time">
-                {{ row.time }}
-              </div>
-            </td>
+    <td
+      v-for="(assignment, index) in row.assignments"
+      :key="`${row.label}-${index}`"
+    >
+      <div
+        v-if="assignment"
+        :class="[
+          row.label === 'DAY'
+            ? 'day-badge'
+            : row.label === 'NIGHT'
+              ? 'night-badge'
+              : 'off-badge'
+        ]"
+      >
+        {{ assignment }}
+      </div>
 
-            <td
-              v-for="(assignment, index) in row.assignments"
-              :key="`${row.label}-${index}`"
-            >
-              <div
-                v-if="assignment"
-                :class="[
-                  row.label === 'DAY'
-                    ? 'day-badge'
-                    : row.label === 'NIGHT'
-                      ? 'night-badge'
-                      : 'off-badge'
-                ]"
-              >
-                {{ assignment }}
-              </div>
+      <span v-else class="empty-slot">
+        —
+      </span>
+    </td>
 
-              <span v-else class="empty-slot">
-                —
-              </span>
-            </td>
-
-          </tr>
-
-        </tbody>
+  </tr>
+</tbody>
 
       </table>
 
       <div class="legend">
         <span>
           <span class="dot day"></span>
-          Day Shift
+          Day Shift (6:00 AM - 6:00 PM)
         </span>
 
         <span>
           <span class="dot night"></span>
-          Night Shift
+          Night Shift (6:00 PM - 6:00 AM)
         </span>
       </div>
 
@@ -373,13 +342,14 @@ const assignmentCount = computed(() => {
   display: flex;
   align-items: center;
   gap: 16px;
+
+  min-height: 100px;
 }
 
 .icon {
-  width: 52px;
-  height: 52px;
-
-  border-radius: 12px;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
 
   display: flex;
   justify-content: center;
@@ -398,9 +368,9 @@ const assignmentCount = computed(() => {
   color: #d97706;
 }
 
-.red {
-  background: #fee2e2;
-  color: #dc2626;
+.purple {
+  background: #ede9fe;
+  color: #7c3aed;
 }
 
 .stat-title {
@@ -409,15 +379,16 @@ const assignmentCount = computed(() => {
   color: #1e293b;
 }
 
-.stat-subtitle {
-  font-size: 13px;
-  color: #64748b;
-}
-
 .stat-value {
   font-size: 30px;
   font-weight: 700;
   color: #0f172a;
+  margin: 4px 0;
+}
+
+.stat-subtitle {
+  font-size: 13px;
+  color: #64748b;
 }
 
 /* SCHEDULE CARD */
@@ -508,7 +479,7 @@ const assignmentCount = computed(() => {
 }
 
 .day-badge,
-.night-badge{
+.night-badge {
   border-radius: 8px;
   padding: 10px;
   font-size: 12px;

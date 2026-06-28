@@ -1,124 +1,163 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { useScheduleStore } from '../../stores/scheduleStore'
+import API from '../../api/axios'
+import { useToast } from 'primevue/usetoast'
 
+const toast = useToast()
 const router = useRouter()
+const scheduleStore = useScheduleStore()
 
 interface Schedule {
-    coverageAssignmentId: number
-    originalDate: string
-    date: string
-    shift: string
-    specialty: string
-    time: string
-    status: string
+  coverageAssignmentId: number
+  originalDate: string
+  date: string
+  shift: string
+  specialty: string
+  time: string
+  status: string
 }
-
-const schedules = ref<Schedule[]>([])
 
 const showUnavailableModal = ref(false)
 const selectedScheduleDate = ref('')
+const selectedAssignmentId = ref<number | null>(null)
 const unavailableReason = ref('')
 
 const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ]
 
 const days = [
-    'Sun', 'Mon', 'Tue', 'Wed',
-    'Thu', 'Fri', 'Sat'
+  'Sun', 'Mon', 'Tue', 'Wed',
+  'Thu', 'Fri', 'Sat'
 ]
 
 const formatDate = (dateString: string) => {
-    const [year, month, day] = dateString.split('-')
+  const [year, month, day] = dateString.split('-')
 
-    const date = new Date(
-        Number(year),
-        Number(month) - 1,
-        Number(day)
-    )
+  const date = new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day)
+  )
 
-    return `${days[date.getDay()]}, ${months[Number(month) - 1]} ${day}`
+  return `${days[date.getDay()]}, ${months[Number(month) - 1]} ${day}`
 }
 
-const fetchMySchedule = async () => {
-    try {
-        const response = await axios.get(
-            'https://localhost:7119/api/MySchedule',
-            {
-                withCredentials: true
-            }
-        )
+const schedules = computed<Schedule[]>(() =>
+  scheduleStore.doctorSchedules.map((schedule: any) => ({
+    coverageAssignmentId: schedule.coverageAssignmentId,
+    originalDate: schedule.date,
+    date: formatDate(schedule.date),
+    shift: schedule.shift.toUpperCase(),
+    specialty: schedule.specialty,
+    time: schedule.time,
+    status: schedule.status
+  }))
+)
 
-        schedules.value = response.data.data.map(
-            (schedule: any) => ({
-                coverageAssignmentId: schedule.coverageAssignmentId,
-                originalDate: schedule.date,
-                date: formatDate(schedule.date),
-                shift: schedule.shift.toUpperCase(),
-                specialty: schedule.specialty,
-                time: schedule.time,
-                status: schedule.status
-            })
-        )
-    } catch (error) {
-        console.error(error)
-    }
+const fetchMySchedule = async () => {
+  try {
+    await scheduleStore.fetchDoctorSchedules()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 onMounted(() => {
-    fetchMySchedule()
+  fetchMySchedule()
 })
 
 const getStatusClass = (status: string) => {
-    switch (status) {
-        case 'ASSIGNED':
-            return 'assigned'
-
-        case 'OFF':
-            return 'off'
-
-        default:
-            return ''
-    }
+  switch (status) {
+    case 'ASSIGNED':
+      return 'assigned'
+    case 'OFF':
+      return 'off'
+    default:
+      return ''
+  }
 }
 
-const markUnavailable = (scheduleDate: string) => {
-    selectedScheduleDate.value = scheduleDate
-    unavailableReason.value = ''
-    showUnavailableModal.value = true
+const markUnavailable = (schedule: Schedule) => {
+  selectedScheduleDate.value = schedule.date
+  selectedAssignmentId.value = schedule.coverageAssignmentId
+  unavailableReason.value = ''
+  showUnavailableModal.value = true
 }
 
 const closeUnavailableModal = () => {
-    showUnavailableModal.value = false
+  showUnavailableModal.value = false
 }
 
-const submitUnavailableRequest = () => {
-    if (!unavailableReason.value.trim()) {
-        alert('Please enter reason')
-        return
-    }
+const submitUnavailableRequest = async () => {
+  if (!unavailableReason.value.trim()) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Warning',
+      detail: 'Please enter reason',
+      life: 3000
+    })
+    return
+  }
 
-    alert(
-        `Unavailable request submitted for ${selectedScheduleDate.value}`
+  if (!selectedAssignmentId.value) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Invalid assignment',
+      life: 3000
+    })
+    return
+  }
+
+  try {
+    await API.patch(
+      `coverageassignments/${selectedAssignmentId.value}/unavailable`,
+      {
+        reason: unavailableReason.value
+      }
     )
 
     showUnavailableModal.value = false
+    unavailableReason.value = ''
+    selectedAssignmentId.value = null
+
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Unavailable request submitted successfully',
+      life: 3000
+    })
+
+    await fetchMySchedule()
+  } catch (error: any) {
+    console.error(error)
+
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail:
+        error?.response?.data?.message ||
+        'Failed to submit unavailable request',
+      life: 3000
+    })
+  }
 }
 
 const openSwapRequest = (schedule: Schedule) => {
-    router.push({
-        path: '/doctor/swap-requests',
-        query: {
-            new: 'true',
-            assignmentId: schedule.coverageAssignmentId,
-            date: schedule.originalDate,
-            shift: schedule.shift,
-            specialty: schedule.specialty
-        }
-    })
+  router.push({
+    path: '/doctor/swap-requests',
+    query: {
+      new: 'true',
+      assignmentId: schedule.coverageAssignmentId,
+      date: schedule.originalDate,
+      shift: schedule.shift,
+      specialty: schedule.specialty
+    }
+  })
 }
 </script>
 
@@ -154,7 +193,7 @@ const openSwapRequest = (schedule: Schedule) => {
                         <td class="action-cell">
                             <template v-if="schedule.status === 'ASSIGNED'">
 
-                                <button class="unavailable-btn" @click="markUnavailable(schedule.date)">
+                                <button class="unavailable-btn" @click="markUnavailable(schedule)">
                                     Unavailable
                                 </button>
 
@@ -167,6 +206,12 @@ const openSwapRequest = (schedule: Schedule) => {
                             <span v-else>
                                 -
                             </span>
+                        </td>
+                    </tr>
+
+                    <tr v-if="schedules.length === 0">
+                        <td colspan="6" class="empty-state">
+                            No schedules available
                         </td>
                     </tr>
                 </tbody>
@@ -394,6 +439,13 @@ tbody tr:hover {
 
 .send-btn:hover {
     background: #1c265f;
+}
+
+.empty-state {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+    padding: 28px;
 }
 
 @media (max-width: 1024px) {

@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
+import { useToast } from 'primevue/usetoast'
+import { useScheduleStore } from '../../stores/scheduleStore'
 
 const route = useRoute()
+const toast = useToast()
+const scheduleStore = useScheduleStore()
 
 const currentWeek = ref('')
 const scheduleStatus = ref('DRAFT')
 
 const weeks = ref<string[]>([])
-const schedules = ref<any[]>([])
 const selectedScheduleId = ref<number | null>(null)
 const currentWeekIndex = ref(0)
 
@@ -20,7 +22,6 @@ const activeCell = ref('')
 
 const loading = ref(false)
 const errorMessage = ref('')
-
 const coverageSchedule = ref<any[]>([])
 
 const months = [
@@ -40,11 +41,7 @@ const formatWeekRange = (startDate: string, endDate: string) => {
   return `${months[Number(startMonth) - 1]} ${startDay} - ${months[Number(endMonth) - 1]} ${endDay}, ${endYear}`
 }
 
-const openCellEditor = (
-  date: string,
-  shift: string,
-  specialty: string
-) => {
+const openCellEditor = (date: string, shift: string, specialty: string) => {
   activeCell.value = `${date}-${shift}-${specialty}`
 }
 
@@ -54,34 +51,27 @@ const closeCellEditor = () => {
 
 const fetchAllSchedules = async () => {
   try {
-    const response = await axios.get(
-      'https://localhost:7119/api/CoverageSchedules',
-      {
-        withCredentials: true
-      }
+    await scheduleStore.fetchSchedules()
+
+    scheduleStore.schedules.sort((a: any, b: any) =>
+      new Date(a.weekStartDate).getTime() - new Date(b.weekStartDate).getTime()
     )
 
-    schedules.value = response.data.data
-
-    weeks.value = schedules.value.map((schedule: any) =>
-      formatWeekRange(
-        schedule.weekStartDate,
-        schedule.weekEndDate
-      )
+    weeks.value = scheduleStore.schedules.map((schedule: any) =>
+      formatWeekRange(schedule.weekStartDate, schedule.weekEndDate)
     )
 
     if (route.query.id) {
       selectedScheduleId.value = Number(route.query.id)
-    } else if (schedules.value.length > 0) {
+    } else if (scheduleStore.schedules.length > 0) {
       selectedScheduleId.value =
-        schedules.value[0].coverageScheduleId
+        scheduleStore.schedules[0].coverageScheduleId
     }
 
-    currentWeekIndex.value =
-      schedules.value.findIndex(
-        (schedule: any) =>
-          schedule.coverageScheduleId === selectedScheduleId.value
-      )
+    currentWeekIndex.value = scheduleStore.schedules.findIndex(
+      (schedule: any) =>
+        schedule.coverageScheduleId === selectedScheduleId.value
+    )
 
     if (currentWeekIndex.value === -1) {
       currentWeekIndex.value = 0
@@ -98,16 +88,11 @@ const fetchScheduleDetails = async () => {
   errorMessage.value = ''
 
   try {
-    const scheduleId = selectedScheduleId.value
+    if (!selectedScheduleId.value) return
 
-    if (!scheduleId) return
-
-    const response = await axios.get(
-      `https://localhost:7119/api/CoverageSchedules/${scheduleId}`,
-      { withCredentials: true }
+    const scheduleData = await scheduleStore.fetchScheduleById(
+      selectedScheduleId.value
     )
-
-    const scheduleData = response.data.data
 
     currentWeek.value = formatWeekRange(
       scheduleData.weekStartDate,
@@ -117,6 +102,10 @@ const fetchScheduleDetails = async () => {
     scheduleStatus.value = scheduleData.status.toUpperCase()
 
     const assignments = scheduleData.assignments
+
+    assignments.sort((a: any, b: any) =>
+      new Date(a.coverageDate).getTime() - new Date(b.coverageDate).getTime()
+    )
 
     const physicianSet = new Set<string>()
     const specialtySet = new Set<string>()
@@ -168,7 +157,6 @@ const fetchScheduleDetails = async () => {
   } catch (error: any) {
     errorMessage.value =
       error.response?.data?.message || 'Failed to load schedule'
-    console.error(error)
   } finally {
     loading.value = false
   }
@@ -183,23 +171,18 @@ const previousWeek = async () => {
     currentWeekIndex.value--
 
     selectedScheduleId.value =
-      schedules.value[currentWeekIndex.value]
-        .coverageScheduleId
+      scheduleStore.schedules[currentWeekIndex.value].coverageScheduleId
 
     await fetchScheduleDetails()
   }
 }
 
 const nextWeek = async () => {
-  if (
-    currentWeekIndex.value <
-    schedules.value.length - 1
-  ) {
+  if (currentWeekIndex.value < scheduleStore.schedules.length - 1) {
     currentWeekIndex.value++
 
     selectedScheduleId.value =
-      schedules.value[currentWeekIndex.value]
-        .coverageScheduleId
+      scheduleStore.schedules[currentWeekIndex.value].coverageScheduleId
 
     await fetchScheduleDetails()
   }
@@ -211,7 +194,6 @@ const editSchedule = () => {
 
 const updateSchedule = () => {
   isEditing.value = false
-  alert('Schedule Updated')
 }
 
 const cancelEdit = () => {
@@ -222,23 +204,26 @@ const publishSchedule = async () => {
   try {
     if (!selectedScheduleId.value) return
 
-    await axios.post(
-      `https://localhost:7119/api/CoverageSchedules/${selectedScheduleId.value}/publish`,
-      {},
-      {
-        withCredentials: true
-      }
-    )
+    await scheduleStore.publishSchedule(selectedScheduleId.value)
 
     scheduleStatus.value = 'PUBLISHED'
     isEditing.value = false
 
     await fetchAllSchedules()
 
-    alert('Schedule Published')
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Schedule Published Successfully',
+      life: 3000
+    })
   } catch (error) {
-    console.error(error)
-    alert('Failed to publish schedule')
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to publish schedule',
+      life: 3000
+    })
   }
 }
 </script>
@@ -541,38 +526,39 @@ tbody tr:hover .date-cell {
 }
 
 .doctor-name {
-    position: relative;
+  position: relative;
 }
 
 .doctor-name.editable:hover {
-    background: #f1f5f9;
+  background: #f1f5f9;
 }
 
 .edit-icon {
-    position: absolute;
-    top: 4px;
-    right: 4px;
+  position: absolute;
+  top: 4px;
+  right: 4px;
 
-    width: 14px;
-    height: 14px;
+  width: 14px;
+  height: 14px;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    border-radius: 50%;
-    background: #e2e8f0;
-    color: #64748b;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
 
-    opacity: 0;
-    transition: 0.2s;
+  opacity: 0;
+  transition: 0.2s;
 }
 
 .edit-icon i {
-    font-size: 7px !important;
+  font-size: 7px !important;
 }
+
 .doctor-name.editable:hover .edit-icon {
-    opacity: 1;
+  opacity: 1;
 }
 
 .physician-dropdown {

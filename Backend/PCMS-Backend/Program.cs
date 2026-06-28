@@ -1,22 +1,38 @@
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-
 using PCMS_Backend.Data;
-
+using PCMS_Backend.Hubs;
 using PCMS_Backend.Interfaces.Repositories;
 using PCMS_Backend.Interfaces.Services;
-
 using PCMS_Backend.Repositories;
 using PCMS_Backend.Services;
+using PCMS_Backend.Services.Scheduling.Builders;
+using PCMS_Backend.Services.Scheduling.Engines;
+using PCMS_Backend.Services.Scheduling.Interfaces;
+using PCMS_Backend.Services.Scheduling.Repositories;
+using PCMS_Backend.Services.Scheduling.Rules;
+using PCMS_Backend.Services.Scheduling.Scoring;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//DI
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IPhysicianService, PhysicianService>();
+builder.Services.AddScoped<IPhysicianRepository, PhysicianRepository>();
+builder.Services.AddScoped<ISupervisorRepository, SupervisorRepository>();
+builder.Services.AddScoped<ISupervisorService, SupervisorService>();
+builder.Services.AddScoped<ICoverageAssignmentsService, CoverageAssignmentsService>();
+builder.Services.AddScoped<ICoverageAssignmentsRepository, CoverageAssignmentsRepo>();
+
+
+
+// Controllers
 builder.Services.AddControllers();
 
 
@@ -40,8 +56,6 @@ builder.Services.AddScoped<ISwapRequestRepository, SwapRequestRepository>();
 builder.Services.AddScoped<ISwapRequestService, SwapRequestService>();
 builder.Services.AddScoped<ICoverageScheduleRepository, CoverageScheduleRepository>();
 
-
-
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<AuthService>();
 
@@ -52,6 +66,33 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
 
+// ===========================
+// Recommendation Engine
+// ===========================
+
+builder.Services.AddScoped<IRecommendationRepository, RecommendationRepository>();
+
+builder.Services.AddScoped<IRecommendationContextBuilder, RecommendationContextBuilder>();
+
+builder.Services.AddScoped<IPhysicianRecommendationService, PhysicianRecommendationService>();
+
+builder.Services.AddScoped<IFairnessScorer, FairnessScorer>();
+
+// ===========================
+// Recommendation Rules
+// ===========================
+
+builder.Services.AddScoped<IEligibilityRule, SpecialtyEligibilityRule>();
+
+builder.Services.AddScoped<IEligibilityRule, LeaveEligibilityRule>();
+
+builder.Services.AddScoped<IEligibilityRule, RestGapEligibilityRule>();
+
+builder.Services.AddScoped<IEligibilityRule, WeeklyLimitEligibilityRule>();
+
+builder.Services.AddScoped<IEligibilityRule, ExternalShiftEligibilityRule>();
+
+builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
 {
@@ -98,7 +139,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -122,5 +163,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<NotificationHub>("/notificationHub");
+app.MapHub<ScheduleHub>("/scheduleHub");
+app.MapHub<SwapRequestHub>("/swapRequests");
+
 
 app.Run();

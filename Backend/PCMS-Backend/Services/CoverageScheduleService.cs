@@ -171,6 +171,7 @@ public class CoverageScheduleService : ICoverageScheduleService
                     CoverageAssignmentId = ca.CoverageAssignmentId,
                     CoverageDate = ca.CoverageDate,
                     SpecialtyName = ca.Specialty.SpecialtyName,
+                    PhysicianId = ca.PhysicianId,
                     PhysicianName = ca.Physician.User.FullName,
                     ShiftType = ca.ShiftType,
                     AssignmentStatus = ca.AssignmentStatus

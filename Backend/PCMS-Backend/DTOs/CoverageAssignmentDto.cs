@@ -8,6 +8,8 @@
 
         public string SpecialtyName { get; set; } = default!;
 
+        public int PhysicianId { get; set; } = default!;
+
         public string PhysicianName { get; set; } = default!;
 
         public string ShiftType { get; set; } = default!;

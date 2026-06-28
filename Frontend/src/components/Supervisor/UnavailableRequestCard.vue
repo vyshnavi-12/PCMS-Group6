@@ -283,6 +283,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .request-card {
   background: #ffffff;
+  overflow-y: hidden;
   border: 1px solid #e2e8f0;
   border-radius: 18px;
   padding: 18px 22px;
@@ -295,9 +296,7 @@ onBeforeUnmount(() => {
   /* Dynamic height wrt viewport */
   height: calc(100vh - 140px);
   max-height: calc(100vh - 140px);
-  min-height: 480px;
-
-  overflow: hidden;
+  min-height: 400px;
 }
 
 .card-header {
@@ -475,7 +474,7 @@ h2 {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 80px;
+  margin-top: 30px;
 }
 
 .decline-btn,

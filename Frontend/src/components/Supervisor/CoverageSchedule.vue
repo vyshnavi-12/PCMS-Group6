@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useScheduleStore } from '../../stores/scheduleStore'
 import OverlayPanel from 'primevue/overlaypanel'
+import API from '../../api/axios'
 
 const route = useRoute()
 const toast = useToast()
@@ -26,6 +27,7 @@ const errorMessage = ref('')
 const coverageSchedule = ref<any[]>([])
 
 const op = ref()
+const isLoadingDoctor = ref(false)
 const selectedDoctor = ref({
   name: '',
   employeeCode: '',
@@ -156,7 +158,10 @@ const fetchScheduleDetails = async () => {
 
       groupedByDate[formattedDate]
         .shifts[shiftType]
-        .assignments[specialty] = assignment.physicianName
+        .assignments[specialty] = { 
+      name: assignment.physicianName, 
+      id: assignment.physicianId 
+  };
     })
 
     coverageSchedule.value = Object.values(groupedByDate).map((day: any) => ({
@@ -232,17 +237,39 @@ const publishSchedule = async () => {
   }
 }
 
-const showDoctorCard = (event: Event, doctorName: string) => {
-  // Dummy data for now
-  // Later replace with API response
-  selectedDoctor.value = {
-    name: doctorName,
-    employeeCode: 'EMP1023',
-    phone: '9876543210',
-    email: 'doctor@hospital.com'
-  }
+const showDoctorCard = async (event: Event, doctor: { name: string, id: number } | null) => {
+  if (!doctor || !doctor.id) return;
 
-  op.value.toggle(event)
+  // 1. CLEAR OLD DATA and set the new name immediately
+  selectedDoctor.value = {
+    name: doctor.name,
+    employeeCode: '',
+    phone: '',
+    email: ''
+  };
+
+  // 2. TOGGLE OVERLAY SYNCHRONOUSLY so PrimeVue grabs the correct DOM coordinates
+  // Use .show(event) instead of toggle to force it to attach to the new click target
+  op.value.show(event);
+  
+  // 3. Set loading state
+  isLoadingDoctor.value = true;
+
+  try {
+    // 4. Fetch the real details
+    const res = await API.get(`physician/${doctor.id}/details`);
+    selectedDoctor.value = {
+        name: doctor.name,
+        employeeCode: res.data.data.employeeCode || 'N/A',
+        phone: res.data.data.phoneNumber || 'N/A',
+        email: res.data.data.email || 'N/A'
+    };
+  } catch (err) {
+    console.error("Failed to fetch doctor details", err);
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Could not load details', life: 3000 });
+  } finally {
+    isLoadingDoctor.value = false;
+  }
 }
 
 onMounted(() => {
@@ -316,15 +343,13 @@ onMounted(() => {
                     ? openCellEditor(day.date, shift.type, specialty)
                     : showDoctorCard($event, shift.assignments[specialty])
                   ">
-                  {{ shift.assignments[specialty] || '-' }}
+                  {{ shift.assignments[specialty]?.name || '-' }}
 
-                  <!-- Edit icon -->
                   <span v-if="isEditing" class="edit-icon">
                     <i class="pi pi-pencil"></i>
                   </span>
 
-                  <!-- Contact icon -->
-                  <span v-if="!isEditing" class="contact-icon">
+                  <span v-if="!isEditing && shift.assignments[specialty]?.name" class="contact-icon">
                     <i class="pi pi-id-card"></i>
                   </span>
                 </span>
@@ -348,21 +373,27 @@ onMounted(() => {
 
   <OverlayPanel ref="op">
     <div class="doctor-card">
-      <h4>Physician Details</h4>
+      <h4>{{ selectedDoctor.name || 'Physician Details' }}</h4>
 
-      <div class="doctor-detail">
-        <label>Employee Code</label>
-        <p>{{ selectedDoctor.employeeCode }}</p>
+      <div v-if="isLoadingDoctor" class="loading-state">
+        <i class="pi pi-spin pi-spinner"></i> Fetching details...
       </div>
 
-      <div class="doctor-detail">
-        <label>Phone Number</label>
-        <p>{{ selectedDoctor.phone }}</p>
-      </div>
+      <div v-else>
+        <div class="doctor-detail">
+          <label>Employee Code</label>
+          <p>{{ selectedDoctor.employeeCode }}</p>
+        </div>
 
-      <div class="doctor-detail">
-        <label>Email</label>
-        <p>{{ selectedDoctor.email }}</p>
+        <div class="doctor-detail">
+          <label>Phone Number</label>
+          <p>{{ selectedDoctor.phone }}</p>
+        </div>
+
+        <div class="doctor-detail">
+          <label>Email</label>
+          <p>{{ selectedDoctor.email }}</p>
+        </div>
       </div>
     </div>
   </OverlayPanel>
@@ -659,6 +690,17 @@ tbody tr:hover .date-cell {
   margin: 0 0 10px 0;
   font-size: 16px;
   color: #1e3a8a;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+
+.loading-state {
+  padding: 12px 0;
+  color: #6b7280;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .doctor-detail {

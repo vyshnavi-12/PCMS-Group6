@@ -17,6 +17,7 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
     private readonly IPhysicianRecommendationService _physicianRecommendationService;
     private readonly IRecommendationContextBuilder _contextBuilder;
     private readonly IHubContext<UnavailableRequestHub> _hubContext;
+    private readonly IEmailService _emailService;
 
 
 
@@ -25,16 +26,18 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
     IPhysicianService physicianService,
     IPhysicianRecommendationService physicianRecommendationService,
     IRecommendationContextBuilder contextBuilder,
-    IHubContext<UnavailableRequestHub> hubContext)
+    IHubContext<UnavailableRequestHub> hubContext,
+    IEmailService emailService)
     {
         _coverageAssignmentsRepo = coverageAssignmentsRepo;
         _physicianService = physicianService;
         _physicianRecommendationService = physicianRecommendationService;
         _contextBuilder = contextBuilder;
         _hubContext = hubContext;
+        _emailService = emailService;
     }
 
-    public async Task<Result> MarkAssignmentUnavailableAsync(int assignmentId, string reason, int physicianId)
+    public async Task<Result> MarkAssignmentUnavailableAsync(int assignmentId, string reason, int physicianId, string physicianName)
     {
         var assignment = await _coverageAssignmentsRepo.GetAssignmentByIdAsync(assignmentId);
 
@@ -57,6 +60,35 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         await _hubContext.Clients
             .Group("User_6")
             .SendAsync("NewUnavailableRequest");
+
+        string supervisorEmail = "supervisor@care-oncall.in";
+        string subject = $"Urgent: Coverage Gap Alert";
+
+        string htmlBody = $@"
+        <div style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px;'>
+            <h2 style='color: #2c3e50;'>Physician Unavailability Request</h2>
+            <p>Hello Supervisor,</p>
+            <p>Physician <strong>{physicianName}</strong> has marked themselves as unavailable on <strong>{assignment.CoverageDate}</strong>.</p>
+            
+            <p><strong>Action Required:</strong></p>
+            <p>Please log in to the Care on Call web portal to review this request.</p>
+            
+            <p>Best regards,<br/><strong>Care on Call Notifications</strong></p>
+        </div>";
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _emailService.SendEmailAsync(supervisorEmail, subject, htmlBody, true);
+            }
+            catch (Exception ex)
+            {
+                // IMPORTANT: Catch errors here, otherwise the background thread might crash silently
+                // Log it to your database or console so you know why it failed
+                Console.WriteLine($"Background email failed: {ex.Message}");
+            }
+        });
 
         return Result.Ok("Assignment marked unavailable. Alert sent to supervisor.");
     }

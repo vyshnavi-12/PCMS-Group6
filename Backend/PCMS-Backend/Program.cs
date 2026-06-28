@@ -1,3 +1,4 @@
+using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -13,9 +14,15 @@ using PCMS_Backend.Services.Scheduling.Interfaces;
 using PCMS_Backend.Services.Scheduling.Repositories;
 using PCMS_Backend.Services.Scheduling.Rules;
 using PCMS_Backend.Services.Scheduling.Scoring;
+using PCMS_Backend.Shared;
 using System.Text;
 
+DotEnv.Load();
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.AddEnvironmentVariables();
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 // DI
 builder.Services.AddHttpContextAccessor();
@@ -29,6 +36,8 @@ builder.Services.AddScoped<ISupervisorRepository, SupervisorRepository>();
 builder.Services.AddScoped<ISupervisorService, SupervisorService>();
 builder.Services.AddScoped<ICoverageAssignmentsService, CoverageAssignmentsService>();
 builder.Services.AddScoped<ICoverageAssignmentsRepository, CoverageAssignmentsRepo>();
+builder.Services.AddTransient<IEmailService, MailKitEmailService>();
+
 
 // Controllers
 builder.Services.AddControllers();

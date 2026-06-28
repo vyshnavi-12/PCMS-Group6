@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PCMS_Backend.Data;
+using PCMS_Backend.DTOs;
 using PCMS_Backend.Interfaces.Repositories; 
 using PCMS_Backend.Models;
+using PCMS_Backend.Shared;
 
 namespace PCMS_Backend.Repositories;
 
@@ -69,5 +71,10 @@ public class PhysicianRepository : IPhysicianRepository
     public async Task<int> GetUnavailableRequestsCountSupervisorAsync()
     {
         return await _context.CoverageGapAlerts.CountAsync(cga => cga.AlertStatus == "Open");
+    }
+
+    public async Task<PhysicianDetailsResponseDto?> GetPhysicianDetailsByIdAsync(int physicianId)
+    {
+        return await _context.Physicians.Where(p => p.PhysicianId == physicianId).Select(p => new PhysicianDetailsResponseDto { EmployeeCode = p.PhysicianCode, Email = p.User.EmailAddress, PhoneNumber = p.User.PhoneNumber }).FirstOrDefaultAsync();
     }
 }

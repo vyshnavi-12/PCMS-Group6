@@ -5,6 +5,7 @@ import { useScheduleStore } from '../../stores/scheduleStore'
 import API from '../../api/axios'
 import { useToast } from 'primevue/usetoast'
 
+
 const toast = useToast()
 const router = useRouter()
 const scheduleStore = useScheduleStore()
@@ -17,6 +18,8 @@ interface Schedule {
     specialty: string
     time: string
     status: string
+    swapRequestStatus?: string
+    canRequestSwap?: boolean
 }
 
 const showUnavailableModal = ref(false)
@@ -71,7 +74,9 @@ const schedules = computed<Schedule[]>(() =>
         shift: schedule.shift.toUpperCase(),
         specialty: schedule.specialty,
         time: schedule.time,
-        status: schedule.status
+        status: schedule.status,
+        swapRequestStatus: schedule.swapRequestStatus,
+        canRequestSwap: schedule.canRequestSwap
     }))
 )
 
@@ -213,16 +218,29 @@ const openSwapRequest = (schedule: Schedule) => {
                                     Unavailable
                                 </button>
 
-                                <button v-if="!isToday(schedule.originalDate)" class="swap-btn"
-                                    @click="openSwapRequest(schedule)">
+                                <button v-if="schedule.canRequestSwap && !isToday(schedule.originalDate)"
+                                    class="swap-btn" @click="openSwapRequest(schedule)">
                                     Request Swap
                                 </button>
 
+                                <span v-else-if="schedule.swapRequestStatus === 'PENDING_TARGET'"
+                                    class="swap-status pending">
+                                    Pending
+                                </span>
+
+                                <span v-else-if="schedule.swapRequestStatus === 'TARGET_ACCEPTED'"
+                                    class="swap-status waiting">
+                                    Waiting Approval
+                                </span>
+
+                                <span v-else-if="schedule.swapRequestStatus === 'SUPERVISOR_APPROVED'"
+                                    class="swap-status swapped">
+                                    Swapped
+                                </span>
+
                             </template>
 
-                            <span v-else>
-                                -
-                            </span>
+                            <span v-else>-</span>
                         </td>
                     </tr>
 
@@ -463,6 +481,31 @@ tbody tr:hover {
     color: #94a3b8;
     font-size: 14px;
     padding: 28px;
+}
+
+.swap-status {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 6px 12px;
+    border: 1px solid #a4ffc4;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.swap-status.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.swap-status.waiting {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.swap-status.swapped {
+    background: #dcfce7;
+    color: #166534;
 }
 
 @media (max-width: 1024px) {

@@ -283,7 +283,6 @@ onBeforeUnmount(() => {
 <style scoped>
 .request-card {
   background: #ffffff;
-  overflow-y: hidden;
   border: 1px solid #e2e8f0;
   border-radius: 18px;
   padding: 18px 22px;
@@ -297,6 +296,8 @@ onBeforeUnmount(() => {
   height: calc(100vh - 140px);
   max-height: calc(100vh - 140px);
   min-height: 400px;
+
+  overflow-y: auto;
 }
 
 .card-header {

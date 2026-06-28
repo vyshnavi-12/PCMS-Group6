@@ -15,9 +15,6 @@ const activeTab = ref('My Requests')
 
 const { myRequests, requestsToMe } = storeToRefs(swapRequestsStore)
 
-const openNewRequest = () => {
-    showNewRequest.value = true
-}
 
 const goBackToList = () => {
     showNewRequest.value = false
@@ -125,7 +122,6 @@ onMounted(async () => {
     <div v-if="!showNewRequest" class="swap-requests-page">
 
         <div class="toolbar">
-
             <div class="tabs">
 
                 <button class="tab-button" :class="{ active: activeTab === 'My Requests' }"
@@ -139,15 +135,6 @@ onMounted(async () => {
                 </button>
 
             </div>
-
-            <div class="actions">
-
-                <button class="new-request-btn" @click="openNewRequest">
-                    + New Swap Request
-                </button>
-
-            </div>
-
         </div>
 
         <div class="table-card">
@@ -296,21 +283,6 @@ onMounted(async () => {
 .tab-button.active {
     color: #232f72;
     border-bottom: 2px solid #232f72;
-}
-
-.actions {
-    display: flex;
-    gap: 12px;
-}
-
-.new-request-btn {
-    background: #232f72;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 10px 16px;
-    cursor: pointer;
-    font-weight: 600;
 }
 
 .table-card {

@@ -65,8 +65,6 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
             "New Unavailable Request",
             $"{physicianName} marked assignment on {assignment.CoverageDate:dd MMM yyyy} as unavailable."
         );
-
-
         await _hubContext.Clients
             .Group("User_6")
             .SendAsync("NewUnavailableRequest");

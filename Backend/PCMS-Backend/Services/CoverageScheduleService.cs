@@ -384,7 +384,7 @@ public class CoverageScheduleService : ICoverageScheduleService
         return Result<bool>.Ok(true);
     }
 
-            
+           
 
     public async Task<Result> UpdateAssignmentsAsync(
     int scheduleId,

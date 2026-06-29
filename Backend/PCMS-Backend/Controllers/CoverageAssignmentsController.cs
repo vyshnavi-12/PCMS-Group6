@@ -2,8 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using PCMS_Backend.DTOs;
 using PCMS_Backend.Interfaces.Services;
-using System.Security.Claims;
+using PCMS_Backend.Services.Scheduling.Models;
 using PCMS_Backend.Shared;
+using System.Security.Claims;
 
 namespace PCMS_Backend.Controllers;
 
@@ -68,6 +69,18 @@ public async Task<IActionResult> GetOpenAlertDetails(int alertId)
     public async Task<IActionResult> GetUnavailableRequestsPerSpecialty()
     {
         var result = await _coverageService.GetUnavailableRequestsPerSpecialtyAsync();
+        return result.ToActionResult();
+    }
+
+    [HttpGet("{assignmentId}/recommendations")]
+    [Authorize(Roles = "Supervisor")]
+    public async Task<IActionResult> GetRecommendations(
+    int assignmentId)
+    {
+        var result =
+            await _coverageService
+                .GetRecommendationsAsync(assignmentId);
+
         return result.ToActionResult();
     }
 }

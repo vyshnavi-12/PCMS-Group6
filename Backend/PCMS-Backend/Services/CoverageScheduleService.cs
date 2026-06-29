@@ -624,5 +624,49 @@ public class CoverageScheduleService : ICoverageScheduleService
             s.PhysicianId == doc &&
             s.ShiftDate == date);
     }
+
+    public async Task<Result> UpdateAssignmentsAsync(
+    int scheduleId,
+    UpdateCoverageAssignmentsDto dto)
+    {
+        var schedule =
+            await _coverageScheduleRepository
+                .GetScheduleWithAssignmentsAsync(scheduleId);
+
+        if (schedule == null)
+        {
+            return Result.NotFound("Schedule not found.");
+        }
+
+        if (schedule.Status.Equals("Published", StringComparison.OrdinalIgnoreCase))
+        {
+            return Result.BadRequest("Published schedules cannot be modified.");
+        }
+
+        foreach (var update in dto.Assignments)
+        {   
+            var assignment =
+                schedule.CoverageAssignments
+                    .FirstOrDefault(a =>
+                        a.CoverageAssignmentId ==
+                        update.CoverageAssignmentId);
+
+            if (assignment == null)
+            {
+                continue;
+            }
+
+            if (assignment.PhysicianId != update.PhysicianId)
+            {
+                assignment.PhysicianId = update.PhysicianId;
+            }
+        }
+
+        
+            await _coverageScheduleRepository
+                .SaveChangesAsync();
+
+        return Result.Ok("Schedule updated successfully.");
+    }
 }
 

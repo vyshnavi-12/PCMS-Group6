@@ -28,8 +28,9 @@ public interface ICoverageScheduleRepository
 
     Task SaveChangesAsync();
     Task<CoverageAssignment?> GetAssignmentByIdAsync(int assignmentId);
-    
 
+
+    
     Task<int> GetCurrentScheduleId();
 
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PCMS_Backend.DTOs;
 using PCMS_Backend.Interfaces.Services;
 using PCMS_Backend.Services;
 using PCMS_Backend.Shared;
@@ -60,4 +61,21 @@ public class CoverageSchedulesController : ControllerBase
 
         return result.ToActionResult();
     }
+
+    [HttpPatch("{scheduleId}/assignments")]
+    [Authorize(Roles = "Supervisor")]
+    public async Task<IActionResult> UpdateAssignments(
+    int scheduleId,
+    UpdateCoverageAssignmentsDto dto)
+    {
+        var result =
+            await _coverageScheduleService
+                .UpdateAssignmentsAsync(
+                    scheduleId,
+                    dto);
+
+        return result.ToActionResult();
+    }
+
+
 }

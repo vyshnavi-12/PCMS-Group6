@@ -295,9 +295,9 @@ onBeforeUnmount(() => {
   /* Dynamic height wrt viewport */
   height: calc(100vh - 140px);
   max-height: calc(100vh - 140px);
-  min-height: 480px;
+  min-height: 400px;
 
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .card-header {
@@ -433,7 +433,7 @@ h2 {
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
-  max-height: 130px;
+  max-height: 140px;
   overflow-y: auto;
 }
 
@@ -475,7 +475,7 @@ h2 {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 80px;
+  margin-top: 30px;
 }
 
 .decline-btn,

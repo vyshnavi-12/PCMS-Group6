@@ -180,12 +180,17 @@ const submitRequest = async () => {
         })
         emit('requestCreated')
 
-    } catch (error) {
-        console.error(error)
+    } catch (error: any) {
+       
+        const errorMessage =
+            error?.response?.data?.message ||
+            error?.response?.data ||
+            'Failed to submit request'
+
         toast.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'Failed to submit request',
+            detail: errorMessage,
             life: 3000
         })
     }

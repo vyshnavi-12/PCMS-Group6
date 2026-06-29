@@ -106,6 +106,7 @@ const chartOptions = {
   border-radius: 14px;
   padding: 12px;
   height: calc(100vh - 270px);
+  overflow-y: auto;
 }
 
 .card-header {

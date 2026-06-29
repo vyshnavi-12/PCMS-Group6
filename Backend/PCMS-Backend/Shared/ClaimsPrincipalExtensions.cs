@@ -10,4 +10,12 @@ public static class ClaimsPrincipalExtensions
         if (int.TryParse(claim, out int id)) return id;
         return null;
     }
+    public static string? GetCurrentUserEmail(this ClaimsPrincipal user)
+    {
+        return user.FindFirstValue(ClaimTypes.Email);
+    }
+    public static string? GetCurrentUserName(this ClaimsPrincipal user)
+    {
+        return user.FindFirstValue(ClaimTypes.Name);
+    }
 }

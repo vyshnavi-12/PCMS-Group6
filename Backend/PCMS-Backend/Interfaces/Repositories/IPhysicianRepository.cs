@@ -1,4 +1,6 @@
-﻿using PCMS_Backend.Models;
+﻿using PCMS_Backend.DTOs;
+using PCMS_Backend.Models;
+using PCMS_Backend.Shared;
 
 namespace PCMS_Backend.Interfaces.Repositories;
 
@@ -9,10 +11,13 @@ public interface IPhysicianRepository
 
     Task<List<CoverageAssignment>> GetAssignmentsByUserIdAsync(int userId);
     Task<Physician?> GetByUserIdAsync(int userId);
+    Task<Physician?> GetByPhysicianIdAsync(int physicianId);
 
     Task<int?> GetPhysicianIdByUserIdAsync(int userId);
     Task<bool> IsPhysicianOnLeaveAsync(int physicianId, DateOnly date);
 
     Task<int> GetUnavailableRequestsCountAsync(int physicianId);
     Task<int> GetUnavailableRequestsCountSupervisorAsync();
+
+    Task<PhysicianDetailsResponseDto?> GetPhysicianDetailsByIdAsync(int physicianId);
 }

@@ -9,7 +9,6 @@ using System.Security.Claims;
 namespace PCMS_Backend.Controllers;
 
 [ApiController]
-[Authorize (Roles = "Physician")]
 [Route("api/physician")]
 public class PhysicianController : ControllerBase
 {
@@ -20,6 +19,7 @@ public class PhysicianController : ControllerBase
         _physicianService = physicianService;
     }
 
+    [Authorize(Roles = "Physician")]
     [HttpGet("assignments")]
     public async Task<IActionResult> GetAllAssignments()
 
@@ -35,6 +35,7 @@ public class PhysicianController : ControllerBase
          
     }
 
+    [Authorize(Roles = "Physician")]
     [HttpGet("unavailable-requests-count")]
     public async Task<IActionResult> GetUnavailableRequestCount()
     {
@@ -43,5 +44,12 @@ public class PhysicianController : ControllerBase
         return result.ToActionResult();
     }
 
+    [Authorize(Roles = "Supervisor")]
+    [HttpGet("{physicianId}/details")]
+    public async Task<IActionResult> GetPhysicianDetails(int physicianId)
+    {
+        var result = await _physicianService.GetPhysicianDetailsByIdAsync(physicianId);
+        return result.ToActionResult();
+    }
 }
 

@@ -23,34 +23,27 @@ public class SupervisorService : ISupervisorService
 
     public async Task<Result<SupervisorDashboardDetailsDto>> DashboardDetails()
     {
-        var pendingApproval = await _swapRequestRepository.GetPendingApprovalSwapRequestCount();
-        var latestDate = await _coverageScheduleRepository.GetLastCreatedScheduleDateAsync();
-        var pendingUnavailable = await _physicianRepository.GetUnavailableRequestsCountSupervisorAsync();
+        var pendingApproval =
+            await _swapRequestRepository.GetPendingApprovalSwapRequestCount();
 
-        DateOnly newScheduleDate;
+        var pendingUnavailable =
+            await _physicianRepository.GetUnavailableRequestsCountSupervisorAsync();
 
-        if (latestDate.HasValue)
-        {
-            newScheduleDate = latestDate.Value.AddDays(7);
-        }
-        else
-        {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = DateOnly.FromDateTime(DateTime.Today);
 
-            int daysUntilNextMonday =
-                ((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7;
+        int daysUntilSaturday =
+            ((int)DayOfWeek.Saturday - (int)today.DayOfWeek + 7) % 7;
 
-            if (daysUntilNextMonday == 0)
-                daysUntilNextMonday = 7;
+        if (daysUntilSaturday == 0)
+            daysUntilSaturday = 7;
 
-            newScheduleDate = today.AddDays(daysUntilNextMonday);
-        }
+        var nextScheduleDate = today.AddDays(daysUntilSaturday);
 
         var response = new SupervisorDashboardDetailsDto
         {
             SwapRequestCount = pendingApproval,
             UnavailableRequestsCount = pendingUnavailable,
-            NextScheduleDate = newScheduleDate
+            NextScheduleDate = nextScheduleDate
         };
 
         return Result<SupervisorDashboardDetailsDto>.Ok(response);

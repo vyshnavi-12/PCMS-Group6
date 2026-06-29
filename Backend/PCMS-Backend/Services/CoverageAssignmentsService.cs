@@ -144,12 +144,12 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
 
         var replacements =
             recommendations
-                .Select((r,index) => new ReplacementPhysicianDto
+                .Select((r, index) => new ReplacementPhysicianDto
                 {
                     PhysicianId = r.PhysicianId,
                     PhysicianName = r.PhysicianName,
-                    IsRecommended=index==0
-                    
+                    IsRecommended = index == 0
+
                 })
                 .ToList();
 
@@ -224,7 +224,7 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
 
     public async Task<Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>> GetUnavailableRequestsPerSpecialtyAsync()
     {
-        var data =  await _coverageAssignmentsRepo.GetUnavailableRequestsPerSpecialtyAsync();
+        var data = await _coverageAssignmentsRepo.GetUnavailableRequestsPerSpecialtyAsync();
         if (data == null) return Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>.ServerError("Failed to fetch data");
         return Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>.Ok(data);
     }

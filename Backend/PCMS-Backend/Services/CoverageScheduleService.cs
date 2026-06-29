@@ -384,4 +384,149 @@ public class CoverageScheduleService : ICoverageScheduleService
         return Result<bool>.Ok(true);
     }
 
+            if (selected == -1)
+            {
+                if (isFirstPass == true) continue;
+                selected = skippedselected;
+                // assuming that atleast skipped slected will not be -1
+
+            }
+
+            var slotObj = slots.First(s => s.Index == key.Item1);
+
+            result.Add(new CoverageAssignment
+            {
+                PhysicianId = selected,
+                SpecialtyId = key.Item2,
+                CoverageDate = slotObj.Date,
+                ShiftType = slotObj.ShiftType,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            if (slotObj.ShiftType == "Day")
+            {
+                if (!currMorningWorkload.ContainsKey(selected))
+                    currMorningWorkload[selected] = 0;
+
+                currMorningWorkload[selected]++;
+
+            }
+            else
+            {
+                if (!currNightWorkload.ContainsKey(selected))
+                    currNightWorkload[selected] = 0;
+
+                currNightWorkload[selected]++;
+
+            }
+
+
+
+
+            assigned.Add(key);
+            BlockDoctor(selected, key.Item1, blocked);
+
+            RemoveAndReinsert(selected, key.Item1, specialties, availability, pq);
+        }
+    }
+
+    private void RemoveAndReinsert(
+        int doc,
+        int slot,
+        List<int> specialties,
+        Dictionary<(int, int), HashSet<int>> map,
+        PriorityQueue<(int, int), int> pq)
+    {
+        var affected = new[] { slot - 1, slot, slot + 1 };
+
+        foreach (var s in affected)
+        {
+            foreach (var spec in specialties)
+            {
+                var key = (s, spec);
+
+                if (!map.ContainsKey(key)) continue;
+
+                if (map[key].Remove(doc))
+                {
+                    pq.Enqueue(key, map[key].Count);
+                }
+            }
+        }
+    }
+
+    private void BlockDoctor(int doc, int slot, Dictionary<int, HashSet<int>> blocked)
+    {
+        if (!blocked.ContainsKey(doc))
+            blocked[doc] = new HashSet<int>();
+
+        blocked[doc].Add(slot);
+        blocked[doc].Add(slot - 1);
+        blocked[doc].Add(slot + 1);
+    }
+
+    private bool IsBlocked(int doc, int slot, Dictionary<int, HashSet<int>> blocked)
+    {
+        return blocked.ContainsKey(doc) && blocked[doc].Contains(slot);
+    }
+
+    private bool IsOnLeave(int doc, DateOnly date, List<ExternalLeavesData> leaves)
+    {
+        return leaves.Any(l =>
+            l.PhysicianId == doc &&
+            date >= l.LeaveStartDate &&
+            date <= l.LeaveEndDate);
+    }
+
+    private bool HasExternalShift(int doc, DateOnly date, List<ExternalShiftsData> shifts)
+    {
+        return shifts.Any(s =>
+            s.PhysicianId == doc &&
+            s.ShiftDate == date);
+    }
+
+    public async Task<Result> UpdateAssignmentsAsync(
+    int scheduleId,
+    UpdateCoverageAssignmentsDto dto)
+    {
+        var schedule =
+            await _coverageScheduleRepository
+                .GetScheduleWithAssignmentsAsync(scheduleId);
+
+        if (schedule == null)
+        {
+            return Result.NotFound("Schedule not found.");
+        }
+
+        if (schedule.Status.Equals("Published", StringComparison.OrdinalIgnoreCase))
+        {
+            return Result.BadRequest("Published schedules cannot be modified.");
+        }
+
+        foreach (var update in dto.Assignments)
+        {   
+            var assignment =
+                schedule.CoverageAssignments
+                    .FirstOrDefault(a =>
+                        a.CoverageAssignmentId ==
+                        update.CoverageAssignmentId);
+
+            if (assignment == null)
+            {
+                continue;
+            }
+
+            if (assignment.PhysicianId != update.PhysicianId)
+            {
+                assignment.PhysicianId = update.PhysicianId;
+            }
+        }
+
+        
+            await _coverageScheduleRepository
+                .SaveChangesAsync();
+
+        return Result.Ok("Schedule updated successfully.");
+    }
 }
+

@@ -17,5 +17,9 @@ public interface ICoverageScheduleService
 
     Task<Result<List<TopPhysicianPerSpecialtyDto>>> GetTopPerSpecialty();
 
+    Task<Result> UpdateAssignmentsAsync(
+    int scheduleId,
+    UpdateCoverageAssignmentsDto dto);
+
 
 }

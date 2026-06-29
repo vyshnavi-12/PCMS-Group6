@@ -67,7 +67,6 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
 
-
 // ===========================
 // Recommendation Engine
 // ===========================

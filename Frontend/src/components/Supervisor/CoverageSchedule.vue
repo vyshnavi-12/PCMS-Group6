@@ -4,11 +4,7 @@ import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useScheduleStore } from '../../stores/scheduleStore'
 import OverlayPanel from 'primevue/overlaypanel'
-<<<<<<< HEAD
-import API from '../../api/axios';
-=======
 import API from '../../api/axios'
->>>>>>> 14cbdbaedcf110f747373ac91a1ccf83c60ef859
 
 const route = useRoute()
 const toast = useToast()
@@ -204,41 +200,26 @@ const fetchScheduleDetails = async () => {
 
       groupedByDate[formattedDate]
         .shifts[shiftType]
-<<<<<<< HEAD
         .assignments[specialty] = {
 
-        coverageAssignmentId:
-          assignment.coverageAssignmentId,
+        coverageAssignmentId: assignment.coverageAssignmentId,
 
-        physicianId:
-          assignment.physicianId,
+        physicianId: assignment.physicianId,
 
-        selectedPhysicianId:
-          assignment.physicianId,
+        selectedPhysicianId: assignment.physicianId,
 
-        physicianName:
-          assignment.physicianName,
+        physicianName: assignment.physicianName,
 
-        specialtyId:
-          assignment.specialtyId,
+        specialtyId: assignment.specialtyId,
 
-        specialtyName:
-          assignment.specialtyName,
+        specialtyName: assignment.specialtyName,
 
-        coverageDate:
-          assignment.coverageDate,
+        coverageDate: assignment.coverageDate,
 
-        shiftType:
-          assignment.shiftType,
+        shiftType: assignment.shiftType,
 
-        availablePhysicians: []     // <-- ADD ONLY THIS
+        availablePhysicians: []
       }
-=======
-        .assignments[specialty] = { 
-      name: assignment.physicianName, 
-      id: assignment.physicianId 
-  };
->>>>>>> 14cbdbaedcf110f747373ac91a1ccf83c60ef859
     })
 
     coverageSchedule.value = Object.values(groupedByDate).map((day: any) => ({
@@ -417,7 +398,7 @@ const showDoctorCard = async (event: Event, doctor: { name: string, id: number }
   // 2. TOGGLE OVERLAY SYNCHRONOUSLY so PrimeVue grabs the correct DOM coordinates
   // Use .show(event) instead of toggle to force it to attach to the new click target
   op.value.show(event);
-  
+
   // 3. Set loading state
   isLoadingDoctor.value = true;
 
@@ -425,10 +406,10 @@ const showDoctorCard = async (event: Event, doctor: { name: string, id: number }
     // 4. Fetch the real details
     const res = await API.get(`physician/${doctor.id}/details`);
     selectedDoctor.value = {
-        name: doctor.name,
-        employeeCode: res.data.data.employeeCode || 'N/A',
-        phone: res.data.data.phoneNumber || 'N/A',
-        email: res.data.data.email || 'N/A'
+      name: doctor.name,
+      employeeCode: res.data.data.employeeCode || 'N/A',
+      phone: res.data.data.phoneNumber || 'N/A',
+      email: res.data.data.email || 'N/A'
     };
   } catch (err) {
     console.error("Failed to fetch doctor details", err);
@@ -516,20 +497,19 @@ onMounted(() => {
                     )
                     : showDoctorCard(
                       $event,
-                      shift.assignments[specialty]?.physicianName
+                      {
+                        name: shift.assignments[specialty]?.physicianName,
+                        id: shift.assignments[specialty]?.physicianId
+                      }
                     )
                   ">
-<<<<<<< HEAD
                   {{ shift.assignments[specialty]?.physicianName || '-' }}
-=======
-                  {{ shift.assignments[specialty]?.name || '-' }}
->>>>>>> 14cbdbaedcf110f747373ac91a1ccf83c60ef859
 
                   <span v-if="isEditing" class="edit-icon">
                     <i class="pi pi-pencil"></i>
                   </span>
 
-                  <span v-if="!isEditing && shift.assignments[specialty]?.name" class="contact-icon">
+                  <span v-if="!isEditing && shift.assignments[specialty]?.physicianName" class="contact-icon">
                     <i class="pi pi-id-card"></i>
                   </span>
                 </span>

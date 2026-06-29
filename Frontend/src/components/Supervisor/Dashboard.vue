@@ -26,14 +26,14 @@ const fetchDashboardDetails = async () => {
   }
 }
 
-const formatDate = (date: string) => {
-  if (!date) return '-'
+const months = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+]
 
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  })
+const formatDate = (dateString: string) => {
+  const [year, month, day] = dateString.split('-')
+  return `${months[Number(month) - 1]} ${day}, ${year}`
 }
 
 onMounted(async () => {

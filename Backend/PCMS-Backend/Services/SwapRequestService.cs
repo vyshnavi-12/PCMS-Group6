@@ -41,11 +41,15 @@ public class SwapRequestService : ISwapRequestService
     {
         var date = assignment.CoverageDate;
         var shift = assignment.ShiftType;
+        Console.WriteLine($"{physicianId}   {date}  {shift}");
         if (await _physicianRepository
        .IsPhysicianOnLeaveAsync(physicianId, assignment.CoverageDate))
         {
+            Console.WriteLine("conflict due to leave of physician");
             return true;
         }
+
+     
 
 
 
@@ -57,6 +61,7 @@ public class SwapRequestService : ISwapRequestService
             // Already assigned on the same date
             if (existingAssignment.Date == date)
             {
+                Console.WriteLine($" conflict due to {physicianId} has exisiting assignment on {existingAssignment.Date}");
                 return true;
             }
 
@@ -65,6 +70,7 @@ public class SwapRequestService : ISwapRequestService
                 existingAssignment.Date == date.AddDays(-1) &&
                 existingAssignment.ShiftType == "Night")
             {
+                Console.WriteLine($" conflict due to {physicianId} has exisiting assignment on {existingAssignment.Date}  Day shift");
                 return true;
             }
 
@@ -73,6 +79,7 @@ public class SwapRequestService : ISwapRequestService
                 existingAssignment.Date == date.AddDays(1) &&
                 existingAssignment.ShiftType == "Day")
             {
+                Console.WriteLine($" conflict due to {physicianId} has exisiting assignment on {existingAssignment.Date}  night shift");
                 return true;
             }
         }
@@ -82,11 +89,16 @@ public class SwapRequestService : ISwapRequestService
 
 
 
-    public async Task<Result<List<AvailableSwapTargetDto>>> GetAvailableTargetsAsync(int coverageAssignmentId)
+    public async Task<Result<List<AvailableSwapTargetDto>>> GetAvailableTargetsAsync(
+    int coverageAssignmentId
+)
     {
         var selectedAssignment = await _repository.GetAssignmentByIdAsync(coverageAssignmentId);
+
         if (selectedAssignment == null)
-            return Result<List<AvailableSwapTargetDto>>.NotFound("Assignment not found");
+            return Result<List<AvailableSwapTargetDto>>.NotFound(
+                "Selected assignment was not found."
+            );
 
         var targets = await _repository.GetAvailableTargetsAsync(
             selectedAssignment.SpecialtyId,
@@ -99,96 +111,159 @@ public class SwapRequestService : ISwapRequestService
 
         foreach (var target in targets)
         {
-            var requesterConflict = await _repository.HasOtherAssignmentOnDateAsync(
+            // 1. Future dates only
+            if (target.CoverageDate <= DateOnly.FromDateTime(DateTime.Today))
+                continue;
+
+            // 2. Same specialty only
+            if (selectedAssignment.SpecialtyId != target.SpecialtyId)
+                continue;
+
+            // 3. Same schedule only
+            if (selectedAssignment.CoverageScheduleId != target.CoverageScheduleId)
+                continue;
+
+            // 4. Requesting physician should be able to take target assignment
+            var requesterConflict = await IsConflictAsync(
                 selectedAssignment.PhysicianId,
-                target.CoverageDate,
-                selectedAssignment.CoverageAssignmentId
+                target
             );
 
-            var targetConflict = await _repository.HasAssignmentOnDateAsync(
+            if (requesterConflict)
+                continue;
+
+            // 5. Target physician should be able to take requester assignment
+            var targetConflict = await IsConflictAsync(
                 target.PhysicianId,
-                selectedAssignment.CoverageDate
+                selectedAssignment
             );
 
-            if (!requesterConflict && !targetConflict)
-            {
-                validTargets.Add(target);
-            }
+            if (targetConflict)
+                continue;
+
+            validTargets.Add(target);
         }
 
-        var response = validTargets.Select(a => new AvailableSwapTargetDto
+        var response = validTargets.Select(target => new AvailableSwapTargetDto
         {
-            CoverageAssignmentId = a.CoverageAssignmentId,
-            Date = a.CoverageDate.ToString("yyyy-MM-dd"),
-            Shift = a.ShiftType,
-            Specialty = a.Specialty.SpecialtyName,
-            PhysicianName = a.Physician.User.FullName,
-            PhysicianId = a.PhysicianId
+            CoverageAssignmentId = target.CoverageAssignmentId,
+            Date = target.CoverageDate.ToString("yyyy-MM-dd"),
+            Shift = target.ShiftType,
+            Specialty = target.Specialty.SpecialtyName,
+            PhysicianName = target.Physician.User.FullName,
+            PhysicianId = target.PhysicianId
         }).ToList();
 
         return Result<List<AvailableSwapTargetDto>>.Ok(response);
     }
 
-    public async Task<Result> CreateSwapRequestAsync(int userId, CreateSwapRequestDto dto)
+    public async Task<Result> CreateSwapRequestAsync(
+    int userId,
+    CreateSwapRequestDto dto
+)
     {
         var physician = await _physicianRepository.GetByUserIdAsync(userId);
+
         if (physician == null)
-            return Result.NotFound("Physician not found");
-        var targetphysician = await _physicianRepository.GetByUserIdAsync(dto.TargetPhysicianId);
-        if (targetphysician == null)
-            return Result.NotFound("Target Physician not found");
-        var currentAssignment= await _repository.GetAssignmentByIdAsync(dto.RequestedPhysicianCoverageAssignmentId);
+            return Result.NotFound("Requesting physician was not found.");
 
+        // NOTE:
+        // Verify whether dto.TargetPhysicianId is UserId or PhysicianId.
 
-        if(currentAssignment == null)
-            return Result.NotFound(" Current Assignment not found");
+        //it should be by GetByPhysicianId
+        var targetPhysician = await _physicianRepository.GetByPhysicianIdAsync(dto.TargetPhysicianId);
 
+        if (targetPhysician == null)
+            return Result.NotFound("Target physician was not found.");
 
-        var targetAssignment = await _repository.GetAssignmentByIdAsync(dto.TargetedPhysicianCoverageAssignmentId);
+        var currentAssignment = await _repository.GetAssignmentByIdAsync(
+            dto.RequestedPhysicianCoverageAssignmentId
+        );
 
-        if(targetAssignment == null)
-            return Result.NotFound(" Target Assignment not found");
-        DateOnly currdate = DateOnly.FromDateTime(DateTime.Today);
-        if (currdate >= currentAssignment.CoverageDate)
-            return Result.Forbidden("can not swap tadays or previos day assignment");
-        if (currdate >= targetAssignment.CoverageDate)
-            return Result.Forbidden("can not swap with todays or previous days assignment");
-        if (currentAssignment.SpecialtyId != targetAssignment.SpecialtyId)
-            return Result.Forbidden("assignments specialities mismatch");
+        if (currentAssignment == null)
+            return Result.NotFound("Selected current assignment was not found.");
+
+        var targetAssignment = await _repository.GetAssignmentByIdAsync(
+            dto.TargetedPhysicianCoverageAssignmentId
+        );
+
+        if (targetAssignment == null)
+            return Result.NotFound("Selected target assignment was not found.");
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        // Future assignments only
+        if (currentAssignment.CoverageDate <= today)
+            return Result.Forbidden(
+                "Swap requests are allowed only for future assignments."
+            );
+
+        if (targetAssignment.CoverageDate <= today)
+            return Result.Forbidden(
+                "Target assignment must be a future assignment."
+            );
+
+        // Ownership validation
         if (currentAssignment.PhysicianId != physician.PhysicianId)
-            return Result.Forbidden("Given current coverage Assignment does not belong to requested Physician");
+            return Result.Forbidden(
+                "The selected assignment does not belong to the requesting physician."
+            );
 
         if (targetAssignment.PhysicianId != dto.TargetPhysicianId)
-            return Result.Forbidden("Targeted cover Assignment does not belong to Targeted Physician");
+            return Result.Forbidden(
+                "The selected target assignment does not belong to the target physician."
+            );
 
+        // Same specialty validation
+        if (currentAssignment.SpecialtyId != targetAssignment.SpecialtyId)
+            return Result.Forbidden(
+                "Swap requests are allowed only between physicians of the same specialty."
+            );
+
+        // Same schedule validation
         if (currentAssignment.CoverageScheduleId != targetAssignment.CoverageScheduleId)
-            return Result.Forbidden("coverage Schedules mismatch");
+            return Result.Forbidden(
+                "Both assignments must belong to the same coverage schedule."
+            );
 
-        var isconflictingRequested = await IsConflictAsync(physician.PhysicianId, targetAssignment);
-        if (isconflictingRequested)
-            return Result.Forbidden("Requested physicians schedule conflicts with target assignment");
+        // Conflict validation for requester
+        var requesterConflict = await IsConflictAsync(
+            physician.PhysicianId,
+            targetAssignment
+        );
 
-        var isconflictingTargeted=await IsConflictAsync(targetphysician.PhysicianId, currentAssignment);
+        if (requesterConflict)
+            return Result.Forbidden(
+                "Requesting physician has a scheduling conflict with the selected target assignment."
+            );
 
-        if(isconflictingTargeted)
-            return Result.Forbidden("Targeted physicians schedule conflicts with current assignment");
+        // Conflict validation for target physician
+        var targetConflict = await IsConflictAsync(
+            targetPhysician.PhysicianId,
+            currentAssignment
+        );
 
-
-
-
-        if (targetAssignment.CoverageDate == DateOnly.FromDateTime(DateTime.Today))
-        {
-            return Result.BadRequest("Swap request is not allowed for current date.");
-        }
+        if (targetConflict)
+            return Result.Forbidden(
+                "Target physician has a scheduling conflict with the selected assignment."
+            );
 
         var request = new SwapRequest
         {
-            RequestedPhysicianCoverageAssignmentId = dto.RequestedPhysicianCoverageAssignmentId,
+            RequestedPhysicianCoverageAssignmentId =
+                dto.RequestedPhysicianCoverageAssignmentId,
+
             RequestedByPhysicianId = physician.PhysicianId,
-            TargetedPhysicianCoverageAssignmentId=dto.TargetedPhysicianCoverageAssignmentId,
+
+            TargetedPhysicianCoverageAssignmentId =
+                dto.TargetedPhysicianCoverageAssignmentId,
+
             TargetPhysicianId = dto.TargetPhysicianId,
+
             RequestComments = dto.RequestComments,
+
             RequestStatus = "PENDING_TARGET",
+
             RequestedAt = DateTime.UtcNow
         };
 
@@ -196,22 +271,25 @@ public class SwapRequestService : ISwapRequestService
         await _repository.SaveChangesAsync();
 
         var targetUserId = targetAssignment.Physician.UserId;
+
         if (targetUserId.HasValue)
         {
             await _notificationService.CreateAndSendNotificationAsync(
                 targetUserId.Value,
                 "New Swap Request",
-                $"Dr. {physician.User.FullName} requested a swap for {targetAssignment.ShiftType} shift on {targetAssignment.CoverageDate:yyyy-MM-dd}."
+                $"Dr. {physician.User.FullName} requested a swap for the {targetAssignment.ShiftType} shift on {targetAssignment.CoverageDate:yyyy-MM-dd}."
             );
 
-            await _hubContext.Clients.Group($"User_{targetUserId.Value}")
-               .SendAsync("RefreshSwapRequests");
+            await _hubContext.Clients
+                .Group($"User_{targetUserId.Value}")
+                .SendAsync("RefreshSwapRequests");
 
-            await _hubContext.Clients.Group($"User_{userId}")
-               .SendAsync("RefreshSwapRequests");
+            await _hubContext.Clients
+                .Group($"User_{userId}")
+                .SendAsync("RefreshSwapRequests");
         }
 
-        return Result.Created("Swap request created");
+        return Result.Created("Swap request created successfully.");
     }
 
     public async Task<Result<List<MySwapRequestDto>>> GetMyRequestsAsync(int userId)
@@ -418,7 +496,7 @@ public class SwapRequestService : ISwapRequestService
         if (request == null)
             return Result.NotFound("Request not found");
 
-        request.RequestStatus = "REQUEST_REJECTED";
+        request.RequestStatus = "SUPERVISOR_DECLINED";
         request.ReviewedAt = DateTime.UtcNow;
         request.ReviewedByUserId = userId;
 

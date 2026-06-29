@@ -93,20 +93,20 @@ const handleLogin = async () => {
 
         <div class="mission-card">
           <p>
-            Ensuring continuous physician coverage across every specialty,
-            every shift, every day.
+            Smart scheduling, real-time coverage visibility, and seamless
+            physician coordination for uninterrupted patient care.
           </p>
         </div>
 
         <div class="stats-row">
           <div class="mini-card">
             <h3>24/7</h3>
-            <span>Coverage Support</span>
+            <span>Coverage Monitoring</span>
           </div>
 
           <div class="mini-card">
-            <h3>100%</h3>
-            <span>Schedule Visibility</span>
+            <h3>Live</h3>
+            <span>Schedule Updates</span>
           </div>
         </div>
 
@@ -134,10 +134,6 @@ const handleLogin = async () => {
           <div class="field">
             <div class="password-header">
               <label>Password</label>
-
-              <RouterLink to="/forgot-password" class="forgot-link">
-                Forgot password?
-              </RouterLink>
             </div>
 
             <Password v-model="password" :feedback="false" toggleMask placeholder="Enter your password" fluid />

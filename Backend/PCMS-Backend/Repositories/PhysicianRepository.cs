@@ -47,6 +47,11 @@ public class PhysicianRepository : IPhysicianRepository
             .FirstOrDefaultAsync(p => p.UserId == userId);
     }
 
+    public async Task<Physician?> GetByPhysicianIdAsync(int physicianId)
+    {
+        return await _context.Physicians.Where(p => p.PhysicianId == physicianId).FirstOrDefaultAsync();
+    }
+
     public async Task<int?> GetPhysicianIdByUserIdAsync(int userId)
     {
         return await _context.Physicians

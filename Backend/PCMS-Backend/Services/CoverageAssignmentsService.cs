@@ -59,6 +59,16 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         };
         await _coverageAssignmentsRepo.ChangeAssignmentStatus(assignmentId, "Pending");
         await _coverageAssignmentsRepo.CreateAlertAsync(gapAlert, physicianId);
+<<<<<<< HEAD
+=======
+
+        await _notificationService.CreateAndSendNotificationAsync(
+            6,
+            "New Unavailable Request",
+            $"{physicianName} marked assignment on {assignment.CoverageDate:dd MMM yyyy} as unavailable."
+        );
+
+>>>>>>> c69f95a0904e91be3714942773e45455ec7785c8
         await _hubContext.Clients
             .Group("User_6")
             .SendAsync("NewUnavailableRequest");

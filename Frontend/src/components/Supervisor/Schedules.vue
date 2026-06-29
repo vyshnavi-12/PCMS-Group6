@@ -142,7 +142,7 @@ const viewSchedule = (scheduleId: number) => {
 
       </div>
 
-      <button class="create-btn" @click="createSchedule" :disabled="generating">
+      <button class="create-btn" @click="createSchedule" :disabled="generating || (draftCount+publishedCount === 2)">
         {{ generating ? 'Generating...' : 'Generate Schedule' }}
       </button>
 
@@ -248,6 +248,16 @@ const viewSchedule = (scheduleId: number) => {
 
 .create-btn:hover {
   background: #1d285f;
+}
+
+.create-btn:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.create-btn:disabled:hover {
+  background: #cbd5e1;
 }
 
 .table-card {

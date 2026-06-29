@@ -64,6 +64,8 @@ const fetchAllSchedules = async () => {
   try {
     await scheduleStore.fetchSchedules()
 
+    const today = new Date()
+
     scheduleStore.schedules.sort((a: any, b: any) =>
       new Date(a.weekStartDate).getTime() - new Date(b.weekStartDate).getTime()
     )
@@ -75,8 +77,19 @@ const fetchAllSchedules = async () => {
     if (route.query.id) {
       selectedScheduleId.value = Number(route.query.id)
     } else if (scheduleStore.schedules.length > 0) {
-      selectedScheduleId.value =
-        scheduleStore.schedules[0].coverageScheduleId
+
+      const currentSchedule = scheduleStore.schedules.find((schedule: any) => {
+        const startDate = new Date(schedule.weekStartDate)
+        const endDate = new Date(schedule.weekEndDate)
+
+        endDate.setHours(23, 59, 59, 999)
+
+        return today >= startDate && today <= endDate
+      })
+
+      selectedScheduleId.value = currentSchedule
+        ? currentSchedule.coverageScheduleId
+        : scheduleStore.schedules[scheduleStore.schedules.length - 1].coverageScheduleId
     }
 
     currentWeekIndex.value = scheduleStore.schedules.findIndex(

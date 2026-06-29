@@ -18,6 +18,7 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
     private readonly IRecommendationContextBuilder _contextBuilder;
     private readonly IHubContext<UnavailableRequestHub> _hubContext;
     private readonly IEmailService _emailService;
+    private readonly INotificationService _notificationService;
 
 
 
@@ -27,7 +28,8 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
     IPhysicianRecommendationService physicianRecommendationService,
     IRecommendationContextBuilder contextBuilder,
     IHubContext<UnavailableRequestHub> hubContext,
-    IEmailService emailService)
+    IEmailService emailService,
+    INotificationService notificationService)
     {
         _coverageAssignmentsRepo = coverageAssignmentsRepo;
         _physicianService = physicianService;
@@ -35,6 +37,7 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         _contextBuilder = contextBuilder;
         _hubContext = hubContext;
         _emailService = emailService;
+        _notificationService = notificationService;
     }
 
     public async Task<Result> MarkAssignmentUnavailableAsync(int assignmentId, string reason, int physicianId, string physicianName)
@@ -56,6 +59,12 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         };
         await _coverageAssignmentsRepo.ChangeAssignmentStatus(assignmentId, "Pending");
         await _coverageAssignmentsRepo.CreateAlertAsync(gapAlert, physicianId);
+
+        await _notificationService.CreateAndSendNotificationAsync(
+            6,
+            "New Unavailable Request",
+            $"{physicianName} marked assignment on {assignment.CoverageDate:dd MMM yyyy} as unavailable."
+        );
 
         await _hubContext.Clients
             .Group("User_6")

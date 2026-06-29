@@ -433,7 +433,7 @@ h2 {
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
-  max-height: 130px;
+  max-height: 140px;
   overflow-y: auto;
 }
 

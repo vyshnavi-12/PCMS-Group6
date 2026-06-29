@@ -58,27 +58,32 @@ public class PhysicianRecommendationService
             }
         }
 
-        var candidatePool =
-            primaryCandidates.Count > 0
-                ? primaryCandidates
-                : secondaryCandidates;
+        var primaryRecommendations = primaryCandidates
+     .Select(c => new PhysicianRecommendation
+     {
+         PhysicianId = c.Physician.PhysicianId,
+         PhysicianName = c.Physician.User.FullName,
+         Score = _fairnessScorer.CalculateScore(c.Physician, request, context),
+         IsPrimarySpecialty = c.IsPrimary
+     })
+     .OrderBy(r => r.Score);
 
-        var recommendations = candidatePool
+        var secondaryRecommendations = secondaryCandidates
             .Select(c => new PhysicianRecommendation
             {
                 PhysicianId = c.Physician.PhysicianId,
-
                 PhysicianName = c.Physician.User.FullName,
-
-                Score = _fairnessScorer.CalculateScore(
-                    c.Physician,
-                    request,
-                    context),
-
+                Score = _fairnessScorer.CalculateScore(c.Physician, request, context),
                 IsPrimarySpecialty = c.IsPrimary
             })
-            .OrderBy(r => r.Score)
+            .OrderBy(r => r.Score);
+
+        // Combine: primary first, then secondary, then take top 10
+        var recommendations = primaryRecommendations
+            .Concat(secondaryRecommendations)
+            .Take(10)
             .ToList();
+
 
         return Task.FromResult<IReadOnlyList<PhysicianRecommendation>>(recommendations);
     }

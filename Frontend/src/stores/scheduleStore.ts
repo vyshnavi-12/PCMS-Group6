@@ -48,6 +48,26 @@ export const useScheduleStore = defineStore("schedule", () => {
     }
   };
 
+  const updateAssignments = async (
+  scheduleId: number,
+ assignments: {
+    coverageAssignmentId: number
+    physicianId: number
+  }[]
+) => {
+  try {
+    await API.patch(
+      `/CoverageSchedules/${scheduleId}/assignments`,
+      {
+        assignments
+      }
+    )
+  } catch (error) {
+    console.error(error)
+    throw error
+  }
+}
+
   const fetchScheduleById = async (scheduleId: number) => {
     try {
       const response = await API.get(`/CoverageSchedules/${scheduleId}`);
@@ -86,6 +106,7 @@ export const useScheduleStore = defineStore("schedule", () => {
     fetchSchedules,
     generateSchedule,
     publishSchedule,
+    updateAssignments,
     fetchScheduleById,
 
     fetchDoctorSchedules,

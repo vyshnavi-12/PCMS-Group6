@@ -18,13 +18,19 @@ const selectedScheduleId = ref<number | null>(null)
 const currentWeekIndex = ref(0)
 
 const isEditing = ref(false)
-const physicians = ref<string[]>([])
 const specialties = ref<string[]>([])
-const activeCell = ref('')
+const activeAssignmentId = ref<number | null>(null)
 
 const loading = ref(false)
 const errorMessage = ref('')
 const coverageSchedule = ref<any[]>([])
+
+const updatedAssignments = ref<
+  {
+    coverageAssignmentId: number
+    physicianId: number
+  }[]
+>([])
 
 const op = ref()
 const isLoadingDoctor = ref(false)
@@ -52,12 +58,35 @@ const formatWeekRange = (startDate: string, endDate: string) => {
   return `${months[Number(startMonth) - 1]} ${startDay} - ${months[Number(endMonth) - 1]} ${endDay}, ${endYear}`
 }
 
-const openCellEditor = (date: string, shift: string, specialty: string) => {
-  activeCell.value = `${date}-${shift}-${specialty}`
+const openCellEditor = async (assignment: any) => {
+
+  if (!assignment) return
+
+  assignment.selectedPhysicianId = assignment.physicianId
+
+  await fetchRecommendations(assignment)
+
+  activeAssignmentId.value = assignment.coverageAssignmentId
 }
 
-const closeCellEditor = () => {
-  activeCell.value = ''
+const fetchRecommendations = async (assignment: any) => {
+
+  const response = await API.get(
+    `/CoverageAssignments/${assignment.coverageAssignmentId}/recommendations`
+  )
+
+  assignment.availablePhysicians = [...response.data.data].sort(
+    (a: any, b: any) => {
+
+      if (a.isRecommended && !b.isRecommended)
+        return -1
+
+      if (!a.isRecommended && b.isRecommended)
+        return 1
+
+      return a.physicianName.localeCompare(b.physicianName)
+    }
+  )
 }
 
 const fetchAllSchedules = async () => {
@@ -131,16 +160,16 @@ const fetchScheduleDetails = async () => {
       new Date(a.coverageDate).getTime() - new Date(b.coverageDate).getTime()
     )
 
-    const physicianSet = new Set<string>()
+
+
     const specialtySet = new Set<string>()
 
     assignments.forEach((assignment: any) => {
-      physicianSet.add(assignment.physicianName)
       specialtySet.add(assignment.specialtyName)
     })
 
-    physicians.value = Array.from(physicianSet)
     specialties.value = Array.from(specialtySet)
+
 
     const groupedByDate: Record<string, any> = {}
 
@@ -157,10 +186,10 @@ const fetchScheduleDetails = async () => {
       }
 
       if (!groupedByDate[formattedDate].shifts[shiftType]) {
-        const emptyAssignments: Record<string, string> = {}
+        const emptyAssignments: Record<string, any> = {}
 
         specialties.value.forEach(s => {
-          emptyAssignments[s] = '-'
+          emptyAssignments[s] = null
         })
 
         groupedByDate[formattedDate].shifts[shiftType] = {
@@ -171,10 +200,26 @@ const fetchScheduleDetails = async () => {
 
       groupedByDate[formattedDate]
         .shifts[shiftType]
-        .assignments[specialty] = { 
-      name: assignment.physicianName, 
-      id: assignment.physicianId 
-  };
+        .assignments[specialty] = {
+
+        coverageAssignmentId: assignment.coverageAssignmentId,
+
+        physicianId: assignment.physicianId,
+
+        selectedPhysicianId: assignment.physicianId,
+
+        physicianName: assignment.physicianName,
+
+        specialtyId: assignment.specialtyId,
+
+        specialtyName: assignment.specialtyName,
+
+        coverageDate: assignment.coverageDate,
+
+        shiftType: assignment.shiftType,
+
+        availablePhysicians: []
+      }
     })
 
     coverageSchedule.value = Object.values(groupedByDate).map((day: any) => ({
@@ -187,6 +232,49 @@ const fetchScheduleDetails = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const closeCellEditor = () => {
+  activeAssignmentId.value = null
+}
+
+const onDoctorChanged = (assignment: any) => {
+
+  assignment.physicianId =
+    assignment.selectedPhysicianId
+
+  assignment.physicianName =
+    assignment.availablePhysicians.find(
+      (x: any) =>
+        x.physicianId === assignment.selectedPhysicianId
+    )?.physicianName
+
+  const existing =
+    updatedAssignments.value.find(
+      x =>
+        x.coverageAssignmentId ===
+        assignment.coverageAssignmentId
+    )
+
+  if (existing) {
+
+    existing.physicianId =
+      assignment.selectedPhysicianId
+
+  }
+  else {
+
+    updatedAssignments.value.push({
+
+      coverageAssignmentId:
+        assignment.coverageAssignmentId,
+
+      physicianId:
+        assignment.selectedPhysicianId
+    })
+  }
+
+  activeAssignmentId.value = null
 }
 
 const previousWeek = async () => {
@@ -215,12 +303,58 @@ const editSchedule = () => {
   isEditing.value = true
 }
 
-const updateSchedule = () => {
-  isEditing.value = false
+const updateSchedule = async () => {
+
+  try {
+
+    if (
+      !selectedScheduleId.value ||
+      updatedAssignments.value.length === 0
+    ) {
+      return
+    }
+
+    await scheduleStore.updateAssignments(
+
+      selectedScheduleId.value,
+
+      updatedAssignments.value
+
+    )
+
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Schedule updated successfully',
+      life: 3000
+    })
+
+    updatedAssignments.value = []
+
+    isEditing.value = false
+
+    await fetchScheduleDetails()
+
+  } catch {
+
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to update schedule',
+      life: 3000
+    })
+  }
 }
 
-const cancelEdit = () => {
+const cancelEdit = async () => {
+
+  updatedAssignments.value = []
+
   isEditing.value = false
+
+  activeAssignmentId.value = null
+
+  await fetchScheduleDetails()
 }
 
 const publishSchedule = async () => {
@@ -264,7 +398,7 @@ const showDoctorCard = async (event: Event, doctor: { name: string, id: number }
   // 2. TOGGLE OVERLAY SYNCHRONOUSLY so PrimeVue grabs the correct DOM coordinates
   // Use .show(event) instead of toggle to force it to attach to the new click target
   op.value.show(event);
-  
+
   // 3. Set loading state
   isLoadingDoctor.value = true;
 
@@ -272,10 +406,10 @@ const showDoctorCard = async (event: Event, doctor: { name: string, id: number }
     // 4. Fetch the real details
     const res = await API.get(`physician/${doctor.id}/details`);
     selectedDoctor.value = {
-        name: doctor.name,
-        employeeCode: res.data.data.employeeCode || 'N/A',
-        phone: res.data.data.phoneNumber || 'N/A',
-        email: res.data.data.email || 'N/A'
+      name: doctor.name,
+      employeeCode: res.data.data.employeeCode || 'N/A',
+      phone: res.data.data.phoneNumber || 'N/A',
+      email: res.data.data.email || 'N/A'
     };
   } catch (err) {
     console.error("Failed to fetch doctor details", err);
@@ -344,25 +478,38 @@ onMounted(() => {
               </td>
 
               <td v-for="specialty in specialties" :key="specialty">
-                <select v-if="isEditing && activeCell === `${day.date}-${shift.type}-${specialty}`"
-                  v-model="shift.assignments[specialty]" class="physician-dropdown" @blur="closeCellEditor">
-                  <option v-for="doctor in physicians" :key="doctor" :value="doctor">
-                    {{ doctor }}
+                <select v-if="
+                  isEditing &&
+                  activeAssignmentId ===
+                  shift.assignments[specialty]?.coverageAssignmentId
+                " v-model="shift.assignments[specialty].selectedPhysicianId" class="physician-dropdown"
+                  @change="onDoctorChanged(shift.assignments[specialty])" @blur="closeCellEditor">
+                  <option v-for="doctor in shift.assignments[specialty].availablePhysicians" :key="doctor.physicianId"
+                    :value="doctor.physicianId">
+                    {{ doctor.physicianName }}
                   </option>
                 </select>
 
-                <span v-else class="doctor-name" :class="{ editable: isEditing, hoverable: !isEditing }" @click="
+                <span v-else class="doctor-name" :class="{ editable: isEditing, hoverable: !isEditing }" @click.stop="
                   isEditing
-                    ? openCellEditor(day.date, shift.type, specialty)
-                    : showDoctorCard($event, shift.assignments[specialty])
+                    ? openCellEditor(
+                      shift.assignments[specialty]
+                    )
+                    : showDoctorCard(
+                      $event,
+                      {
+                        name: shift.assignments[specialty]?.physicianName,
+                        id: shift.assignments[specialty]?.physicianId
+                      }
+                    )
                   ">
-                  {{ shift.assignments[specialty]?.name || '-' }}
+                  {{ shift.assignments[specialty]?.physicianName || '-' }}
 
                   <span v-if="isEditing" class="edit-icon">
                     <i class="pi pi-pencil"></i>
                   </span>
 
-                  <span v-if="!isEditing && shift.assignments[specialty]?.name" class="contact-icon">
+                  <span v-if="!isEditing && shift.assignments[specialty]?.physicianName" class="contact-icon">
                     <i class="pi pi-id-card"></i>
                   </span>
                 </span>
@@ -657,16 +804,6 @@ tbody tr:hover .date-cell {
   opacity: 1;
 }
 
-.physician-dropdown {
-  width: 100%;
-  padding: 6px 8px;
-
-  border: 1px solid #dbe2ea;
-  border-radius: 6px;
-
-  font-size: 13px;
-}
-
 .doctor-name {
   position: relative;
   display: block;
@@ -744,6 +881,43 @@ tbody tr:hover .date-cell {
 
 :deep(.p-overlaypanel) {
   max-width: 250px;
+}
+
+.physician-dropdown {
+
+  width: 100%;
+  padding: 8px 12px;
+
+  border: 1px solid #dcdfe6;
+
+  border-radius: 8px;
+
+  outline: none;
+
+  font-size: 14px;
+
+  background: #fff;
+
+  cursor: pointer;
+
+  transition: .2s;
+}
+
+.physician-dropdown:hover {
+
+  border-color: #4f46e5;
+}
+
+.physician-dropdown:focus {
+
+  border-color: #2563eb;
+
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+}
+
+.physician-dropdown option {
+
+  padding: 10px;
 }
 
 /* =========================

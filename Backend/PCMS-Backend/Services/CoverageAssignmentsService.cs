@@ -65,7 +65,6 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
             "New Unavailable Request",
             $"{physicianName} marked assignment on {assignment.CoverageDate:dd MMM yyyy} as unavailable."
         );
-
         await _hubContext.Clients
             .Group("User_6")
             .SendAsync("NewUnavailableRequest");
@@ -237,5 +236,53 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
         if (data == null) return Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>.ServerError("Failed to fetch data");
         return Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>.Ok(data);
     }
+
+    public async Task<Result<IReadOnlyList<ReplacementPhysicianDto>>>
+        GetRecommendationsAsync(
+            int assignmentId)
+            {
+                var assignment =
+                    await _coverageAssignmentsRepo
+                        .GetAssignmentByIdAsync(
+                            assignmentId);
+
+                if (assignment == null)
+                {
+                    return Result<IReadOnlyList<ReplacementPhysicianDto>>
+                        .NotFound("Assignment not found.");
+                }
+
+                var context =
+                    await _contextBuilder.BuildAsync(
+                        assignment.CoverageDate);
+
+                var request =
+                    new RecommendationRequest
+                    {
+                        CoverageDate = assignment.CoverageDate,
+                        ShiftType = assignment.ShiftType,
+                        SpecialtyId = assignment.SpecialtyId,
+                        ExcludePhysicianId = assignment.PhysicianId
+                    };
+
+                var recommendations =
+                    await _physicianRecommendationService
+                        .GetRecommendations(
+                            request,
+                            context);
+
+                var replacements =
+                    recommendations
+                        .Select((r, index) => new ReplacementPhysicianDto
+                        {
+                            PhysicianId = r.PhysicianId,
+                            PhysicianName = r.PhysicianName,
+                            IsRecommended = index == 0
+                        })
+                        .ToList();
+
+                return Result<IReadOnlyList<ReplacementPhysicianDto>>
+                    .Ok(replacements);
+            }
 
 }

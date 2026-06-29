@@ -4,11 +4,7 @@ import { useRoute } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useScheduleStore } from '../../stores/scheduleStore'
 import OverlayPanel from 'primevue/overlaypanel'
-<<<<<<< HEAD
-import API from '../../api/axios';
-=======
 import API from '../../api/axios'
->>>>>>> 14cbdbaedcf110f747373ac91a1ccf83c60ef859
 
 const route = useRoute()
 const toast = useToast()
@@ -204,41 +200,10 @@ const fetchScheduleDetails = async () => {
 
       groupedByDate[formattedDate]
         .shifts[shiftType]
-<<<<<<< HEAD
-        .assignments[specialty] = {
-
-        coverageAssignmentId:
-          assignment.coverageAssignmentId,
-
-        physicianId:
-          assignment.physicianId,
-
-        selectedPhysicianId:
-          assignment.physicianId,
-
-        physicianName:
-          assignment.physicianName,
-
-        specialtyId:
-          assignment.specialtyId,
-
-        specialtyName:
-          assignment.specialtyName,
-
-        coverageDate:
-          assignment.coverageDate,
-
-        shiftType:
-          assignment.shiftType,
-
-        availablePhysicians: []     // <-- ADD ONLY THIS
-      }
-=======
         .assignments[specialty] = { 
       name: assignment.physicianName, 
       id: assignment.physicianId 
   };
->>>>>>> 14cbdbaedcf110f747373ac91a1ccf83c60ef859
     })
 
     coverageSchedule.value = Object.values(groupedByDate).map((day: any) => ({

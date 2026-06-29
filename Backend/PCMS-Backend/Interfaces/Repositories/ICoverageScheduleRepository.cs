@@ -9,7 +9,7 @@ public interface ICoverageScheduleRepository
 
     Task<CoverageSchedule?> GetByIdAsync(int scheduleId);
     Task<int> GetScheduleIdByStartDate(DateOnly startDate);
-
+    Task<CoverageSchedule?> GetLatestPublishedScheduleAsync();
     Task<List<Physician>> GetPhysiciansAsync();
     Task<List<int>> GetSpecialtiesAsync();
     Task<List<ExternalLeavesData>> GetLeavesAsync();

@@ -13,8 +13,7 @@ public interface ICoverageAssignmentsService
 
     Task<Result> DeclineUnavailableRequestAsync(int alertId);
 
-    Task<Result<IReadOnlyList<ReplacementPhysicianDto>>>
-        GetRecommendationsAsync(
-            int assignmentId);
+    Task<Result<IReadOnlyList<ReplacementPhysicianDto>>> GetRecommendationsAsync(
+    RecommendationRequestDto requestDto);
     Task<Result<IReadOnlyList<UnavailableRequestsPerSpecialtyDto>>> GetUnavailableRequestsPerSpecialtyAsync();
 }

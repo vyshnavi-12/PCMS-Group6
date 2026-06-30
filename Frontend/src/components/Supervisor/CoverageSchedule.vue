@@ -71,9 +71,13 @@ const openCellEditor = async (assignment: any) => {
 
 const fetchRecommendations = async (assignment: any) => {
 
-  const response = await API.get(
-    `/CoverageAssignments/${assignment.coverageAssignmentId}/recommendations`
-  )
+  const response = await API.post(
+    "/CoverageAssignments/recommendations",
+    {
+        coverageAssignmentId: assignment.coverageAssignmentId,
+        pendingAssignments: updatedAssignments.value
+    }
+    )
 
   assignment.availablePhysicians = [...response.data.data].sort(
     (a: any, b: any) => {

@@ -169,4 +169,17 @@ public class CoverageAssignmentsRepo : ICoverageAssignmentsRepository
         return true;
     }
 
+    public async Task<List<CoverageAssignment>> GetAssignmentsForRecommendationWindowAsync(
+    DateOnly coverageDate)
+    {
+        var startDate = coverageDate.AddDays(-1);
+        var endDate = coverageDate.AddDays(1);
+
+        return await _context.CoverageAssignments
+            .Where(a =>
+                a.CoverageDate >= startDate &&
+                a.CoverageDate <= endDate)
+            .ToListAsync();
+    }
+
 }

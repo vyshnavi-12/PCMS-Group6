@@ -239,12 +239,12 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
 
     public async Task<Result<IReadOnlyList<ReplacementPhysicianDto>>>
         GetRecommendationsAsync(
-            int assignmentId)
+            RecommendationRequestDto requestDto)
             {
                 var assignment =
                     await _coverageAssignmentsRepo
                         .GetAssignmentByIdAsync(
-                            assignmentId);
+                            requestDto.CoverageAssignmentId);
 
                 if (assignment == null)
                 {
@@ -256,22 +256,88 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
                     await _contextBuilder.BuildAsync(
                         assignment.CoverageDate);
 
-                var request =
+                
+
+        var request =
                     new RecommendationRequest
                     {
+                        CoverageAssignmentId =assignment.CoverageAssignmentId,
                         CoverageDate = assignment.CoverageDate,
                         ShiftType = assignment.ShiftType,
                         SpecialtyId = assignment.SpecialtyId,
                         ExcludePhysicianId = assignment.PhysicianId
                     };
 
-                var recommendations =
-                    await _physicianRecommendationService
-                        .GetRecommendations(
-                            request,
-                            context);
+        var recommendations =
+            await _physicianRecommendationService
+                .GetRecommendations(
+                    request,
+                    context);
 
-                var replacements =
+        var assignments =
+        await _coverageAssignmentsRepo
+        .GetAssignmentsForRecommendationWindowAsync(
+            assignment.CoverageDate);
+
+
+        foreach (var pending in requestDto.PendingAssignments)
+        {
+            var editedAssignment = assignments.FirstOrDefault(a =>
+                a.CoverageAssignmentId == pending.CoverageAssignmentId);
+
+            if (editedAssignment != null)
+            {
+                editedAssignment.PhysicianId = pending.PhysicianId;
+            }
+        }
+
+        var blockedPhysicians = new HashSet<int>();
+
+        if (assignment.ShiftType == "Day")
+        {
+            var previousNight = assignments.FirstOrDefault(a =>
+                a.CoverageDate == assignment.CoverageDate.AddDays(-1) &&
+                a.ShiftType == "Night" &&
+                a.SpecialtyId == assignment.SpecialtyId);
+
+            if (previousNight != null)
+                blockedPhysicians.Add(previousNight.PhysicianId);
+
+            var sameDayNight = assignments.FirstOrDefault(a =>
+                a.CoverageDate == assignment.CoverageDate &&
+                a.ShiftType == "Night" &&
+                a.SpecialtyId == assignment.SpecialtyId);
+
+            if (sameDayNight != null)
+                blockedPhysicians.Add(sameDayNight.PhysicianId);
+        }
+        else
+        {
+            var sameDayDay = assignments.FirstOrDefault(a =>
+                a.CoverageDate == assignment.CoverageDate &&
+                a.ShiftType == "Day" &&
+                a.SpecialtyId == assignment.SpecialtyId
+                );
+
+            if (sameDayDay != null)
+                blockedPhysicians.Add(sameDayDay.PhysicianId);
+
+            var nextDayDay = assignments.FirstOrDefault(a =>
+                a.CoverageDate == assignment.CoverageDate.AddDays(1) &&
+                a.ShiftType == "Day" &&
+                a.SpecialtyId == assignment.SpecialtyId);
+
+            if (nextDayDay != null)
+                blockedPhysicians.Add(nextDayDay.PhysicianId);
+        }
+
+
+        recommendations = recommendations
+                    .Where(r => !blockedPhysicians.Contains(r.PhysicianId))
+                    .ToList();
+
+
+        var replacements =
                     recommendations
                         .Select((r, index) => new ReplacementPhysicianDto
                         {
@@ -284,5 +350,7 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
                 return Result<IReadOnlyList<ReplacementPhysicianDto>>
                     .Ok(replacements);
             }
+
+    
 
 }

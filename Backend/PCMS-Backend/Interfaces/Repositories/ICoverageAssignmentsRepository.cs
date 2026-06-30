@@ -21,6 +21,11 @@ public interface ICoverageAssignmentsRepository
     Task<bool> ChangeAssignmentStatus(int assignmentId, string status);
     Task<int?> GetAssignmentIdByAlertIdAsync(int alertId);
 
+    //Task<IReadOnlyList<CoverageAssignment>> GetAdjacentAssignmentsAsync(
+    //DateOnly coverageDate,
+    //string shiftType);
+    Task<List<CoverageAssignment>> GetAssignmentsForRecommendationWindowAsync(
+    DateOnly coverageDate);
     Task SaveChangesAsync();
 
 

@@ -2,6 +2,7 @@
 
 public class RecommendationRequest
 {
+    public int CoverageAssignmentId { get; set; }
     public DateOnly CoverageDate { get; set; }
 
     public string ShiftType { get; set; } = default!;

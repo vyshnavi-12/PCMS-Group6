@@ -28,7 +28,7 @@ public class WeeklyLimitEligibilityRule
             return true;
         }
 
-        if (workload.TotalAssignments >=
+        if (workload.CurrentMorningAssignments+workload.CurrentNightAssignments >=
             SchedulingRules.MaxAssignmentsPerSchedule)
         {
             return false;
@@ -39,7 +39,7 @@ public class WeeklyLimitEligibilityRule
                 "Night",
                 StringComparison.OrdinalIgnoreCase)
             &&
-            workload.TotalNightAssignments >=
+            workload.CurrentNightAssignments >=
             SchedulingRules.MaxNightAssignmentsPerSchedule)
         {
             return false;

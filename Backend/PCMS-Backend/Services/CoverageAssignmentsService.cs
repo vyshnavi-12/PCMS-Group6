@@ -141,7 +141,8 @@ public class CoverageAssignmentsService : ICoverageAssignmentsService
                 CoverageDate = assignment.CoverageDate,
                 ShiftType = assignment.ShiftType,
                 SpecialtyId = assignment.SpecialtyId,
-                ExcludePhysicianId = assignment.PhysicianId
+                ExcludePhysicianId = assignment.PhysicianId,
+                AllowLimitOverride = true
             };
 
         var recommendations =

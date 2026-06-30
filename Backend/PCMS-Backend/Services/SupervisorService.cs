@@ -29,15 +29,14 @@ public class SupervisorService : ISupervisorService
         var pendingUnavailable =
             await _physicianRepository.GetUnavailableRequestsCountSupervisorAsync();
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var latestSchedule = await _coverageScheduleRepository.GetLatestPublishedScheduleAsync();
 
-        int daysUntilSaturday =
-            ((int)DayOfWeek.Saturday - (int)today.DayOfWeek + 7) % 7;
+        DateOnly nextScheduleDate = DateOnly.FromDateTime(DateTime.Today);
 
-        if (daysUntilSaturday == 0)
-            daysUntilSaturday = 7;
-
-        var nextScheduleDate = today.AddDays(daysUntilSaturday);
+        if (latestSchedule != null)
+        {
+            nextScheduleDate = latestSchedule.WeekEndDate.AddDays(-1);
+        }
 
         var response = new SupervisorDashboardDetailsDto
         {

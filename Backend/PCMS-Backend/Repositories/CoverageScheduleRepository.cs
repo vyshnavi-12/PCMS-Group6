@@ -100,6 +100,13 @@ public class CoverageScheduleRepository : ICoverageScheduleRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<CoverageSchedule?> GetLatestPublishedScheduleAsync()
+    {
+        return await _context.CoverageSchedules
+            .Where(x => x.Status == "Published")
+            .OrderByDescending(x => x.WeekEndDate)
+            .FirstOrDefaultAsync();
+    }
 
     public async Task<CoverageSchedule?> GetByStartDateWithAssignmentsAsync(DateOnly startDate)
     {

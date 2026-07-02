@@ -46,15 +46,14 @@ onMounted(async () => {
       })
     }
   )
-
-  await supervisorSwapSignalRService.startConnection(
-    parsedUser.userId.toString()
-  )
-
   supervisorSwapSignalRService.onRefreshSupervisorRequests(async () => {
     console.log('Supervisor swap refresh received')
     await swapRequestsStore.fetchSupervisorRequests()
   })
+
+  await supervisorSwapSignalRService.startConnection(
+    parsedUser.userId.toString()
+  )
 
   await unavailableRequestSignalRService.startConnection(
     parsedUser.userId.toString()

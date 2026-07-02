@@ -93,7 +93,19 @@ onMounted(fetchData)
 <template>
   <div class="workload-card">
     <div class="card-header">
-      <h3>Physician workload (Weekly) </h3>
+      <h3>Top Physician Workload (Weekly)</h3>
+      
+      <!-- Legend for D and N Shifts -->
+      <div class="legend">
+        <div class="legend-item">
+          <div class="shift-box day">D</div>
+          <span>Day</span>
+        </div>
+        <div class="legend-item">
+          <div class="shift-box night">N</div>
+          <span>Night</span>
+        </div>
+      </div>
     </div>
 
     <div v-for="group in workloadData" :key="group.specialty" class="specialty-section">
@@ -153,15 +165,36 @@ onMounted(fetchData)
   background: white;
   padding: 18px;
   border-bottom: 1px solid #e2e8f0;
+  
+  /* Flexbox layout to separate title and legend */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .card-header h3 {
   margin: 0;
   font-size: 20px;
   color: #232f72;
+  white-space: nowrap
 }
 
-.specialty-title {
+/* Legend Styles */
+.legend {
+  display: flex;
+  gap: 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.specialty-section {
   margin-top: 18px;
 }
 
@@ -235,7 +268,7 @@ onMounted(fetchData)
   color: #2563eb;
 }
 
-/* NIGHT SHIFT = ORANGE */
+/* NIGHT SHIFT = PURPLE/ORANGE */
 .night {
   background: #f3e8ff;
   color: #7c3aed;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
+import supervisorSwapSignalRService from '../../services/supervisorSwapSignalRService'
 import { useSupervisorSwapRequestsStore } from '../../stores/supervisorSwapRequestsStore'
 
 const activeTab = ref('Pending')
@@ -20,6 +21,14 @@ const fetchSupervisorRequests = async () => {
 
 onMounted(async () => {
     await fetchSupervisorRequests()
+    supervisorSwapSignalRService.onRefreshSupervisorRequests(async () => {
+    console.log('Supervisor swap refresh received')
+    await swapRequestsStore.fetchSupervisorRequests()
+  })
+
+  await supervisorSwapSignalRService.startConnection(
+    "6"
+  )
 })
 
 const filteredRequests = computed(() => {

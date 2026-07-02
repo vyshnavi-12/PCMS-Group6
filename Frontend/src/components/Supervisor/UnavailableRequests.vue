@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import UnavailableRequestCard from './UnavailableRequestCard.vue'
 import API from '../../api/axios.ts'
 import { useToast } from 'primevue/usetoast'
@@ -82,22 +82,28 @@ const handleRequestUpdated = async (message: string) => {
     selectedRequest.value = null
     await fetchUnavailableRequests()
 }
+const handleNewRequest = async () => {
+    console.log('New unavailable request received')
+    await fetchUnavailableRequests()
+}
 
+const handleRequestUpdatedEvent = () => {
+    console.log('Unavailable request updated received')
+    handleRequestUpdated('Request has been updated successfully')
+}
 onMounted(() => {
     fetchUnavailableRequests()
 
-    unavailableRequestSignalRService.onNewUnavailableRequest(async () => {
-        console.log('New unavailable request received')
+    // 1. Attach listeners
+    unavailableRequestSignalRService.onNewUnavailableRequest(handleNewRequest)
+    unavailableRequestSignalRService.onUnavailableRequestUpdated(handleRequestUpdatedEvent)
+})
 
-        await fetchUnavailableRequests()
-
-        toast.add({
-            severity: 'info',
-            summary: 'New Request',
-            detail: 'New unavailable request received',
-            life: 3000
-        })
-    })
+onUnmounted(() => {
+    // 2. Clean up listeners to prevent memory leaks and stacked duplicate toasts
+    // Note: Ensure your SignalR service has methods to remove/off listeners!
+    unavailableRequestSignalRService.offNewUnavailableRequest(handleNewRequest)
+    unavailableRequestSignalRService.offUnavailableRequestUpdated(handleRequestUpdatedEvent)
 })
 </script>
 
